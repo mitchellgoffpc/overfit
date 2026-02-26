@@ -1,12 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { App } from "./App";
+import IndexRoute from "./routes/index";
 
-describe("App", () => {
-  it("renders the heading", () => {
-    render(<App />);
+describe("IndexRoute", () => {
+  it("renders the projects heading", () => {
+    render(<IndexRoute />);
 
-    expect(screen.getByText(/React \+ TypeScript \+ Vite/i)).toBeInTheDocument();
+    expect(screen.getByText("Projects")).toBeInTheDocument();
   });
 });
