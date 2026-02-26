@@ -7,6 +7,10 @@ import { nowIso, type ErrorResponse, type ID } from "./helpers";
 type RunStore = Map<ID, Run>;
 
 export function registerRunRoutes(app: Express, apiBase: string, runs: RunStore) {
+  app.get(`${apiBase}/runs`, (_req: Request, res: Response<Run[]>) => {
+    res.json(Array.from(runs.values()));
+  });
+
   app.get(`${apiBase}/runs/:id`, (req: Request, res: Response<Run | ErrorResponse>) => {
     const run = runs.get(req.params.id);
 

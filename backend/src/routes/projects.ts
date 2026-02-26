@@ -7,6 +7,10 @@ import { nowIso, type ErrorResponse, type ID } from "./helpers";
 type ProjectStore = Map<ID, Project>;
 
 export function registerProjectRoutes(app: Express, apiBase: string, projects: ProjectStore) {
+  app.get(`${apiBase}/projects`, (_req: Request, res: Response<Project[]>) => {
+    res.json(Array.from(projects.values()));
+  });
+
   app.get(`${apiBase}/projects/:id`, (req: Request, res: Response<Project | ErrorResponse>) => {
     const project = projects.get(req.params.id);
 

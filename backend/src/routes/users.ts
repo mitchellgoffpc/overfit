@@ -7,6 +7,10 @@ import { nowIso, type ErrorResponse, type ID } from "./helpers";
 type UserStore = Map<ID, User>;
 
 export function registerUserRoutes(app: Express, apiBase: string, users: UserStore) {
+  app.get(`${apiBase}/users`, (_req: Request, res: Response<User[]>) => {
+    res.json(Array.from(users.values()));
+  });
+
   app.get(`${apiBase}/users/:id`, (req: Request, res: Response<User | ErrorResponse>) => {
     const user = users.get(req.params.id);
 

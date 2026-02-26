@@ -9,6 +9,10 @@ type MetricStore = Map<ID, Metric>;
 type RunStore = Map<ID, Run>;
 
 export function registerMetricRoutes(app: Express, apiBase: string, metrics: MetricStore, runs: RunStore) {
+  app.get(`${apiBase}/metrics`, (_req: Request, res: Response<Metric[]>) => {
+    res.json(Array.from(metrics.values()));
+  });
+
   app.get(`${apiBase}/metrics/:id`, (req: Request, res: Response<Metric | ErrorResponse>) => {
     const metric = metrics.get(req.params.id);
 

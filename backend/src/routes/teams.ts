@@ -7,6 +7,10 @@ import { nowIso, type ErrorResponse, type ID } from "./helpers";
 type TeamStore = Map<ID, Team>;
 
 export function registerTeamRoutes(app: Express, apiBase: string, teams: TeamStore) {
+  app.get(`${apiBase}/teams`, (_req: Request, res: Response<Team[]>) => {
+    res.json(Array.from(teams.values()));
+  });
+
   app.get(`${apiBase}/teams/:id`, (req: Request, res: Response<Team | ErrorResponse>) => {
     const team = teams.get(req.params.id);
 

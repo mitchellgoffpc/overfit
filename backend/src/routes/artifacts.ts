@@ -14,6 +14,10 @@ export function registerArtifactRoutes(
   artifacts: ArtifactStore,
   runs: RunStore
 ) {
+  app.get(`${apiBase}/artifacts`, (_req: Request, res: Response<Artifact[]>) => {
+    res.json(Array.from(artifacts.values()));
+  });
+
   app.get(`${apiBase}/artifacts/:id`, (req: Request, res: Response<Artifact | ErrorResponse>) => {
     const artifact = artifacts.get(req.params.id);
 
