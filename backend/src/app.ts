@@ -1,10 +1,13 @@
 import cors from "cors";
 import express, { type Request, type Response } from "express";
 
-import { API_VERSION, type HelloRequest, type HelloResponse, makeHelloMessage } from "@app/shared";
+import { API_VERSION, type HelloRequest, type HelloResponse, type NameResponse, makeHelloMessage } from "@app/shared";
+
+const defaultName = "Ada";
 
 export function createApp() {
   const app = express();
+  let storedName = defaultName;
 
   app.use(cors());
   app.use(express.json());
@@ -14,8 +17,14 @@ export function createApp() {
   });
 
   app.post("/api/hello", (req: Request<unknown, HelloResponse, HelloRequest>, res: Response<HelloResponse>) => {
-    const message = makeHelloMessage(req.body.name);
+    const trimmed = req.body.name?.trim();
+    storedName = trimmed ? trimmed : defaultName;
+    const message = makeHelloMessage(storedName);
     res.json({ message });
+  });
+
+  app.get("/api/name", (_req: Request, res: Response<NameResponse>) => {
+    res.json({ name: storedName });
   });
 
   return app;

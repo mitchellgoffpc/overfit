@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { makeHelloMessage, type HelloRequest, type HelloResponse } from "@app/shared";
+import { makeHelloMessage, type HelloRequest, type HelloResponse, type NameResponse } from "@app/shared";
 
 const defaultName = "Ada";
 
@@ -14,12 +14,11 @@ export function App() {
     return import.meta.env.VITE_API_URL ?? "http://localhost:4000";
   }, []);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const sendHello = useCallback(async (nextName: string) => {
     setIsLoading(true);
     setError(null);
 
-    const payload: HelloRequest = { name };
+    const payload: HelloRequest = { name: nextName };
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/hello`, {
@@ -42,6 +41,39 @@ export function App() {
     } finally {
       setIsLoading(false);
     }
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    const fetchName = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/name`);
+
+        if (!response.ok) {
+          throw new Error(`Request failed (${response.status})`);
+        }
+
+        const data = (await response.json()) as NameResponse;
+        setName(data.name);
+        setMessage(makeHelloMessage(data.name));
+      } catch (caught) {
+        const messageText = caught instanceof Error ? caught.message : "Unexpected error";
+        setError(messageText);
+        setName(defaultName);
+        setMessage(makeHelloMessage(defaultName));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void fetchName();
+  }, [apiBaseUrl]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await sendHello(name);
   };
 
   return (

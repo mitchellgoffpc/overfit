@@ -6,6 +6,10 @@ export type HelloResponse = {
   message: string;
 };
 
+export type NameResponse = {
+  name: string;
+};
+
 export const API_VERSION = "v1";
 
 export function makeHelloMessage(name?: string | null): string {
