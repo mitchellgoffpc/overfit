@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { makeHelloMessage, type HelloRequest, type HelloResponse, type NameResponse } from "@app/shared";
+import { API_VERSION } from "@app/shared";
 
-const defaultName = "Ada";
+type HealthResponse = {
+  status: string;
+  version: string;
+};
 
 export function App() {
-  const [name, setName] = useState(defaultName);
-  const [message, setMessage] = useState(() => makeHelloMessage(defaultName));
+  const [status, setStatus] = useState<string>("unknown");
+  const [version, setVersion] = useState<string>(API_VERSION);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,94 +17,48 @@ export function App() {
     return import.meta.env.VITE_API_URL ?? "http://localhost:4000";
   }, []);
 
-  const sendHello = useCallback(async (nextName: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    const payload: HelloRequest = { name: nextName };
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/hello`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed (${response.status})`);
-      }
-
-      const data = (await response.json()) as HelloResponse;
-      setMessage(data.message);
-    } catch (caught) {
-      const messageText = caught instanceof Error ? caught.message : "Unexpected error";
-      setError(messageText);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiBaseUrl]);
-
   useEffect(() => {
-    const fetchName = async () => {
+    const fetchHealth = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await fetch(`${apiBaseUrl}/api/name`);
+        const response = await fetch(`${apiBaseUrl}/api/health`);
 
         if (!response.ok) {
           throw new Error(`Request failed (${response.status})`);
         }
 
-        const data = (await response.json()) as NameResponse;
-        setName(data.name);
-        setMessage(makeHelloMessage(data.name));
+        const data = (await response.json()) as HealthResponse;
+        setStatus(data.status);
+        setVersion(data.version);
       } catch (caught) {
         const messageText = caught instanceof Error ? caught.message : "Unexpected error";
         setError(messageText);
-        setName(defaultName);
-        setMessage(makeHelloMessage(defaultName));
+        setStatus("offline");
+        setVersion(API_VERSION);
       } finally {
         setIsLoading(false);
       }
     };
 
-    void fetchName();
+    void fetchHealth();
   }, [apiBaseUrl]);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    await sendHello(name);
-  };
 
   return (
     <div className="app">
       <header className="app__header">
         <p className="app__kicker">Overfit Starter</p>
-        <h1 className="app__title">React + TypeScript + Vite</h1>
-        <p className="app__subtitle">Shared API types and a tiny backend to get you moving.</p>
+        <h1 className="app__title">Tracking Runs</h1>
+        <p className="app__subtitle">Backend models + API scaffolding for an open-source W&B.</p>
       </header>
 
       <section className="app__panel">
-        <form onSubmit={handleSubmit} className="app__form">
-          <label className="app__label" htmlFor="name">
-            Name
-          </label>
-          <input
-            id="name"
-            className="app__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <button className="app__button" type="submit" disabled={isLoading}>
-            {isLoading ? "Sending..." : "Send"}
-          </button>
-        </form>
-
         <div className="app__output">
-          <p className="app__message">{message}</p>
+          <p className="app__message">
+            API status: {isLoading ? "checking..." : status}
+          </p>
+          <p className="app__message">API version: {version}</p>
           {error ? <p className="app__error">{error}</p> : null}
         </div>
       </section>
