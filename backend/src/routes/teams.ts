@@ -1,15 +1,14 @@
 import type { Team } from "@app/shared";
 import type { Request, Response } from "express";
 
+import type { EntityStore } from "../storage/types";
 
-import { nowIso } from "./helpers";
 import type { ErrorResponse, ID, RouteApp } from "./helpers";
+import { nowIso } from "./time";
 
-type TeamStore = Map<ID, Team>;
-
-export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: TeamStore): void {
+export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: EntityStore<Team>): void {
   app.get(`${apiBase}/teams`, (_req: Request, res: Response<Team[]>) => {
-    res.json(Array.from(teams.values()));
+    res.json(teams.list());
   });
 
   app.get(`${apiBase}/teams/:id`, (req: Request<{ id: ID }>, res: Response<Team | ErrorResponse>) => {
@@ -51,7 +50,7 @@ export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: TeamSt
       updatedAt: nowIso()
     };
 
-    teams.set(id, team);
+    teams.upsert(team);
     res.json(team);
   });
 }

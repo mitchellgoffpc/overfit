@@ -1,15 +1,14 @@
 import type { Run } from "@app/shared";
 import type { Request, Response } from "express";
 
+import type { EntityStore } from "../storage/types";
 
-import { nowIso } from "./helpers";
 import type { ErrorResponse, ID, RouteApp } from "./helpers";
+import { nowIso } from "./time";
 
-type RunStore = Map<ID, Run>;
-
-export function registerRunRoutes(app: RouteApp, apiBase: string, runs: RunStore): void {
+export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntityStore<Run>): void {
   app.get(`${apiBase}/runs`, (_req: Request, res: Response<Run[]>) => {
-    res.json(Array.from(runs.values()));
+    res.json(runs.list());
   });
 
   app.get(`${apiBase}/runs/:id`, (req: Request<{ id: ID }>, res: Response<Run | ErrorResponse>) => {
@@ -61,7 +60,7 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: RunStore
       metadata: payload.metadata ?? existing?.metadata
     };
 
-    runs.set(id, run);
+    runs.upsert(run);
     res.json(run);
   });
 }

@@ -1,15 +1,13 @@
 import type { Metric, Run } from "@app/shared";
 import type { Request, Response } from "express";
 
+import type { EntityStore } from "../storage/types";
+
 import type { ErrorResponse, ID, RouteApp } from "./helpers";
 
-type MetricStore = Map<ID, Metric>;
-
-type RunStore = Map<ID, Run>;
-
-export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: MetricStore, runs: RunStore): void {
+export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: EntityStore<Metric>, runs: EntityStore<Run>): RouteApp {
   app.get(`${apiBase}/metrics`, (_req: Request, res: Response<Metric[]>) => {
-    res.json(Array.from(metrics.values()));
+    res.json(metrics.list());
   });
 
   app.get(`${apiBase}/metrics/:id`, (req: Request<{ id: ID }>, res: Response<Metric | ErrorResponse>) => {
@@ -69,8 +67,10 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: Me
         timestamp
       };
 
-      metrics.set(id, metric);
+      metrics.upsert(metric);
       res.json(metric);
     }
   );
+
+  return app;
 }

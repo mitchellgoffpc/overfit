@@ -1,27 +1,26 @@
 import { API_VERSION } from "@app/shared";
-import type { Artifact, Metric, Project, Run, Team, User } from "@app/shared";
 import cors from "cors";
 import express from "express";
 import type { Express, Request, Response } from "express";
 
-
 import { registerArtifactRoutes } from "./routes/artifacts";
-import type { ID } from "./routes/helpers";
 import { registerMetricRoutes } from "./routes/metrics";
 import { registerProjectRoutes } from "./routes/projects";
 import { registerRunRoutes } from "./routes/runs";
 import { registerTeamRoutes } from "./routes/teams";
 import { registerUserRoutes } from "./routes/users";
+import { createStorage } from "./storage";
+import type { Storage, StorageConfig } from "./storage";
 
-export function createApp(): Express {
+interface AppOptions {
+  storage?: Storage;
+  storageConfig?: StorageConfig;
+}
+
+export function createApp(options: AppOptions = {}): Express {
   const app = express();
 
-  const users = new Map<ID, User>();
-  const teams = new Map<ID, Team>();
-  const projects = new Map<ID, Project>();
-  const runs = new Map<ID, Run>();
-  const artifacts = new Map<ID, Artifact>();
-  const metrics = new Map<ID, Metric>();
+  const storage = options.storage ?? createStorage(options.storageConfig);
 
   app.use(cors());
   app.use(express.json());
@@ -32,12 +31,12 @@ export function createApp(): Express {
     res.json({ status: "ok", version: API_VERSION });
   });
 
-  registerUserRoutes(app, apiBase, users);
-  registerTeamRoutes(app, apiBase, teams);
-  registerProjectRoutes(app, apiBase, projects);
-  registerRunRoutes(app, apiBase, runs);
-  registerArtifactRoutes(app, apiBase, artifacts, runs);
-  registerMetricRoutes(app, apiBase, metrics, runs);
+  registerUserRoutes(app, apiBase, storage.users);
+  registerTeamRoutes(app, apiBase, storage.teams);
+  registerProjectRoutes(app, apiBase, storage.projects);
+  registerRunRoutes(app, apiBase, storage.runs);
+  registerArtifactRoutes(app, apiBase, storage.artifacts, storage.runs);
+  registerMetricRoutes(app, apiBase, storage.metrics, storage.runs);
 
   return app;
 }

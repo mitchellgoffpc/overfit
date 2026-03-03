@@ -1,15 +1,14 @@
 import type { Project } from "@app/shared";
 import type { Request, Response } from "express";
 
+import type { EntityStore } from "../storage/types";
 
-import { nowIso } from "./helpers";
 import type { ErrorResponse, ID, RouteApp } from "./helpers";
+import { nowIso } from "./time";
 
-type ProjectStore = Map<ID, Project>;
-
-export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: ProjectStore): void {
+export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: EntityStore<Project>): void {
   app.get(`${apiBase}/projects`, (_req: Request, res: Response<Project[]>) => {
-    res.json(Array.from(projects.values()));
+    res.json(projects.list());
   });
 
   app.get(`${apiBase}/projects/:id`, (req: Request<{ id: ID }>, res: Response<Project | ErrorResponse>) => {
@@ -45,7 +44,7 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
       updatedAt: nowIso()
     };
 
-    projects.set(id, project);
+    projects.upsert(project);
     res.json(project);
   });
 }

@@ -9,7 +9,6 @@ Overfit is an open-source model reporting dashboard for tracking experiments, me
 - Keep code clean and concise. Do not add comments unless the logic is non-obvious.
 - Avoid splitting statements across multiple lines without a readability benefit. If it fits under 160 characters, keep it on one line.
 - Prefer minimal, clear abstractions over clever ones.
-- Use absolute imports only.
 - Avoid short docstrings. Use docstrings only when detailed multi-line documentation is required.
 
 ## Committing changes

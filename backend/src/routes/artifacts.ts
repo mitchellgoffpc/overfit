@@ -1,22 +1,14 @@
 import type { Artifact, Run } from "@app/shared";
 import type { Request, Response } from "express";
 
+import type { EntityStore } from "../storage/types";
 
-import { nowIso } from "./helpers";
 import type { ErrorResponse, ID, RouteApp } from "./helpers";
+import { nowIso } from "./time";
 
-type ArtifactStore = Map<ID, Artifact>;
-
-type RunStore = Map<ID, Run>;
-
-export function registerArtifactRoutes(
-  app: RouteApp,
-  apiBase: string,
-  artifacts: ArtifactStore,
-  runs: RunStore
-): void {
+export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts: EntityStore<Artifact>, runs: EntityStore<Run>): void {
   app.get(`${apiBase}/artifacts`, (_req: Request, res: Response<Artifact[]>) => {
-    res.json(Array.from(artifacts.values()));
+    res.json(artifacts.list());
   });
 
   app.get(`${apiBase}/artifacts/:id`, (req: Request<{ id: ID }>, res: Response<Artifact | ErrorResponse>) => {
@@ -81,7 +73,7 @@ export function registerArtifactRoutes(
         metadata: payload.metadata ?? existing?.metadata
       };
 
-      artifacts.set(id, artifact);
+      artifacts.upsert(artifact);
       res.json(artifact);
     }
   );

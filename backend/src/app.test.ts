@@ -6,10 +6,11 @@ import { describe, expect, it } from "vitest";
 import { createApp } from "./app";
 
 const apiBase = `/api/${API_VERSION}`;
+const createTestApp = () => createApp({ storageConfig: { type: "sqlite", sqlitePath: ":memory:" } });
 
 describe("backend api", () => {
   it("upserts and fetches a user", async () => {
-    const app = createApp();
+    const app = createTestApp();
 
     const userPayload = {
       email: "ada@example.com",
@@ -37,7 +38,7 @@ describe("backend api", () => {
   });
 
   it("upserts and fetches a team", async () => {
-    const app = createApp();
+    const app = createTestApp();
 
     const teamPayload = {
       name: "Core",
@@ -60,7 +61,7 @@ describe("backend api", () => {
   });
 
   it("upserts and fetches a project", async () => {
-    const app = createApp();
+    const app = createTestApp();
 
     const projectPayload = {
       name: "Overfit",
@@ -83,7 +84,7 @@ describe("backend api", () => {
   });
 
   it("upserts and fetches a run", async () => {
-    const app = createApp();
+    const app = createTestApp();
 
     await request(app)
       .put(`${apiBase}/projects/project-1`)
@@ -113,7 +114,7 @@ describe("backend api", () => {
   });
 
   it("upserts and fetches an artifact", async () => {
-    const app = createApp();
+    const app = createTestApp();
 
     await request(app)
       .put(`${apiBase}/projects/project-1`)
@@ -149,7 +150,7 @@ describe("backend api", () => {
   });
 
   it("upserts and fetches a metric", async () => {
-    const app = createApp();
+    const app = createTestApp();
 
     await request(app)
       .put(`${apiBase}/projects/project-1`)
