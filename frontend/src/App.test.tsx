@@ -7,6 +7,6 @@ describe("IndexRoute", () => {
   it("renders the projects heading", () => {
     render(<IndexRoute />);
 
-    expect(screen.getByText("Projects")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Projects" })).toBeInTheDocument();
   });
 });
