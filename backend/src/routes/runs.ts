@@ -1,10 +1,9 @@
 import type { Run } from "@app/shared";
 import type { Request, Response } from "express";
 
-import type { EntityStore } from "../storage/types";
-
-import type { ErrorResponse, ID, RouteApp } from "./helpers";
-import { nowIso } from "./time";
+import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import { nowIso } from "routes/time";
+import type { EntityStore } from "storage/types";
 
 export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntityStore<Run>): void {
   app.get(`${apiBase}/runs`, (_req: Request, res: Response<Run[]>) => {

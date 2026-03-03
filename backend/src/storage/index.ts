@@ -1,6 +1,6 @@
-import { createInMemoryStorage } from "./memory";
-import { createSqliteStorage } from "./sqlite";
-import type { Storage } from "./types";
+import { createInMemoryStorage } from "storage/memory";
+import { createSqliteStorage } from "storage/sqlite";
+import type { Storage } from "storage/types";
 
 export type StorageType = "memory" | "sqlite";
 
@@ -26,4 +26,4 @@ export const createStorage = (config: StorageConfig = {}): Storage => {
   return createSqliteStorage({ path: sqlitePath });
 };
 
-export type { Storage } from "./types";
+export type { Storage } from "storage/types";

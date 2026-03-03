@@ -36,3 +36,6 @@ Thumbs.db
 
 # Tests
 .vitest/
+
+# Worktrees
+.worktrees/

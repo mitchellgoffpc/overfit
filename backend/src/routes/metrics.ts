@@ -1,9 +1,8 @@
 import type { Metric, Run } from "@app/shared";
 import type { Request, Response } from "express";
 
-import type { EntityStore } from "../storage/types";
-
-import type { ErrorResponse, ID, RouteApp } from "./helpers";
+import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import type { EntityStore } from "storage/types";
 
 export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: EntityStore<Metric>, runs: EntityStore<Run>): RouteApp {
   app.get(`${apiBase}/metrics`, (_req: Request, res: Response<Metric[]>) => {

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
@@ -12,7 +12,8 @@
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "types": ["node"],
     "paths": {
-      "@app/shared": ["../shared/src/index.ts"]
+      "@app/shared": ["../../shared/src"],
+      "models": ["../../shared/src/models.ts"]
     }
   },
   "include": ["src/**/*"],

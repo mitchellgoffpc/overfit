@@ -3,7 +3,7 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "composite": true,
@@ -12,7 +12,8 @@
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "types": ["vitest/globals"],
     "paths": {
-      "@app/shared": ["../shared/src/index.ts"]
+      "@app/shared": ["../../shared/src"],
+      "models": ["../../shared/src/models.ts"]
     }
   },
   "include": ["src/**/*", "vite.config.ts"],

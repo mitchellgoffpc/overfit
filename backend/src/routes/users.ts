@@ -1,10 +1,9 @@
 import type { User } from "@app/shared";
 import type { Request, Response } from "express";
 
-import type { EntityStore } from "../storage/types";
-
-import type { ErrorResponse, ID, RouteApp } from "./helpers";
-import { nowIso } from "./time";
+import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import { nowIso } from "routes/time";
+import type { EntityStore } from "storage/types";
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, users: EntityStore<User>): void {
   app.get(`${apiBase}/users`, (_req: Request, res: Response<User[]>) => {

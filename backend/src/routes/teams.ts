@@ -1,10 +1,9 @@
 import type { Team } from "@app/shared";
 import type { Request, Response } from "express";
 
-import type { EntityStore } from "../storage/types";
-
-import type { ErrorResponse, ID, RouteApp } from "./helpers";
-import { nowIso } from "./time";
+import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import { nowIso } from "routes/time";
+import type { EntityStore } from "storage/types";
 
 export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: EntityStore<Team>): void {
   app.get(`${apiBase}/teams`, (_req: Request, res: Response<Team[]>) => {

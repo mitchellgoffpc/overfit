@@ -1,6 +1,6 @@
 import type { Artifact, ID, Metric, Project, Run, Team, User } from "@app/shared";
 
-import type { EntityStore, Storage } from "./types";
+import type { EntityStore, Storage } from "storage/types";
 
 const createMapStore = <T extends { id: ID }>(map = new Map<ID, T>()): EntityStore<T> => ({
   list: () => Array.from(map.values()),

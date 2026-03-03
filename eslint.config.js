@@ -48,6 +48,12 @@ const manualRules = {
       "newlines-between": "always"
     }
   ],
+  "no-restricted-imports": [
+    "error",
+    {
+      "patterns": ["./*", "../*"]
+    }
+  ],
   "curly": "error",
   "eqeqeq": "error",
   "no-console": "warn",

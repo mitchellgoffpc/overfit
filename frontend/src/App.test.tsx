@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import IndexRoute from "./routes/index";
+import IndexRoute from "routes";
 
 describe("IndexRoute", () => {
   it("renders the projects heading", () => {

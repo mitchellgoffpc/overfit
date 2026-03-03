@@ -1,11 +1,8 @@
+import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      "@app/shared": new URL("../shared/src/index.ts", import.meta.url).pathname
-    }
-  },
+  plugins: [tsconfigPaths()],
   test: {
     environment: "node"
   }

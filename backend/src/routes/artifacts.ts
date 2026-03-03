@@ -1,10 +1,9 @@
 import type { Artifact, Run } from "@app/shared";
 import type { Request, Response } from "express";
 
-import type { EntityStore } from "../storage/types";
-
-import type { ErrorResponse, ID, RouteApp } from "./helpers";
-import { nowIso } from "./time";
+import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import { nowIso } from "routes/time";
+import type { EntityStore } from "storage/types";
 
 export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts: EntityStore<Artifact>, runs: EntityStore<Run>): void {
   app.get(`${apiBase}/artifacts`, (_req: Request, res: Response<Artifact[]>) => {

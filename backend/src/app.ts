@@ -3,14 +3,14 @@ import cors from "cors";
 import express from "express";
 import type { Express, Request, Response } from "express";
 
-import { registerArtifactRoutes } from "./routes/artifacts";
-import { registerMetricRoutes } from "./routes/metrics";
-import { registerProjectRoutes } from "./routes/projects";
-import { registerRunRoutes } from "./routes/runs";
-import { registerTeamRoutes } from "./routes/teams";
-import { registerUserRoutes } from "./routes/users";
-import { createStorage } from "./storage";
-import type { Storage, StorageConfig } from "./storage";
+import { registerArtifactRoutes } from "routes/artifacts";
+import { registerMetricRoutes } from "routes/metrics";
+import { registerProjectRoutes } from "routes/projects";
+import { registerRunRoutes } from "routes/runs";
+import { registerTeamRoutes } from "routes/teams";
+import { registerUserRoutes } from "routes/users";
+import { createStorage } from "storage";
+import type { Storage, StorageConfig } from "storage";
 
 interface AppOptions {
   storage?: Storage;
