@@ -1,0 +1,46 @@
+import { API_VERSION } from "@app/shared";
+import request from "supertest";
+import { describe, expect, it } from "vitest";
+
+import { createApp } from "app";
+
+const apiBase = `/api/${API_VERSION}`;
+const createTestApp = () => createApp({ storageConfig: { type: "sqlite", sqlitePath: ":memory:" } });
+
+describe("metrics routes", () => {
+  it("upserts and fetches a metric", async () => {
+    const app = createTestApp();
+
+    await request(app)
+      .put(`${apiBase}/projects/project-1`)
+      .send({ name: "Overfit" })
+      .expect(200);
+
+    await request(app)
+      .put(`${apiBase}/runs/run-1`)
+      .send({ projectId: "project-1", name: "Run 1", status: "running" })
+      .expect(200);
+
+    const metricPayload = {
+      runId: "run-1",
+      name: "accuracy",
+      value: 0.98,
+      step: 10,
+      timestamp: new Date("2025-01-01T00:00:00.000Z").toISOString()
+    };
+
+    await request(app)
+      .put(`${apiBase}/metrics/metric-1`)
+      .send(metricPayload)
+      .expect(200);
+
+    const response = await request(app)
+      .get(`${apiBase}/metrics/metric-1`)
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      id: "metric-1",
+      ...metricPayload
+    });
+  });
+});

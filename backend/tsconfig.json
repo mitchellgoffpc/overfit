@@ -16,6 +16,6 @@
       "models": ["../../shared/src/models.ts"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tests/**/*"],
   "references": [{ "path": "../shared" }]
 }
