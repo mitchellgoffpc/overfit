@@ -1,17 +1,19 @@
+import { API_VERSION } from "@app/shared";
+import type { Artifact, Metric, Project, Run, Team, User } from "@app/shared";
 import cors from "cors";
-import express, { type Request, type Response } from "express";
+import express from "express";
+import type { Express, Request, Response } from "express";
 
-import { API_VERSION, type Artifact, type Metric, type Project, type Run, type Team, type User } from "@app/shared";
 
 import { registerArtifactRoutes } from "./routes/artifacts";
+import type { ID } from "./routes/helpers";
 import { registerMetricRoutes } from "./routes/metrics";
 import { registerProjectRoutes } from "./routes/projects";
 import { registerRunRoutes } from "./routes/runs";
 import { registerTeamRoutes } from "./routes/teams";
 import { registerUserRoutes } from "./routes/users";
-import type { ID } from "./routes/helpers";
 
-export function createApp() {
+export function createApp(): Express {
   const app = express();
 
   const users = new Map<ID, User>();

@@ -1,24 +1,25 @@
-import type { Express, Request, Response } from "express";
-
 import type { Artifact, Run } from "@app/shared";
+import type { Request, Response } from "express";
 
-import { nowIso, type ErrorResponse, type ID } from "./helpers";
+
+import { nowIso } from "./helpers";
+import type { ErrorResponse, ID, RouteApp } from "./helpers";
 
 type ArtifactStore = Map<ID, Artifact>;
 
 type RunStore = Map<ID, Run>;
 
 export function registerArtifactRoutes(
-  app: Express,
+  app: RouteApp,
   apiBase: string,
   artifacts: ArtifactStore,
   runs: RunStore
-) {
+): void {
   app.get(`${apiBase}/artifacts`, (_req: Request, res: Response<Artifact[]>) => {
     res.json(Array.from(artifacts.values()));
   });
 
-  app.get(`${apiBase}/artifacts/:id`, (req: Request, res: Response<Artifact | ErrorResponse>) => {
+  app.get(`${apiBase}/artifacts/:id`, (req: Request<{ id: ID }>, res: Response<Artifact | ErrorResponse>) => {
     const artifact = artifacts.get(req.params.id);
 
     if (!artifact) {
@@ -31,9 +32,9 @@ export function registerArtifactRoutes(
 
   app.put(
     `${apiBase}/artifacts/:id`,
-    (req: Request<unknown, Artifact | ErrorResponse, Partial<Artifact>>, res: Response<Artifact | ErrorResponse>) => {
+    (req: Request<{ id: ID }, Artifact | ErrorResponse, Partial<Artifact>>, res: Response<Artifact | ErrorResponse>) => {
       const id = req.params.id;
-      const payload = req.body ?? {};
+      const payload = req.body;
       const existing = artifacts.get(id);
 
       const runId = payload.runId ?? existing?.runId;

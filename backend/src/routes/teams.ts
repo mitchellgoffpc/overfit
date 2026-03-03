@@ -1,17 +1,18 @@
-import type { Express, Request, Response } from "express";
-
 import type { Team } from "@app/shared";
+import type { Request, Response } from "express";
 
-import { nowIso, type ErrorResponse, type ID } from "./helpers";
+
+import { nowIso } from "./helpers";
+import type { ErrorResponse, ID, RouteApp } from "./helpers";
 
 type TeamStore = Map<ID, Team>;
 
-export function registerTeamRoutes(app: Express, apiBase: string, teams: TeamStore) {
+export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: TeamStore): void {
   app.get(`${apiBase}/teams`, (_req: Request, res: Response<Team[]>) => {
     res.json(Array.from(teams.values()));
   });
 
-  app.get(`${apiBase}/teams/:id`, (req: Request, res: Response<Team | ErrorResponse>) => {
+  app.get(`${apiBase}/teams/:id`, (req: Request<{ id: ID }>, res: Response<Team | ErrorResponse>) => {
     const team = teams.get(req.params.id);
 
     if (!team) {
@@ -22,9 +23,9 @@ export function registerTeamRoutes(app: Express, apiBase: string, teams: TeamSto
     res.json(team);
   });
 
-  app.put(`${apiBase}/teams/:id`, (req: Request<unknown, Team | ErrorResponse, Partial<Team>>, res: Response<Team | ErrorResponse>) => {
+  app.put(`${apiBase}/teams/:id`, (req: Request<{ id: ID }, Team | ErrorResponse, Partial<Team>>, res: Response<Team | ErrorResponse>) => {
     const id = req.params.id;
-    const payload = req.body ?? {};
+    const payload = req.body;
     const existing = teams.get(id);
 
     const name = payload.name ?? existing?.name;

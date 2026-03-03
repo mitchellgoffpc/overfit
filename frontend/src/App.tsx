@@ -1,21 +1,19 @@
+import { API_VERSION } from "@app/shared";
+import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-import { API_VERSION } from "@app/shared";
-
-type HealthResponse = {
+interface HealthResponse {
   status: string;
   version: string;
-};
+}
 
-export function App() {
+export function App(): ReactElement {
   const [status, setStatus] = useState<string>("unknown");
   const [version, setVersion] = useState<string>(API_VERSION);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const apiBaseUrl = useMemo(() => {
-    return import.meta.env.VITE_API_URL ?? "http://localhost:4000";
-  }, []);
+  const apiBaseUrl = useMemo(() => import.meta.env.VITE_API_URL ?? "http://localhost:4000", []);
 
   useEffect(() => {
     const fetchHealth = async () => {
@@ -26,7 +24,7 @@ export function App() {
         const response = await fetch(`${apiBaseUrl}/api/health`);
 
         if (!response.ok) {
-          throw new Error(`Request failed (${response.status})`);
+          throw new Error(`Request failed (${String(response.status)})`);
         }
 
         const data = (await response.json()) as HealthResponse;

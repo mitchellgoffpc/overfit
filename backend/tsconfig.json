@@ -3,6 +3,7 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,

@@ -1,7 +1,7 @@
+import { API_VERSION } from "@app/shared";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
-import { API_VERSION } from "@app/shared";
 
 import { createApp } from "./app";
 

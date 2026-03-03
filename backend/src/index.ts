@@ -5,6 +5,5 @@ const port = Number(process.env.PORT ?? 4000);
 const app = createApp();
 
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Backend listening on http://localhost:${port}`);
+  console.log(`Backend listening on http://localhost:${String(port)}`);
 });

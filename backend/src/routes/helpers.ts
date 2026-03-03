@@ -1,5 +1,11 @@
-export type ErrorResponse = { error: string };
+import type { Express } from "express";
+
+export interface ErrorResponse {
+  error: string;
+}
 
 export type ID = string;
 
-export const nowIso = () => new Date().toISOString();
+export type RouteApp = Pick<Express, "get" | "put">;
+
+export const nowIso = (): string => new Date().toISOString();

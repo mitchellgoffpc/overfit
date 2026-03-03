@@ -2,33 +2,33 @@ export type ID = string;
 
 export type Timestamp = string;
 
-export type User = {
+export interface User {
   id: ID;
   email: string;
   displayName: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-};
+}
 
-export type Team = {
+export interface Team {
   id: ID;
   name: string;
   slug: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-};
+}
 
-export type Project = {
+export interface Project {
   id: ID;
   name: string;
   description?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-};
+}
 
 export type RunStatus = "queued" | "running" | "finished" | "failed" | "canceled";
 
-export type Run = {
+export interface Run {
   id: ID;
   projectId: ID;
   name: string;
@@ -38,9 +38,9 @@ export type Run = {
   startedAt?: Timestamp;
   finishedAt?: Timestamp;
   metadata?: Record<string, unknown>;
-};
+}
 
-export type Artifact = {
+export interface Artifact {
   id: ID;
   runId: ID;
   name: string;
@@ -50,13 +50,13 @@ export type Artifact = {
   updatedAt: Timestamp;
   uri?: string;
   metadata?: Record<string, unknown>;
-};
+}
 
-export type Metric = {
+export interface Metric {
   id: ID;
   runId: ID;
   name: string;
   value: number;
   step?: number;
   timestamp: Timestamp;
-};
+}

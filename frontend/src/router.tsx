@@ -1,11 +1,13 @@
+import type { ReactElement } from "react";
 import React from "react";
-import { RouterProvider, createBrowserRouter, type RouteObject } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import type { RouteObject } from "react-router-dom";
 
-type RouteModule = {
+interface RouteModule {
   default: React.ComponentType;
-};
+}
 
-const routeModules = import.meta.glob("./routes/**/*.tsx", { eager: true }) as Record<string, RouteModule>;
+const routeModules = import.meta.glob<RouteModule>("./routes/**/*.tsx", { eager: true });
 
 const toRoutePath = (filePath: string) => {
   const withoutPrefix = filePath.replace("./routes", "");
@@ -41,6 +43,6 @@ const routes: RouteObject[] = Object.entries(routeModules).map(([filePath, modul
 
 const router = createBrowserRouter(routes);
 
-export function AppRouter() {
+export function AppRouter(): ReactElement {
   return <RouterProvider router={router} />;
 }

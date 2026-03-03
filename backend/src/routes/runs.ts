@@ -1,17 +1,18 @@
-import type { Express, Request, Response } from "express";
-
 import type { Run } from "@app/shared";
+import type { Request, Response } from "express";
 
-import { nowIso, type ErrorResponse, type ID } from "./helpers";
+
+import { nowIso } from "./helpers";
+import type { ErrorResponse, ID, RouteApp } from "./helpers";
 
 type RunStore = Map<ID, Run>;
 
-export function registerRunRoutes(app: Express, apiBase: string, runs: RunStore) {
+export function registerRunRoutes(app: RouteApp, apiBase: string, runs: RunStore): void {
   app.get(`${apiBase}/runs`, (_req: Request, res: Response<Run[]>) => {
     res.json(Array.from(runs.values()));
   });
 
-  app.get(`${apiBase}/runs/:id`, (req: Request, res: Response<Run | ErrorResponse>) => {
+  app.get(`${apiBase}/runs/:id`, (req: Request<{ id: ID }>, res: Response<Run | ErrorResponse>) => {
     const run = runs.get(req.params.id);
 
     if (!run) {
@@ -22,9 +23,9 @@ export function registerRunRoutes(app: Express, apiBase: string, runs: RunStore)
     res.json(run);
   });
 
-  app.put(`${apiBase}/runs/:id`, (req: Request<unknown, Run | ErrorResponse, Partial<Run>>, res: Response<Run | ErrorResponse>) => {
+  app.put(`${apiBase}/runs/:id`, (req: Request<{ id: ID }, Run | ErrorResponse, Partial<Run>>, res: Response<Run | ErrorResponse>) => {
     const id = req.params.id;
-    const payload = req.body ?? {};
+    const payload = req.body;
     const existing = runs.get(id);
 
     const projectId = payload.projectId ?? existing?.projectId;

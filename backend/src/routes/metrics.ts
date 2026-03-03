@@ -1,19 +1,18 @@
-import type { Express, Request, Response } from "express";
-
 import type { Metric, Run } from "@app/shared";
+import type { Request, Response } from "express";
 
-import { type ErrorResponse, type ID } from "./helpers";
+import type { ErrorResponse, ID, RouteApp } from "./helpers";
 
 type MetricStore = Map<ID, Metric>;
 
 type RunStore = Map<ID, Run>;
 
-export function registerMetricRoutes(app: Express, apiBase: string, metrics: MetricStore, runs: RunStore) {
+export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: MetricStore, runs: RunStore): void {
   app.get(`${apiBase}/metrics`, (_req: Request, res: Response<Metric[]>) => {
     res.json(Array.from(metrics.values()));
   });
 
-  app.get(`${apiBase}/metrics/:id`, (req: Request, res: Response<Metric | ErrorResponse>) => {
+  app.get(`${apiBase}/metrics/:id`, (req: Request<{ id: ID }>, res: Response<Metric | ErrorResponse>) => {
     const metric = metrics.get(req.params.id);
 
     if (!metric) {
@@ -26,9 +25,9 @@ export function registerMetricRoutes(app: Express, apiBase: string, metrics: Met
 
   app.put(
     `${apiBase}/metrics/:id`,
-    (req: Request<unknown, Metric | ErrorResponse, Partial<Metric>>, res: Response<Metric | ErrorResponse>) => {
+    (req: Request<{ id: ID }, Metric | ErrorResponse, Partial<Metric>>, res: Response<Metric | ErrorResponse>) => {
       const id = req.params.id;
-      const payload = req.body ?? {};
+      const payload = req.body;
       const existing = metrics.get(id);
 
       const runId = payload.runId ?? existing?.runId;

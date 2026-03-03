@@ -1,17 +1,18 @@
-import type { Express, Request, Response } from "express";
-
 import type { User } from "@app/shared";
+import type { Request, Response } from "express";
 
-import { nowIso, type ErrorResponse, type ID } from "./helpers";
+
+import { nowIso } from "./helpers";
+import type { ErrorResponse, ID, RouteApp } from "./helpers";
 
 type UserStore = Map<ID, User>;
 
-export function registerUserRoutes(app: Express, apiBase: string, users: UserStore) {
+export function registerUserRoutes(app: RouteApp, apiBase: string, users: UserStore): void {
   app.get(`${apiBase}/users`, (_req: Request, res: Response<User[]>) => {
     res.json(Array.from(users.values()));
   });
 
-  app.get(`${apiBase}/users/:id`, (req: Request, res: Response<User | ErrorResponse>) => {
+  app.get(`${apiBase}/users/:id`, (req: Request<{ id: ID }>, res: Response<User | ErrorResponse>) => {
     const user = users.get(req.params.id);
 
     if (!user) {
@@ -22,9 +23,9 @@ export function registerUserRoutes(app: Express, apiBase: string, users: UserSto
     res.json(user);
   });
 
-  app.put(`${apiBase}/users/:id`, (req: Request<unknown, User | ErrorResponse, Partial<User>>, res: Response<User | ErrorResponse>) => {
+  app.put(`${apiBase}/users/:id`, (req: Request<{ id: ID }, User | ErrorResponse, Partial<User>>, res: Response<User | ErrorResponse>) => {
     const id = req.params.id;
-    const payload = req.body ?? {};
+    const payload = req.body;
     const existing = users.get(id);
 
     const email = payload.email ?? existing?.email;

@@ -1,6 +1,7 @@
+import type { Project, User } from "@app/shared";
+import type { ReactElement } from "react";
 import { useMemo } from "react";
 
-import type { Project, User } from "@app/shared";
 
 type ProjectRow = Project & {
   lastRun: string;
@@ -42,7 +43,7 @@ const FALLBACK_PROJECTS: ProjectRow[] = [
   }
 ];
 
-export default function IndexRoute() {
+export default function IndexRoute(): ReactElement {
   const projects = useMemo(() => FALLBACK_PROJECTS, []);
   const user = useMemo(() => FALLBACK_USER, []);
 
