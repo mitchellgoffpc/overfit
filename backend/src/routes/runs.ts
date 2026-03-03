@@ -2,7 +2,7 @@ import type { Run } from "@app/shared";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
-import { nowIso } from "routes/time";
+import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntityStore<Run>): void {
@@ -30,29 +30,19 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntitySt
     const name = payload.name ?? existing?.name;
     const status = payload.status ?? existing?.status;
 
-    if (!projectId) {
-      res.status(400).json({ error: "Run projectId is required" });
-      return;
+    for (const [label, value] of Object.entries({ projectId, name, status })) {
+      if (!value) {
+        res.status(400).json({ error: `Run ${label} is required` });
+        return;
+      }
     }
-
-    if (!name) {
-      res.status(400).json({ error: "Run name is required" });
-      return;
-    }
-
-    if (!status) {
-      res.status(400).json({ error: "Run status is required" });
-      return;
-    }
-
-    const createdAt = existing?.createdAt ?? payload.createdAt ?? nowIso();
 
     const run: Run = {
       id,
       projectId,
       name,
       status,
-      createdAt,
+      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
       updatedAt: nowIso(),
       startedAt: payload.startedAt ?? existing?.startedAt,
       finishedAt: payload.finishedAt ?? existing?.finishedAt,

@@ -2,7 +2,7 @@ import type { User } from "@app/shared";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
-import { nowIso } from "routes/time";
+import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, users: EntityStore<User>): void {
@@ -29,23 +29,18 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, users: Entity
     const email = payload.email ?? existing?.email;
     const displayName = payload.displayName ?? existing?.displayName;
 
-    if (!email) {
-      res.status(400).json({ error: "User email is required" });
-      return;
+    for (const [label, value] of Object.entries({ email, displayName })) {
+      if (!value) {
+        res.status(400).json({ error: `User ${label} is required` });
+        return;
+      }
     }
-
-    if (!displayName) {
-      res.status(400).json({ error: "User displayName is required" });
-      return;
-    }
-
-    const createdAt = existing?.createdAt ?? payload.createdAt ?? nowIso();
 
     const user: User = {
       id,
       email,
       displayName,
-      createdAt,
+      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
       updatedAt: nowIso()
     };
 

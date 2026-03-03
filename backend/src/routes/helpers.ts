@@ -7,3 +7,5 @@ export interface ErrorResponse {
 export type ID = string;
 
 export type RouteApp = Pick<Express, "get" | "put">;
+
+export const nowIso = (): string => new Date().toISOString();

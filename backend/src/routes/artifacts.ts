@@ -2,7 +2,7 @@ import type { Artifact, Run } from "@app/shared";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
-import { nowIso } from "routes/time";
+import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts: EntityStore<Artifact>, runs: EntityStore<Run>): void {
@@ -33,9 +33,11 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
       const type = payload.type ?? existing?.type;
       const version = payload.version ?? existing?.version;
 
-      if (!runId) {
-        res.status(400).json({ error: "Artifact runId is required" });
-        return;
+      for (const [label, value] of Object.entries({ runId })) {
+        if (!value) {
+          res.status(400).json({ error: `Artifact ${label} is required` });
+          return;
+        }
       }
 
       if (!runs.has(runId)) {
@@ -43,22 +45,12 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
         return;
       }
 
-      if (!name) {
-        res.status(400).json({ error: "Artifact name is required" });
-        return;
+      for (const [label, value] of Object.entries({ name, type, version })) {
+        if (!value) {
+          res.status(400).json({ error: `Artifact ${label} is required` });
+          return;
+        }
       }
-
-      if (!type) {
-        res.status(400).json({ error: "Artifact type is required" });
-        return;
-      }
-
-      if (!version) {
-        res.status(400).json({ error: "Artifact version is required" });
-        return;
-      }
-
-      const createdAt = existing?.createdAt ?? payload.createdAt ?? nowIso();
 
       const artifact: Artifact = {
         id,
@@ -66,7 +58,7 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
         name,
         type,
         version,
-        createdAt,
+        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
         updatedAt: nowIso(),
         uri: payload.uri ?? existing?.uri,
         metadata: payload.metadata ?? existing?.metadata

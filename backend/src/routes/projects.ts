@@ -2,7 +2,7 @@ import type { Project } from "@app/shared";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
-import { nowIso } from "routes/time";
+import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: EntityStore<Project>): void {
@@ -28,18 +28,18 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
 
     const name = payload.name ?? existing?.name;
 
-    if (!name) {
-      res.status(400).json({ error: "Project name is required" });
-      return;
+    for (const [label, value] of Object.entries({ name })) {
+      if (!value) {
+        res.status(400).json({ error: `Project ${label} is required` });
+        return;
+      }
     }
-
-    const createdAt = existing?.createdAt ?? payload.createdAt ?? nowIso();
 
     const project: Project = {
       id,
       name,
       description: payload.description ?? existing?.description,
-      createdAt,
+      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
       updatedAt: nowIso()
     };
 

@@ -29,12 +29,14 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
 
       const runId = payload.runId ?? existing?.runId;
       const name = payload.name ?? existing?.name;
-      const value = payload.value ?? existing?.value;
+      const metricValue = payload.value ?? existing?.value;
       const timestamp = payload.timestamp ?? existing?.timestamp;
 
-      if (!runId) {
-        res.status(400).json({ error: "Metric runId is required" });
-        return;
+      for (const [label, value] of Object.entries({ runId, name, timestamp })) {
+        if (!value) {
+          res.status(400).json({ error: `Metric ${label} is required` });
+          return;
+        }
       }
 
       if (!runs.has(runId)) {
@@ -42,18 +44,8 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
         return;
       }
 
-      if (!name) {
-        res.status(400).json({ error: "Metric name is required" });
-        return;
-      }
-
-      if (typeof value !== "number") {
+      if (typeof metricValue !== "number") {
         res.status(400).json({ error: "Metric value must be a number" });
-        return;
-      }
-
-      if (!timestamp) {
-        res.status(400).json({ error: "Metric timestamp is required" });
         return;
       }
 
@@ -61,7 +53,7 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
         id,
         runId,
         name,
-        value,
+        value: metricValue,
         step: payload.step ?? existing?.step,
         timestamp
       };

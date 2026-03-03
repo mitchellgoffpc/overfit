@@ -2,7 +2,7 @@ import type { Team } from "@app/shared";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
-import { nowIso } from "routes/time";
+import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: EntityStore<Team>): void {
@@ -29,23 +29,18 @@ export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: Entity
     const name = payload.name ?? existing?.name;
     const slug = payload.slug ?? existing?.slug;
 
-    if (!name) {
-      res.status(400).json({ error: "Team name is required" });
-      return;
+    for (const [label, value] of Object.entries({ name, slug })) {
+      if (!value) {
+        res.status(400).json({ error: `Team ${label} is required` });
+        return;
+      }
     }
-
-    if (!slug) {
-      res.status(400).json({ error: "Team slug is required" });
-      return;
-    }
-
-    const createdAt = existing?.createdAt ?? payload.createdAt ?? nowIso();
 
     const team: Team = {
       id,
       name,
       slug,
-      createdAt,
+      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
       updatedAt: nowIso()
     };
 
