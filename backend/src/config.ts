@@ -3,18 +3,13 @@ import path from "node:path";
 
 import * as toml from "@iarna/toml";
 
-import type { StorageType } from "storage/types";
+import type { StorageConfig } from "storage/types";
 
 export interface AppConfig {
   server: {
     port: number;
   };
-  storage: {
-    type: StorageType;
-    sqlite?: {
-      path: string;
-    };
-  };
+  storage: StorageConfig;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
