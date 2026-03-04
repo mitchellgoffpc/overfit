@@ -3,7 +3,7 @@ import path from "node:path";
 
 import * as toml from "@iarna/toml";
 
-export type StorageType = "memory" | "sqlite";
+import type { StorageType } from "storage/types";
 
 export interface AppConfig {
   server: {
@@ -11,7 +11,7 @@ export interface AppConfig {
   };
   storage: {
     type: StorageType;
-    sqlite: {
+    sqlite?: {
       path: string;
     };
   };
@@ -60,26 +60,26 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
     throw new Error(`Invalid storage.type type: ${typeof typeValue}`);
   }
 
-  if (typeValue !== "memory" && typeValue !== "sqlite") {
+  if (typeValue !== "sqlite" && typeValue !== "postgresql") {
     throw new Error(`Unsupported storage type: ${typeValue}`);
   }
+  const storage: AppConfig["storage"] = { type: typeValue };
 
-  const sqlitePathValue = sqliteConfig.path ?? DEFAULT_CONFIG.storage.sqlite.path;
+  if (typeValue === "sqlite") {
+    const sqlitePathValue = sqliteConfig.path ?? DEFAULT_CONFIG.storage.sqlite.path;
 
-  if (typeof sqlitePathValue !== "string" || sqlitePathValue.trim() === "") {
-    throw new Error("storage.sqlite.path must be a non-empty string");
+    if (typeof sqlitePathValue !== "string" || sqlitePathValue.trim() === "") {
+      throw new Error("storage.sqlite.path must be a non-empty string");
+    }
+
+    storage.sqlite = { path: sqlitePathValue };
   }
 
   return {
     server: {
       port
     },
-    storage: {
-      type: typeValue,
-      sqlite: {
-        path: sqlitePathValue
-      }
-    }
+    storage
   };
 };
 

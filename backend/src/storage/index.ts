@@ -1,25 +1,15 @@
-import { createInMemoryStorage } from "storage/memory";
 import { createSqliteStorage } from "storage/sqlite";
-import type { Storage } from "storage/types";
-
-export type StorageType = "memory" | "sqlite";
-
-export interface StorageConfig {
-  type?: StorageType;
-  sqlite?: {
-    path?: string;
-  };
-}
+import type { Storage, StorageConfig, StorageType } from "storage/types";
 
 export const createStorage = (config: StorageConfig = {}): Storage => {
   const type: StorageType = config.type ?? "sqlite";
 
-  if (type === "memory") {
-    return createInMemoryStorage();
+  if (type === "postgresql") {
+    throw new Error("PostgreSQL storage is not implemented yet.");
   }
 
   const sqlitePath = config.sqlite?.path ?? "overfit.db";
   return createSqliteStorage({ path: sqlitePath });
 };
 
-export type { Storage } from "storage/types";
+export type { Storage, StorageConfig, StorageType } from "storage/types";
