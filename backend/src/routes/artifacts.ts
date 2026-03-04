@@ -1,16 +1,15 @@
 import type { Artifact, Run } from "@overfit/types";
-import type { Request, Response } from "express";
 
-import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertArtifactPayload } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts: EntityStore<Artifact>, runs: EntityStore<Run>): void {
-  app.get(`${apiBase}/artifacts`, (_req: Request, res: Response<Artifact[]>) => {
+  app.get(`${apiBase}/artifacts`, (_req: RouteRequest, res: RouteResponse<Artifact[]>) => {
     res.json(artifacts.list());
   });
 
-  app.get(`${apiBase}/artifacts/:id`, (req: Request<{ id: ID }>, res: Response<Artifact | ErrorResponse>) => {
+  app.get(`${apiBase}/artifacts/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<Artifact | ErrorResponse>) => {
     const artifact = artifacts.get(req.params.id);
 
     if (!artifact) {
@@ -23,7 +22,7 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
 
   app.put(
     `${apiBase}/artifacts/:id`,
-    (req: Request<{ id: ID }, Artifact | ErrorResponse, Partial<Artifact>>, res: Response<Artifact | ErrorResponse>) => {
+    (req: RouteRequest<RouteParams, Artifact | ErrorResponse, UpsertArtifactPayload>, res: RouteResponse<Artifact | ErrorResponse>) => {
       const id = req.params.id;
       const payload = req.body;
       const existing = artifacts.get(id);
@@ -33,7 +32,7 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
       const type = payload.type ?? existing?.type;
       const version = payload.version ?? existing?.version;
 
-      for (const [label, value] of Object.entries({ runId })) {
+      for (const [label, value] of Object.entries({ runId, name, type, version })) {
         if (!value) {
           res.status(400).json({ error: `Artifact ${label} is required` });
           return;
@@ -43,13 +42,6 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
       if (!runs.has(runId)) {
         res.status(400).json({ error: "Artifact runId does not reference an existing run" });
         return;
-      }
-
-      for (const [label, value] of Object.entries({ name, type, version })) {
-        if (!value) {
-          res.status(400).json({ error: `Artifact ${label} is required` });
-          return;
-        }
       }
 
       const artifact: Artifact = {

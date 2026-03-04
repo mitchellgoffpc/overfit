@@ -1,16 +1,15 @@
 import type { Team } from "@overfit/types";
-import type { Request, Response } from "express";
 
-import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertTeamPayload } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: EntityStore<Team>): void {
-  app.get(`${apiBase}/teams`, (_req: Request, res: Response<Team[]>) => {
+  app.get(`${apiBase}/teams`, (_req: RouteRequest, res: RouteResponse<Team[]>) => {
     res.json(teams.list());
   });
 
-  app.get(`${apiBase}/teams/:id`, (req: Request<{ id: ID }>, res: Response<Team | ErrorResponse>) => {
+  app.get(`${apiBase}/teams/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<Team | ErrorResponse>) => {
     const team = teams.get(req.params.id);
 
     if (!team) {
@@ -21,7 +20,9 @@ export function registerTeamRoutes(app: RouteApp, apiBase: string, teams: Entity
     res.json(team);
   });
 
-  app.put(`${apiBase}/teams/:id`, (req: Request<{ id: ID }, Team | ErrorResponse, Partial<Team>>, res: Response<Team | ErrorResponse>) => {
+  app.put(
+    `${apiBase}/teams/:id`,
+    (req: RouteRequest<RouteParams, Team | ErrorResponse, UpsertTeamPayload>, res: RouteResponse<Team | ErrorResponse>) => {
     const id = req.params.id;
     const payload = req.body;
     const existing = teams.get(id);

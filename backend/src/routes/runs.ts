@@ -1,16 +1,15 @@
 import type { Run } from "@overfit/types";
-import type { Request, Response } from "express";
 
-import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertRunPayload } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntityStore<Run>): void {
-  app.get(`${apiBase}/runs`, (_req: Request, res: Response<Run[]>) => {
+  app.get(`${apiBase}/runs`, (_req: RouteRequest, res: RouteResponse<Run[]>) => {
     res.json(runs.list());
   });
 
-  app.get(`${apiBase}/runs/:id`, (req: Request<{ id: ID }>, res: Response<Run | ErrorResponse>) => {
+  app.get(`${apiBase}/runs/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<Run | ErrorResponse>) => {
     const run = runs.get(req.params.id);
 
     if (!run) {
@@ -21,7 +20,9 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntitySt
     res.json(run);
   });
 
-  app.put(`${apiBase}/runs/:id`, (req: Request<{ id: ID }, Run | ErrorResponse, Partial<Run>>, res: Response<Run | ErrorResponse>) => {
+  app.put(
+    `${apiBase}/runs/:id`,
+    (req: RouteRequest<RouteParams, Run | ErrorResponse, UpsertRunPayload>, res: RouteResponse<Run | ErrorResponse>) => {
     const id = req.params.id;
     const payload = req.body;
     const existing = runs.get(id);

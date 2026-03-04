@@ -30,4 +30,25 @@ describe("projects routes", () => {
       ...projectPayload
     });
   });
+
+  it("rejects unknown projects", async () => {
+    const app = createTestApp();
+
+    const response = await request(app)
+      .get(`${apiBase}/projects/missing`)
+      .expect(404);
+
+    expect(response.body).toMatchObject({ error: "Project not found" });
+  });
+
+  it("rejects missing required fields", async () => {
+    const app = createTestApp();
+
+    const response = await request(app)
+      .put(`${apiBase}/projects/project-2`)
+      .send({ description: "Missing name" })
+      .expect(400);
+
+    expect(response.body).toMatchObject({ error: "Project name is required" });
+  });
 });

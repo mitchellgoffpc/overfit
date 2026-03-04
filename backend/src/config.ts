@@ -24,7 +24,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   storage: {
     type: "sqlite",
     sqlite: {
-      path: "overfit.db"
+      path: ":memory:"
     }
   }
 };

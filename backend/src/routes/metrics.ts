@@ -1,15 +1,14 @@
 import type { Metric, Run } from "@overfit/types";
-import type { Request, Response } from "express";
 
-import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertMetricPayload } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: EntityStore<Metric>, runs: EntityStore<Run>): RouteApp {
-  app.get(`${apiBase}/metrics`, (_req: Request, res: Response<Metric[]>) => {
+  app.get(`${apiBase}/metrics`, (_req: RouteRequest, res: RouteResponse<Metric[]>) => {
     res.json(metrics.list());
   });
 
-  app.get(`${apiBase}/metrics/:id`, (req: Request<{ id: ID }>, res: Response<Metric | ErrorResponse>) => {
+  app.get(`${apiBase}/metrics/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<Metric | ErrorResponse>) => {
     const metric = metrics.get(req.params.id);
 
     if (!metric) {
@@ -22,7 +21,7 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
 
   app.put(
     `${apiBase}/metrics/:id`,
-    (req: Request<{ id: ID }, Metric | ErrorResponse, Partial<Metric>>, res: Response<Metric | ErrorResponse>) => {
+    (req: RouteRequest<RouteParams, Metric | ErrorResponse, UpsertMetricPayload>, res: RouteResponse<Metric | ErrorResponse>) => {
       const id = req.params.id;
       const payload = req.body;
       const existing = metrics.get(id);

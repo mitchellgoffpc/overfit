@@ -37,4 +37,33 @@ describe("runs routes", () => {
       ...runPayload
     });
   });
+
+  it("rejects unknown runs", async () => {
+    const app = createTestApp();
+
+    const response = await request(app)
+      .get(`${apiBase}/runs/missing`)
+      .expect(404);
+
+    expect(response.body).toMatchObject({ error: "Run not found" });
+  });
+
+  it("rejects missing required fields", async () => {
+    const app = createTestApp();
+
+    const cases = [
+      { payload: { name: "Run 2", status: "running" }, error: "Run projectId is required" },
+      { payload: { projectId: "project-1", status: "running" }, error: "Run name is required" },
+      { payload: { projectId: "project-1", name: "Run 2" }, error: "Run status is required" }
+    ];
+
+    for (const [index, testCase] of cases.entries()) {
+      const response = await request(app)
+        .put(`${apiBase}/runs/reject-${index}`)
+        .send(testCase.payload)
+        .expect(400);
+
+      expect(response.body).toMatchObject({ error: testCase.error });
+    }
+  });
 });

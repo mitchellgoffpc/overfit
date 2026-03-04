@@ -35,4 +35,32 @@ describe("users routes", () => {
       ...userPayload
     });
   });
+
+  it("rejects unknown users", async () => {
+    const app = createTestApp();
+
+    const response = await request(app)
+      .get(`${apiBase}/users/missing`)
+      .expect(404);
+
+    expect(response.body).toMatchObject({ error: "User not found" });
+  });
+
+  it("rejects missing required fields", async () => {
+    const app = createTestApp();
+
+    const cases = [
+      { payload: { displayName: "Ada Lovelace" }, error: "User email is required" },
+      { payload: { email: "ada@example.com" }, error: "User displayName is required" }
+    ];
+
+    for (const [index, testCase] of cases.entries()) {
+      const response = await request(app)
+        .put(`${apiBase}/users/reject-${index}`)
+        .send(testCase.payload)
+        .expect(400);
+
+      expect(response.body).toMatchObject({ error: testCase.error });
+    }
+  });
 });

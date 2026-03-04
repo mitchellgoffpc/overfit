@@ -1,16 +1,15 @@
 import type { User } from "@overfit/types";
-import type { Request, Response } from "express";
 
-import type { ErrorResponse, ID, RouteApp } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertUserPayload } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, users: EntityStore<User>): void {
-  app.get(`${apiBase}/users`, (_req: Request, res: Response<User[]>) => {
+  app.get(`${apiBase}/users`, (_req: RouteRequest, res: RouteResponse<User[]>) => {
     res.json(users.list());
   });
 
-  app.get(`${apiBase}/users/:id`, (req: Request<{ id: ID }>, res: Response<User | ErrorResponse>) => {
+  app.get(`${apiBase}/users/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<User | ErrorResponse>) => {
     const user = users.get(req.params.id);
 
     if (!user) {
@@ -21,7 +20,9 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, users: Entity
     res.json(user);
   });
 
-  app.put(`${apiBase}/users/:id`, (req: Request<{ id: ID }, User | ErrorResponse, Partial<User>>, res: Response<User | ErrorResponse>) => {
+  app.put(
+    `${apiBase}/users/:id`,
+    (req: RouteRequest<RouteParams, User | ErrorResponse, UpsertUserPayload>, res: RouteResponse<User | ErrorResponse>) => {
     const id = req.params.id;
     const payload = req.body;
     const existing = users.get(id);
