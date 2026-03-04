@@ -4,6 +4,8 @@ export type Timestamp = string;
 
 export type OrganizationRole = "ADMIN" | "MEMBER";
 
+export const organizationRoles: ReadonlySet<OrganizationRole> = new Set(["ADMIN", "MEMBER"]);
+
 export interface User {
   id: ID;
   email: string;

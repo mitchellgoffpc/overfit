@@ -1,14 +1,17 @@
 import type { Metric, Run } from "@overfit/types";
+import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertMetricPayload } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
-export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: EntityStore<Metric>, runs: EntityStore<Run>): RouteApp {
-  app.get(`${apiBase}/metrics`, (_req: RouteRequest, res: RouteResponse<Metric[]>) => {
-    res.json(metrics.list());
-  });
+type UpsertMetricPayload = Partial<Omit<Metric, "id">>;
 
-  app.get(`${apiBase}/metrics/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<Metric | ErrorResponse>) => {
+export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: EntityStore<Metric>, runs: EntityStore<Run>): void {
+  const listMetrics: RequestHandler<Record<string, string>, Metric[]> = (_req, res) => {
+    res.json(metrics.list());
+  };
+
+  const getMetric: RequestHandler<RouteParams, Metric | ErrorResponse> = (req, res) => {
     const metric = metrics.get(req.params.id);
 
     if (!metric) {
@@ -16,42 +19,41 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
     } else {
       res.json(metric);
     }
-  });
+  };
 
-  app.put(
-    `${apiBase}/metrics/:id`,
-    (req: RouteRequest<RouteParams, Metric | ErrorResponse, UpsertMetricPayload>, res: RouteResponse<Metric | ErrorResponse>) => {
-      const id = req.params.id;
-      const payload = req.body;
-      const existing = metrics.get(id);
+  const upsertMetric: RequestHandler<RouteParams, Metric | ErrorResponse, UpsertMetricPayload> = (req, res) => {
+    const id = req.params.id;
+    const payload = req.body;
+    const existing = metrics.get(id);
 
-      const runId = payload.runId ?? existing?.runId;
-      const name = payload.name ?? existing?.name;
-      const metricValue = payload.value ?? existing?.value;
-      const timestamp = payload.timestamp ?? existing?.timestamp;
-      const missingFields = Object.entries({ runId, name, timestamp }).filter(([, value]) => !value).map(([label]) => label);
+    const runId = payload.runId ?? existing?.runId;
+    const name = payload.name ?? existing?.name;
+    const metricValue = payload.value ?? existing?.value;
+    const timestamp = payload.timestamp ?? existing?.timestamp;
+    const missingFields = Object.entries({ runId, name, timestamp }).filter(([, value]) => !value).map(([label]) => label);
 
-      if (missingFields.length > 0) {
-        res.status(400).json({ error: `Metric fields are required: ${missingFields.join(", ")}` });
-      } else if (!runs.has(runId)) {
-        res.status(400).json({ error: "Metric runId does not reference an existing run" });
-      } else if (typeof metricValue !== "number") {
-        res.status(400).json({ error: "Metric value must be a number" });
-      } else {
-        const metric: Metric = {
-          id,
-          runId,
-          name,
-          value: metricValue,
-          step: payload.step ?? existing?.step,
-          timestamp
-        };
+    if (missingFields.length > 0) {
+      res.status(400).json({ error: `Metric fields are required: ${missingFields.join(", ")}` });
+    } else if (!runs.has(runId)) {
+      res.status(400).json({ error: "Metric runId does not reference an existing run" });
+    } else if (typeof metricValue !== "number") {
+      res.status(400).json({ error: "Metric value must be a number" });
+    } else {
+      const metric: Metric = {
+        id,
+        runId,
+        name,
+        value: metricValue,
+        step: payload.step ?? existing?.step,
+        timestamp
+      };
 
-        metrics.upsert(metric);
-        res.json(metric);
-      }
+      metrics.upsert(metric);
+      res.json(metric);
     }
-  );
+  };
 
-  return app;
+  app.get(`${apiBase}/metrics`, listMetrics);
+  app.get(`${apiBase}/metrics/:id`, getMetric);
+  app.put(`${apiBase}/metrics/:id`, upsertMetric);
 }

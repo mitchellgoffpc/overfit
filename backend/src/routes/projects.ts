@@ -1,15 +1,18 @@
 import type { Project } from "@overfit/types";
+import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertProjectPayload } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
-export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: EntityStore<Project>): void {
-  app.get(`${apiBase}/projects`, (_req: RouteRequest, res: RouteResponse<Project[]>) => {
-    res.json(projects.list());
-  });
+type UpsertProjectPayload = Partial<Omit<Project, "id" | "updatedAt">>;
 
-  app.get(`${apiBase}/projects/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<Project | ErrorResponse>) => {
+export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: EntityStore<Project>): void {
+  const listProjects: RequestHandler<Record<string, string>, Project[]> = (_req, res) => {
+    res.json(projects.list());
+  };
+
+  const getProject: RequestHandler<RouteParams, Project | ErrorResponse> = (req, res) => {
     const project = projects.get(req.params.id);
 
     if (!project) {
@@ -17,11 +20,9 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
     } else {
       res.json(project);
     }
-  });
+  };
 
-  app.put(
-    `${apiBase}/projects/:id`,
-    (req: RouteRequest<RouteParams, Project | ErrorResponse, UpsertProjectPayload>, res: RouteResponse<Project | ErrorResponse>) => {
+  const upsertProject: RequestHandler<RouteParams, Project | ErrorResponse, UpsertProjectPayload> = (req, res) => {
     const id = req.params.id;
     const payload = req.body;
     const existing = projects.get(id);
@@ -43,5 +44,9 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
       projects.upsert(project);
       res.json(project);
     }
-  });
+  };
+
+  app.get(`${apiBase}/projects`, listProjects);
+  app.get(`${apiBase}/projects/:id`, getProject);
+  app.put(`${apiBase}/projects/:id`, upsertProject);
 }

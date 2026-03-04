@@ -1,6 +1,8 @@
+import { organizationRoles } from "@overfit/types";
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
+import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertOrganizationPayload } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
@@ -17,7 +19,7 @@ interface OrganizationMemberPayload {
   role?: OrganizationRole;
 }
 
-const organizationRoles: ReadonlySet<OrganizationRole> = new Set(["ADMIN", "MEMBER"]);
+type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "updatedAt">>;
 
 export function registerOrganizationRoutes(
   app: RouteApp,
@@ -26,11 +28,11 @@ export function registerOrganizationRoutes(
   users: EntityStore<User>,
   organizationMembers: EntityStore<OrganizationMember>
 ): void {
-  app.get(`${apiBase}/organizations`, (_req: RouteRequest, res: RouteResponse<Organization[]>) => {
+  const listOrganizations: RequestHandler<Record<string, string>, Organization[]> = (_req, res) => {
     res.json(organizations.list());
-  });
+  };
 
-  app.get(`${apiBase}/organizations/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<OrganizationDetail | ErrorResponse>) => {
+  const getOrganization: RequestHandler<RouteParams, OrganizationDetail | ErrorResponse> = (req, res) => {
     const organization = organizations.get(req.params.id);
 
     if (!organization) {
@@ -44,11 +46,9 @@ export function registerOrganizationRoutes(
 
       res.json({ ...organization, users: organizationUsers });
     }
-  });
+  };
 
-  app.put(
-    `${apiBase}/organizations/:id`,
-    (req: RouteRequest<RouteParams, Organization | ErrorResponse, UpsertOrganizationPayload>, res: RouteResponse<Organization | ErrorResponse>) => {
+  const upsertOrganization: RequestHandler<RouteParams, Organization | ErrorResponse, UpsertOrganizationPayload> = (req, res) => {
     const id = req.params.id;
     const payload = req.body;
     const existing = organizations.get(id);
@@ -71,60 +71,60 @@ export function registerOrganizationRoutes(
       organizations.upsert(organization);
       res.json(organization);
     }
-  });
+  };
 
-  app.put(
-    `${apiBase}/organizations/:id/members/:userId`,
-    (req: RouteRequest<MemberRouteParams, OrganizationMember | ErrorResponse, OrganizationMemberPayload>, res: RouteResponse<OrganizationMember | ErrorResponse>) => {
-      const organizationId = req.params.id;
-      const userId = req.params.userId;
-      const membershipId = `${organizationId}:${userId}`;
-      const organization = organizations.get(organizationId);
-      const user = users.get(userId);
-      const existing = organizationMembers.get(membershipId);
-      const role = req.body.role ?? existing?.role ?? "MEMBER";
+  const upsertOrganizationMember: RequestHandler<MemberRouteParams, OrganizationMember | ErrorResponse, OrganizationMemberPayload> = (req, res) => {
+    const organizationId = req.params.id;
+    const userId = req.params.userId;
+    const membershipId = `${organizationId}:${userId}`;
+    const organization = organizations.get(organizationId);
+    const user = users.get(userId);
+    const existing = organizationMembers.get(membershipId);
+    const role = req.body.role ?? existing?.role ?? "MEMBER";
 
-      if (!organization) {
-        res.status(404).json({ error: "Organization not found" });
-      } else if (!user) {
-        res.status(404).json({ error: "User not found" });
-      } else if (!organizationRoles.has(role)) {
-        res.status(400).json({ error: "Organization role is invalid" });
-      } else {
-        const member: OrganizationMember = {
-          id: membershipId,
-          organizationId,
-          userId,
-          role,
-          createdAt: existing?.createdAt ?? nowIso(),
-          updatedAt: nowIso()
-        };
+    if (!organization) {
+      res.status(404).json({ error: "Organization not found" });
+    } else if (!user) {
+      res.status(404).json({ error: "User not found" });
+    } else if (!organizationRoles.has(role)) {
+      res.status(400).json({ error: "Organization role is invalid" });
+    } else {
+      const member: OrganizationMember = {
+        id: membershipId,
+        organizationId,
+        userId,
+        role,
+        createdAt: existing?.createdAt ?? nowIso(),
+        updatedAt: nowIso()
+      };
 
-        organizationMembers.upsert(member);
-        res.json(member);
-      }
+      organizationMembers.upsert(member);
+      res.json(member);
     }
-  );
+  };
 
-  app.delete(
-    `${apiBase}/organizations/:id/members/:userId`,
-    (req: RouteRequest<MemberRouteParams, { ok: true } | ErrorResponse>, res: RouteResponse<{ ok: true } | ErrorResponse>) => {
-      const organizationId = req.params.id;
-      const userId = req.params.userId;
-      const membershipId = `${organizationId}:${userId}`;
-      const organization = organizations.get(organizationId);
-      const user = users.get(userId);
+  const deleteOrganizationMember: RequestHandler<MemberRouteParams, { ok: true } | ErrorResponse> = (req, res) => {
+    const organizationId = req.params.id;
+    const userId = req.params.userId;
+    const membershipId = `${organizationId}:${userId}`;
+    const organization = organizations.get(organizationId);
+    const user = users.get(userId);
 
-      if (!organization) {
-        res.status(404).json({ error: "Organization not found" });
-      } else if (!user) {
-        res.status(404).json({ error: "User not found" });
-      } else if (!organizationMembers.has(membershipId)) {
-        res.status(404).json({ error: "Membership not found" });
-      } else {
-        organizationMembers.delete(membershipId);
-        res.json({ ok: true });
-      }
+    if (!organization) {
+      res.status(404).json({ error: "Organization not found" });
+    } else if (!user) {
+      res.status(404).json({ error: "User not found" });
+    } else if (!organizationMembers.has(membershipId)) {
+      res.status(404).json({ error: "Membership not found" });
+    } else {
+      organizationMembers.delete(membershipId);
+      res.json({ ok: true });
     }
-  );
+  };
+
+  app.get(`${apiBase}/organizations`, listOrganizations);
+  app.get(`${apiBase}/organizations/:id`, getOrganization);
+  app.put(`${apiBase}/organizations/:id`, upsertOrganization);
+  app.put(`${apiBase}/organizations/:id/members/:userId`, upsertOrganizationMember);
+  app.delete(`${apiBase}/organizations/:id/members/:userId`, deleteOrganizationMember);
 }

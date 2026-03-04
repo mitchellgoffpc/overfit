@@ -1,8 +1,15 @@
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
+import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertUserPayload } from "routes/helpers";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
+
+interface UserDetail extends User {
+  organizations: (Organization & { role: OrganizationRole })[];
+}
+
+type UpsertUserPayload = Partial<Omit<User, "id" | "updatedAt">>;
 
 export function registerUserRoutes(
   app: RouteApp,
@@ -11,15 +18,11 @@ export function registerUserRoutes(
   organizations: EntityStore<Organization>,
   organizationMembers: EntityStore<OrganizationMember>
 ): void {
-  interface UserDetail extends User {
-    organizations: (Organization & { role: OrganizationRole })[];
-  }
-
-  app.get(`${apiBase}/users`, (_req: RouteRequest, res: RouteResponse<User[]>) => {
+  const listUsers: RequestHandler<Record<string, string>, User[]> = (_req, res) => {
     res.json(users.list());
-  });
+  };
 
-  app.get(`${apiBase}/users/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<UserDetail | ErrorResponse>) => {
+  const getUser: RequestHandler<RouteParams, UserDetail | ErrorResponse> = (req, res) => {
     const user = users.get(req.params.id);
 
     if (!user) {
@@ -33,11 +36,9 @@ export function registerUserRoutes(
 
       res.json({ ...user, organizations: userOrganizations });
     }
-  });
+  };
 
-  app.put(
-    `${apiBase}/users/:id`,
-    (req: RouteRequest<RouteParams, User | ErrorResponse, UpsertUserPayload>, res: RouteResponse<User | ErrorResponse>) => {
+  const upsertUser: RequestHandler<RouteParams, User | ErrorResponse, UpsertUserPayload> = (req, res) => {
     const id = req.params.id;
     const payload = req.body;
     const existing = users.get(id);
@@ -60,5 +61,9 @@ export function registerUserRoutes(
       users.upsert(user);
       res.json(user);
     }
-  });
+  };
+
+  app.get(`${apiBase}/users`, listUsers);
+  app.get(`${apiBase}/users/:id`, getUser);
+  app.put(`${apiBase}/users/:id`, upsertUser);
 }
