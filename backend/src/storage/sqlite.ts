@@ -1,4 +1,4 @@
-import type { Artifact, Metric, Project, Run, Team, User } from "@app/shared/models";
+import type { Artifact, Metric, Project, Run, Team, User } from "@overfit/types";
 import Database from "better-sqlite3";
 
 import type { EntityStore, Storage } from "storage/types";

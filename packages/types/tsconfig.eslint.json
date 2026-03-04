@@ -6,7 +6,7 @@
     "declarationMap": false,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "rootDir": "..",
+    "rootDir": "../..",
   },
   "references": []
 }

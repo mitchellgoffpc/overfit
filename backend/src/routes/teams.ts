@@ -1,4 +1,4 @@
-import type { Team } from "@app/shared/models";
+import type { Team } from "@overfit/types";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";

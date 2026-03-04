@@ -1,4 +1,4 @@
-import { API_VERSION } from "@app/shared/models";
+import { API_VERSION } from "@overfit/types";
 import cors from "cors";
 import express from "express";
 import type { Express, Request, Response } from "express";

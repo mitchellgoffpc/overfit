@@ -1,4 +1,4 @@
-import type { Project, User } from "@app/shared/models";
+import type { Project, User } from "@overfit/types";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
 

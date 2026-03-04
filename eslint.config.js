@@ -9,7 +9,7 @@ import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import globals from "globals";
 
-const projectConfigs = ["./frontend/tsconfig.eslint.json", "./backend/tsconfig.eslint.json", "./shared/tsconfig.eslint.json"];
+const projectConfigs = ["./frontend/tsconfig.eslint.json", "./backend/tsconfig.eslint.json", "./packages/types/tsconfig.eslint.json"];
 
 const baseRules = {
   ...(eslint.configs.recommended.rules ?? {}),
@@ -36,7 +36,7 @@ const manualRules = {
   "@typescript-eslint/strict-void-return": "error",
   "import/first": "error",
   "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
-  "import/no-extraneous-dependencies": ["error", { "packageDir": [".", "./frontend", "./backend", "./shared"] }],
+  "import/no-extraneous-dependencies": ["error", { "packageDir": [".", "./frontend", "./backend", "./packages/types"] }],
   "import/newline-after-import": "error",
   "import/no-duplicates": "error",
   "import/no-unresolved": "error",

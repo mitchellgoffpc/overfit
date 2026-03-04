@@ -1,5 +1,5 @@
 {
-  "name": "@app/shared",
+  "name": "@overfit/types",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,9 +14,6 @@
   "scripts": {
     "build": "tsc -b",
     "test": "vitest run"
-  },
-  "dependencies": {
-    "@iarna/toml": "^3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.6.2",

@@ -12,9 +12,9 @@
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "types": ["node"],
     "paths": {
-      "@app/shared/models": ["../../shared/src/models.ts"]
+      "@overfit/types": ["../../packages/types/src"]
     }
   },
   "include": ["src/**/*", "tests/**/*"],
-  "references": [{ "path": "../shared" }]
+  "references": [{ "path": "../packages/types" }]
 }

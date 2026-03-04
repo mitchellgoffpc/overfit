@@ -5,12 +5,12 @@
   "workspaces": [
     "frontend",
     "backend",
-    "shared"
+    "packages/types"
   ],
   "scripts": {
     "dev": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
-    "build": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
+    "build": "npm run build -w @overfit/types && npm run build -w backend && npm run build -w frontend",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run"

@@ -1,4 +1,4 @@
-import type { Artifact, ID, Metric, Project, Run, Team, User } from "@app/shared/models";
+import type { Artifact, ID, Metric, Project, Run, Team, User } from "@overfit/types";
 
 export interface EntityStore<T> {
   list: () => T[];

@@ -1,4 +1,4 @@
-import { API_VERSION } from "@app/shared/models";
+import { API_VERSION } from "@overfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 

@@ -1,4 +1,4 @@
-import { API_VERSION } from "@app/shared/models";
+import { API_VERSION } from "@overfit/types";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 

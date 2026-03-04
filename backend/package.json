@@ -1,5 +1,5 @@
 {
-  "name": "@app/backend",
+  "name": "@overfit/backend",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,10 +10,11 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@app/shared": "^0.0.0",
+    "@overfit/types": "^0.0.0",
     "better-sqlite3": "^11.10.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "@iarna/toml": "^3.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
