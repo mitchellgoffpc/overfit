@@ -1,9 +1,10 @@
 import { createApp } from "app";
+import { loadConfig } from "config";
 
-const port = Number(process.env.PORT ?? 4000);
+const configPath = process.argv[2];
+const config = loadConfig(configPath);
+const app = createApp(config);
 
-const app = createApp();
-
-app.listen(port, () => {
-  console.log(`Backend listening on http://localhost:${String(port)}`);
+app.listen(config.server.port, () => {
+  console.log(`Backend listening on http://localhost:${String(config.server.port)}`);
 });

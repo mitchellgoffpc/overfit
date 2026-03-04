@@ -1,4 +1,4 @@
-import type { Artifact, ID, Metric, Project, Run, Team, User } from "@app/shared";
+import type { Artifact, ID, Metric, Project, Run, Team, User } from "@app/shared/models";
 
 import type { EntityStore, Storage } from "storage/types";
 

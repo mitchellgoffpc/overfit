@@ -60,3 +60,5 @@ export interface Metric {
   step?: number;
   timestamp: Timestamp;
 }
+
+export const API_VERSION = "v1";

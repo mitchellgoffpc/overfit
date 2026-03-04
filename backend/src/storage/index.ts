@@ -6,23 +6,19 @@ export type StorageType = "memory" | "sqlite";
 
 export interface StorageConfig {
   type?: StorageType;
-  sqlitePath?: string;
+  sqlite?: {
+    path?: string;
+  };
 }
 
 export const createStorage = (config: StorageConfig = {}): Storage => {
-  const configuredType = config.type ?? process.env.OVERFIT_DB;
-
-  if (configuredType !== undefined && configuredType !== "memory" && configuredType !== "sqlite") {
-    throw new Error(`Unsupported storage type: ${configuredType}`);
-  }
-
-  const type: StorageType = configuredType ?? "sqlite";
+  const type: StorageType = config.type ?? "sqlite";
 
   if (type === "memory") {
     return createInMemoryStorage();
   }
 
-  const sqlitePath = config.sqlitePath ?? process.env.OVERFIT_SQLITE_PATH ?? "overfit.db";
+  const sqlitePath = config.sqlite?.path ?? "overfit.db";
   return createSqliteStorage({ path: sqlitePath });
 };
 

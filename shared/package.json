@@ -15,6 +15,9 @@
     "build": "tsc -b",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@iarna/toml": "^3.0.0"
+  },
   "devDependencies": {
     "typescript": "^5.6.2",
     "vitest": "^2.1.8"

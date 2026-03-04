@@ -12,8 +12,7 @@
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "types": ["vitest/globals"],
     "paths": {
-      "@app/shared": ["../../shared/src"],
-      "models": ["../../shared/src/models.ts"]
+      "@app/shared/models": ["../../shared/src/models.ts"]
     }
   },
   "include": ["src/**/*", "tests/**/*", "vite.config.ts"],

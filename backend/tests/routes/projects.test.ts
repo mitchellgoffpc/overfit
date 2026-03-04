@@ -1,11 +1,11 @@
-import { API_VERSION } from "@app/shared";
+import { API_VERSION } from "@app/shared/models";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import { createApp } from "app";
 
 const apiBase = `/api/${API_VERSION}`;
-const createTestApp = () => createApp({ storageConfig: { type: "sqlite", sqlitePath: ":memory:" } });
+const createTestApp = () => createApp({ server: { port: 4000 }, storage: { type: "sqlite", sqlite: { path: ":memory:" } } });
 
 describe("projects routes", () => {
   it("upserts and fetches a project", async () => {

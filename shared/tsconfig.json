@@ -10,9 +10,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
-    "paths": {
-      "@app/shared": ["./src"]
-    }
   },
   "include": ["src/**/*"]
 }

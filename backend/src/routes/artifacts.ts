@@ -1,4 +1,4 @@
-import type { Artifact, Run } from "@app/shared";
+import type { Artifact, Run } from "@app/shared/models";
 import type { Request, Response } from "express";
 
 import type { ErrorResponse, ID, RouteApp } from "routes/helpers";

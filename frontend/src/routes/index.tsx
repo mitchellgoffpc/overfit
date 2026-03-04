@@ -1,4 +1,4 @@
-import type { Project, User } from "@app/shared";
+import type { Project, User } from "@app/shared/models";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
 
