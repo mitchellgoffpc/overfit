@@ -1,54 +1,24 @@
-import { API_VERSION } from "@overfit/types";
-import request from "supertest";
 import { describe, expect, it } from "vitest";
 
-import { createApp } from "app";
-
-const apiBase = `/api/${API_VERSION}`;
-const createTestApp = () => createApp({ server: { port: 4000 }, storage: { type: "sqlite", sqlite: { path: ":memory:" } } });
+import { assertNotFound, createTestApp, get, put } from "@overfit/backend/tests/routes/helpers";
 
 describe("projects routes", () => {
   it("upserts and fetches a project", async () => {
     const app = createTestApp();
-
-    const projectPayload = {
-      name: "Overfit",
-      description: "Tracking runs"
-    };
-
-    await request(app)
-      .put(`${apiBase}/projects/project-1`)
-      .send(projectPayload)
-      .expect(200);
-
-    const response = await request(app)
-      .get(`${apiBase}/projects/project-1`)
-      .expect(200);
-
-    expect(response.body).toMatchObject({
-      id: "project-1",
-      ...projectPayload
-    });
+    const projectPayload = { name: "Overfit", description: "Tracking runs" };
+    await put(app, "projects", "project-1", projectPayload);
+    const response = await get(app, "projects", "project-1");
+    expect(response.body).toMatchObject({ id: "project-1", ...projectPayload });
   });
 
   it("rejects unknown projects", async () => {
     const app = createTestApp();
-
-    const response = await request(app)
-      .get(`${apiBase}/projects/missing`)
-      .expect(404);
-
-    expect(response.body).toMatchObject({ error: "Project not found" });
+    await assertNotFound(app, "projects", "missing", "Project not found");
   });
 
   it("rejects missing required fields", async () => {
     const app = createTestApp();
-
-    const response = await request(app)
-      .put(`${apiBase}/projects/project-2`)
-      .send({ description: "Missing name" })
-      .expect(400);
-
+    const response = await put(app, "projects", "project-2", { description: "Missing name" }, 400);
     expect(response.body).toMatchObject({ error: "Project name is required" });
   });
 });
