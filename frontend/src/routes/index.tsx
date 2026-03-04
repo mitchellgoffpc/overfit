@@ -1,10 +1,10 @@
 import type { User } from "@overfit/types";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
-import ProjectsPanel from "../components/ProjectsPanel";
-import Sidebar from "../components/Sidebar";
-import TabBar from "../components/TabBar";
 
+import ProjectsPanel from "components/ProjectsPanel";
+import Sidebar from "components/Sidebar";
+import TabBar from "components/TabBar";
 
 const FALLBACK_USER: User = {
   id: "user-mitchell",

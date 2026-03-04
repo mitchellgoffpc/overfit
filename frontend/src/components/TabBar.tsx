@@ -1,10 +1,9 @@
 import type { ReactElement } from "react";
 
-
-type TabBarProps = {
-  activeTab: string;
-  tabs: string[];
-};
+interface TabBarProps {
+  readonly activeTab: string;
+  readonly tabs: string[];
+}
 
 export default function TabBar({ activeTab, tabs }: TabBarProps): ReactElement {
   return (

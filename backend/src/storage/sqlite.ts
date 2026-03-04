@@ -1,4 +1,4 @@
-import type { Artifact, Metric, Project, Run, Team, User } from "@overfit/types";
+import type { Artifact, Metric, Organization, OrganizationMember, Project, Run, User } from "@overfit/types";
 import Database from "better-sqlite3";
 
 import { schema } from "storage/types";
@@ -93,6 +93,7 @@ const createEntityStore = <T>(db: Database.Database, tableName: keyof typeof sch
   const selectAll = db.prepare(`SELECT * FROM ${tableName}`);
   const selectById = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
   const hasById = db.prepare(`SELECT 1 FROM ${tableName} WHERE id = ?`);
+  const deleteById = db.prepare(`DELETE FROM ${tableName} WHERE id = ?`);
   const upsert = db.prepare(
     `INSERT INTO ${tableName} (${columns}) VALUES (${parameters}) ON CONFLICT(id) DO UPDATE SET ${updates}`
   );
@@ -104,6 +105,9 @@ const createEntityStore = <T>(db: Database.Database, tableName: keyof typeof sch
       return row ? fromRow(row) : undefined;
     },
     has: (id) => Boolean(hasById.get(id)),
+    delete: (id) => {
+      deleteById.run(id);
+    },
     upsert: (entity) => {
       upsert.run(toRow(entity));
       return entity;
@@ -119,7 +123,8 @@ export const createSqliteStorage = ({ path }: SqliteConfig): Storage => {
 
   return {
     users: createEntityStore<User>(db, "users"),
-    teams: createEntityStore<Team>(db, "teams"),
+    organizations: createEntityStore<Organization>(db, "organizations"),
+    organizationMembers: createEntityStore<OrganizationMember>(db, "organization_members"),
     projects: createEntityStore<Project>(db, "projects"),
     runs: createEntityStore<Run>(db, "runs"),
     artifacts: createEntityStore<Artifact>(db, "artifacts"),

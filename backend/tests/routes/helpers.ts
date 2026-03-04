@@ -7,8 +7,8 @@ import { createApp } from "app";
 import type { RouteApp } from "routes/helpers";
 
 export const apiBase = `/api/${API_VERSION}`;
-export const createTestApp = (): RouteApp => createApp({ server: { port: 4000 }, storage: { type: "sqlite", sqlite: { path: ":memory:" } } });
 export const testTimestamp = "2025-01-01T00:00:00.000Z";
+export const createTestApp = (): RouteApp => createApp({ server: { port: 4000 }, storage: { type: "sqlite", sqlite: { path: ":memory:" } } });
 
 interface RejectCase { payload: Record<string, unknown>; error: string }
 

@@ -6,9 +6,9 @@ import type { Express, Request, Response } from "express";
 import type { AppConfig } from "config";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerMetricRoutes } from "routes/metrics";
+import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
-import { registerTeamRoutes } from "routes/teams";
 import { registerUserRoutes } from "routes/users";
 import { createStorage } from "storage";
 
@@ -25,8 +25,8 @@ export function createApp(config: AppConfig): Express {
     res.json({ status: "ok", version: API_VERSION });
   });
 
-  registerUserRoutes(app, apiBase, storage.users);
-  registerTeamRoutes(app, apiBase, storage.teams);
+  registerUserRoutes(app, apiBase, storage.users, storage.organizations, storage.organizationMembers);
+  registerOrganizationRoutes(app, apiBase, storage.organizations, storage.users, storage.organizationMembers);
   registerProjectRoutes(app, apiBase, storage.projects);
   registerRunRoutes(app, apiBase, storage.runs);
   registerArtifactRoutes(app, apiBase, storage.artifacts, storage.runs);

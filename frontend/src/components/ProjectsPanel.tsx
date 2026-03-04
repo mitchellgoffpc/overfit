@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { useProjectStore } from "../store/projects";
 
+import { useProjectStore } from "store/projects";
 
 export default function ProjectsPanel(): ReactElement {
   const projects = useProjectStore((state) => state.projects);
@@ -48,7 +48,7 @@ export default function ProjectsPanel(): ReactElement {
                 <p className="table__description">{project.description ?? ""}</p>
               </div>
               <span className="table__muted">—</span>
-              <span className="table__badge">Team</span>
+              <span className="table__badge">Organization</span>
               <span>0</span>
               <span>0</span>
             </div>

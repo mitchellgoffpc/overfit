@@ -1,10 +1,9 @@
 import type { User } from "@overfit/types";
 import type { ReactElement } from "react";
 
-
-type SidebarProps = {
-  user: User;
-};
+interface SidebarProps {
+  readonly user: User;
+}
 
 export default function Sidebar({ user }: SidebarProps): ReactElement {
   return (
@@ -25,7 +24,7 @@ export default function Sidebar({ user }: SidebarProps): ReactElement {
       </div>
       <nav className="sidebar__nav">
         <button className="sidebar__nav-item" type="button">
-          Team settings
+          Organization settings
         </button>
         <button className="sidebar__nav-item" type="button">
           Registry
@@ -34,7 +33,7 @@ export default function Sidebar({ user }: SidebarProps): ReactElement {
       <div className="sidebar__members">
         <p className="sidebar__members-title">Members (1)</p>
         <button className="sidebar__members-action" type="button">
-          Invite team members
+          Invite organization members
         </button>
         <div className="sidebar__member">
           <span className="sidebar__member-avatar">MG</span>

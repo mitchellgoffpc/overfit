@@ -1,15 +1,25 @@
-import type { User } from "@overfit/types";
+import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
 
 import type { ErrorResponse, RouteApp, RouteParams, RouteRequest, RouteResponse, UpsertUserPayload } from "routes/helpers";
 import { nowIso } from "routes/helpers";
 import type { EntityStore } from "storage/types";
 
-export function registerUserRoutes(app: RouteApp, apiBase: string, users: EntityStore<User>): void {
+export function registerUserRoutes(
+  app: RouteApp,
+  apiBase: string,
+  users: EntityStore<User>,
+  organizations: EntityStore<Organization>,
+  organizationMembers: EntityStore<OrganizationMember>
+): void {
+  interface UserDetail extends User {
+    organizations: (Organization & { role: OrganizationRole })[];
+  }
+
   app.get(`${apiBase}/users`, (_req: RouteRequest, res: RouteResponse<User[]>) => {
     res.json(users.list());
   });
 
-  app.get(`${apiBase}/users/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<User | ErrorResponse>) => {
+  app.get(`${apiBase}/users/:id`, (req: RouteRequest<RouteParams>, res: RouteResponse<UserDetail | ErrorResponse>) => {
     const user = users.get(req.params.id);
 
     if (!user) {
@@ -17,7 +27,13 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, users: Entity
       return;
     }
 
-    res.json(user);
+    const memberships = organizationMembers.list().filter((member) => member.userId === user.id);
+    const userOrganizations = memberships.flatMap((member) => {
+      const organization = organizations.get(member.organizationId);
+      return organization ? [{ ...organization, role: member.role }] : [];
+    });
+
+    res.json({ ...user, organizations: userOrganizations });
   });
 
   app.put(

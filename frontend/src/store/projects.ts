@@ -2,13 +2,12 @@ import { API_VERSION } from "@overfit/types";
 import type { Project } from "@overfit/types";
 import { create } from "zustand";
 
-
-type ProjectState = {
+interface ProjectState {
   projects: Project[];
   isLoading: boolean;
   error: string | null;
   fetchProjects: () => Promise<void>;
-};
+}
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
@@ -23,7 +22,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
       const response = await fetch(`${apiBase}/projects`);
 
       if (!response.ok) {
-        set({ error: `Failed to fetch projects (${response.status})`, isLoading: false });
+        set({ error: `Failed to fetch projects (${String(response.status)})`, isLoading: false });
         return;
       }
 

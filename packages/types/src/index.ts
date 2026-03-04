@@ -2,6 +2,8 @@ export type ID = string;
 
 export type Timestamp = string;
 
+export type OrganizationRole = "ADMIN" | "MEMBER";
+
 export interface User {
   id: ID;
   email: string;
@@ -10,10 +12,19 @@ export interface User {
   updatedAt: Timestamp;
 }
 
-export interface Team {
+export interface Organization {
   id: ID;
   name: string;
   slug: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface OrganizationMember {
+  id: ID;
+  organizationId: ID;
+  userId: ID;
+  role: OrganizationRole;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
