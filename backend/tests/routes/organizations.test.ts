@@ -20,8 +20,9 @@ describe("organizations routes", () => {
   it("rejects missing required fields", async () => {
     const app = createTestApp();
     const cases = [
-      { payload: { name: "Core" }, error: "Organization slug is required" },
-      { payload: { slug: "core" }, error: "Organization name is required" }
+      { payload: {}, error: "Organization fields are required: name, slug" },
+      { payload: { name: "Core" }, error: "Organization fields are required: slug" },
+      { payload: { slug: "core" }, error: "Organization fields are required: name" }
     ];
     await assertRejectCases(app, "organizations", cases);
   });

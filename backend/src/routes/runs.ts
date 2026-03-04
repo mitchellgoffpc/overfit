@@ -14,10 +14,9 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntitySt
 
     if (!run) {
       res.status(404).json({ error: "Run not found" });
-      return;
+    } else {
+      res.json(run);
     }
-
-    res.json(run);
   });
 
   app.put(
@@ -30,27 +29,25 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntitySt
     const projectId = payload.projectId ?? existing?.projectId;
     const name = payload.name ?? existing?.name;
     const status = payload.status ?? existing?.status;
+    const missingFields = Object.entries({ projectId, name, status }).filter(([, value]) => !value).map(([label]) => label);
 
-    for (const [label, value] of Object.entries({ projectId, name, status })) {
-      if (!value) {
-        res.status(400).json({ error: `Run ${label} is required` });
-        return;
-      }
+    if (missingFields.length > 0) {
+      res.status(400).json({ error: `Run fields are required: ${missingFields.join(", ")}` });
+    } else {
+      const run: Run = {
+        id,
+        projectId,
+        name,
+        status,
+        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        updatedAt: nowIso(),
+        startedAt: payload.startedAt ?? existing?.startedAt,
+        finishedAt: payload.finishedAt ?? existing?.finishedAt,
+        metadata: payload.metadata ?? existing?.metadata
+      };
+
+      runs.upsert(run);
+      res.json(run);
     }
-
-    const run: Run = {
-      id,
-      projectId,
-      name,
-      status,
-      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
-      updatedAt: nowIso(),
-      startedAt: payload.startedAt ?? existing?.startedAt,
-      finishedAt: payload.finishedAt ?? existing?.finishedAt,
-      metadata: payload.metadata ?? existing?.metadata
-    };
-
-    runs.upsert(run);
-    res.json(run);
   });
 }

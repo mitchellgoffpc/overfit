@@ -13,10 +13,9 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
 
     if (!metric) {
       res.status(404).json({ error: "Metric not found" });
-      return;
+    } else {
+      res.json(metric);
     }
-
-    res.json(metric);
   });
 
   app.put(
@@ -30,35 +29,27 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, metrics: En
       const name = payload.name ?? existing?.name;
       const metricValue = payload.value ?? existing?.value;
       const timestamp = payload.timestamp ?? existing?.timestamp;
+      const missingFields = Object.entries({ runId, name, timestamp }).filter(([, value]) => !value).map(([label]) => label);
 
-      for (const [label, value] of Object.entries({ runId, name, timestamp })) {
-        if (!value) {
-          res.status(400).json({ error: `Metric ${label} is required` });
-          return;
-        }
-      }
-
-      if (!runs.has(runId)) {
+      if (missingFields.length > 0) {
+        res.status(400).json({ error: `Metric fields are required: ${missingFields.join(", ")}` });
+      } else if (!runs.has(runId)) {
         res.status(400).json({ error: "Metric runId does not reference an existing run" });
-        return;
-      }
-
-      if (typeof metricValue !== "number") {
+      } else if (typeof metricValue !== "number") {
         res.status(400).json({ error: "Metric value must be a number" });
-        return;
+      } else {
+        const metric: Metric = {
+          id,
+          runId,
+          name,
+          value: metricValue,
+          step: payload.step ?? existing?.step,
+          timestamp
+        };
+
+        metrics.upsert(metric);
+        res.json(metric);
       }
-
-      const metric: Metric = {
-        id,
-        runId,
-        name,
-        value: metricValue,
-        step: payload.step ?? existing?.step,
-        timestamp
-      };
-
-      metrics.upsert(metric);
-      res.json(metric);
     }
   );
 

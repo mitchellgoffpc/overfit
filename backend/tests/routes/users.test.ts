@@ -21,8 +21,9 @@ describe("users routes", () => {
   it("rejects missing required fields", async () => {
     const app = createTestApp();
     const cases = [
-      { payload: { displayName: "Ada Lovelace" }, error: "User email is required" },
-      { payload: { email: "ada@example.com" }, error: "User displayName is required" }
+      { payload: {}, error: "User fields are required: email, displayName" },
+      { payload: { displayName: "Ada Lovelace" }, error: "User fields are required: email" },
+      { payload: { email: "ada@example.com" }, error: "User fields are required: displayName" }
     ];
     await assertRejectCases(app, "users", cases);
   });

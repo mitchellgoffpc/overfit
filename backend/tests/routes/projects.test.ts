@@ -19,6 +19,6 @@ describe("projects routes", () => {
   it("rejects missing required fields", async () => {
     const app = createTestApp();
     const response = await put(app, "projects", "project-2", { description: "Missing name" }, 400);
-    expect(response.body).toMatchObject({ error: "Project name is required" });
+    expect(response.body).toMatchObject({ error: "Project fields are required: name" });
   });
 });

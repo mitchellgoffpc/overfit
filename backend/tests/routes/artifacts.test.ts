@@ -26,10 +26,10 @@ describe("artifacts routes", () => {
   it("rejects missing required fields", async () => {
     const app = createTestApp();
     const cases = [
-      { payload: { name: "model", type: "model", version: "v2" }, error: "Artifact runId is required" },
-      { payload: { runId: "run-1", type: "model", version: "v2" }, error: "Artifact name is required" },
-      { payload: { runId: "run-1", name: "model", version: "v2" }, error: "Artifact type is required" },
-      { payload: { runId: "run-1", name: "model", type: "model" }, error: "Artifact version is required" }
+      { payload: { name: "model", type: "model" }, error: "Artifact fields are required: runId, version" },
+      { payload: { runId: "run-1", type: "model" }, error: "Artifact fields are required: name, version" },
+      { payload: { runId: "run-1", name: "model" }, error: "Artifact fields are required: type, version" },
+      { payload: { runId: "run-1", name: "model", type: "model" }, error: "Artifact fields are required: version" }
     ];
     await assertRejectCases(app, "artifacts", cases);
   });

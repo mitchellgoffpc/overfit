@@ -14,10 +14,9 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
 
     if (!project) {
       res.status(404).json({ error: "Project not found" });
-      return;
+    } else {
+      res.json(project);
     }
-
-    res.json(project);
   });
 
   app.put(
@@ -28,23 +27,21 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
     const existing = projects.get(id);
 
     const name = payload.name ?? existing?.name;
+    const missingFields = Object.entries({ name }).filter(([, value]) => !value).map(([label]) => label);
 
-    for (const [label, value] of Object.entries({ name })) {
-      if (!value) {
-        res.status(400).json({ error: `Project ${label} is required` });
-        return;
-      }
+    if (missingFields.length > 0) {
+      res.status(400).json({ error: `Project fields are required: ${missingFields.join(", ")}` });
+    } else {
+      const project: Project = {
+        id,
+        name,
+        description: payload.description ?? existing?.description,
+        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        updatedAt: nowIso()
+      };
+
+      projects.upsert(project);
+      res.json(project);
     }
-
-    const project: Project = {
-      id,
-      name,
-      description: payload.description ?? existing?.description,
-      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
-      updatedAt: nowIso()
-    };
-
-    projects.upsert(project);
-    res.json(project);
   });
 }

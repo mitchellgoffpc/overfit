@@ -25,9 +25,9 @@ describe("runs routes", () => {
   it("rejects missing required fields", async () => {
     const app = createTestApp();
     const cases = [
-      { payload: { name: "Run 2", status: "running" }, error: "Run projectId is required" },
-      { payload: { projectId: "project-1", status: "running" }, error: "Run name is required" },
-      { payload: { projectId: "project-1", name: "Run 2" }, error: "Run status is required" }
+      { payload: { status: "running" }, error: "Run fields are required: projectId, name" },
+      { payload: { projectId: "project-1" }, error: "Run fields are required: name, status" },
+      { payload: { projectId: "project-1", name: "Run 2" }, error: "Run fields are required: status" }
     ];
     await assertRejectCases(app, "runs", cases);
   });

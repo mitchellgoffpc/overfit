@@ -26,9 +26,9 @@ describe("metrics routes", () => {
   it("rejects missing required fields", async () => {
     const app = createTestApp();
     const cases = [
-      { payload: { name: "loss", value: 0.12, timestamp: testTimestamp }, error: "Metric runId is required" },
-      { payload: { runId: "run-1", value: 0.12, timestamp: testTimestamp }, error: "Metric name is required" },
-      { payload: { runId: "run-1", name: "loss", value: 0.12 }, error: "Metric timestamp is required" }
+      { payload: { value: 0.12, timestamp: testTimestamp }, error: "Metric fields are required: runId, name" },
+      { payload: { runId: "run-1", value: 0.12 }, error: "Metric fields are required: name, timestamp" },
+      { payload: { runId: "run-1", name: "loss" }, error: "Metric fields are required: timestamp" }
     ];
     await assertRejectCases(app, "metrics", cases);
   });

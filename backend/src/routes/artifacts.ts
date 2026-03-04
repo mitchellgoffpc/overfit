@@ -14,10 +14,9 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
 
     if (!artifact) {
       res.status(404).json({ error: "Artifact not found" });
-      return;
+    } else {
+      res.json(artifact);
     }
-
-    res.json(artifact);
   });
 
   app.put(
@@ -31,33 +30,28 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, artifacts
       const name = payload.name ?? existing?.name;
       const type = payload.type ?? existing?.type;
       const version = payload.version ?? existing?.version;
+      const missingFields = Object.entries({ runId, name, type, version }).filter(([, value]) => !value).map(([label]) => label);
 
-      for (const [label, value] of Object.entries({ runId, name, type, version })) {
-        if (!value) {
-          res.status(400).json({ error: `Artifact ${label} is required` });
-          return;
-        }
-      }
-
-      if (!runs.has(runId)) {
+      if (missingFields.length > 0) {
+        res.status(400).json({ error: `Artifact fields are required: ${missingFields.join(", ")}` });
+      } else if (!runs.has(runId)) {
         res.status(400).json({ error: "Artifact runId does not reference an existing run" });
-        return;
+      } else {
+        const artifact: Artifact = {
+          id,
+          runId,
+          name,
+          type,
+          version,
+          createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+          updatedAt: nowIso(),
+          uri: payload.uri ?? existing?.uri,
+          metadata: payload.metadata ?? existing?.metadata
+        };
+
+        artifacts.upsert(artifact);
+        res.json(artifact);
       }
-
-      const artifact: Artifact = {
-        id,
-        runId,
-        name,
-        type,
-        version,
-        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
-        updatedAt: nowIso(),
-        uri: payload.uri ?? existing?.uri,
-        metadata: payload.metadata ?? existing?.metadata
-      };
-
-      artifacts.upsert(artifact);
-      res.json(artifact);
     }
   );
 }

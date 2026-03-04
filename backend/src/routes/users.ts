@@ -24,16 +24,15 @@ export function registerUserRoutes(
 
     if (!user) {
       res.status(404).json({ error: "User not found" });
-      return;
+    } else {
+      const memberships = organizationMembers.list().filter((member) => member.userId === user.id);
+      const userOrganizations = memberships.flatMap((member) => {
+        const organization = organizations.get(member.organizationId);
+        return organization ? [{ ...organization, role: member.role }] : [];
+      });
+
+      res.json({ ...user, organizations: userOrganizations });
     }
-
-    const memberships = organizationMembers.list().filter((member) => member.userId === user.id);
-    const userOrganizations = memberships.flatMap((member) => {
-      const organization = organizations.get(member.organizationId);
-      return organization ? [{ ...organization, role: member.role }] : [];
-    });
-
-    res.json({ ...user, organizations: userOrganizations });
   });
 
   app.put(
@@ -45,23 +44,21 @@ export function registerUserRoutes(
 
     const email = payload.email ?? existing?.email;
     const displayName = payload.displayName ?? existing?.displayName;
+    const missingFields = Object.entries({ email, displayName }).filter(([, value]) => !value).map(([label]) => label);
 
-    for (const [label, value] of Object.entries({ email, displayName })) {
-      if (!value) {
-        res.status(400).json({ error: `User ${label} is required` });
-        return;
-      }
+    if (missingFields.length > 0) {
+      res.status(400).json({ error: `User fields are required: ${missingFields.join(", ")}` });
+    } else {
+      const user: User = {
+        id,
+        email,
+        displayName,
+        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        updatedAt: nowIso()
+      };
+
+      users.upsert(user);
+      res.json(user);
     }
-
-    const user: User = {
-      id,
-      email,
-      displayName,
-      createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
-      updatedAt: nowIso()
-    };
-
-    users.upsert(user);
-    res.json(user);
   });
 }
