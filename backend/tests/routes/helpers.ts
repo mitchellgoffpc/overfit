@@ -6,11 +6,17 @@ import { expect } from "vitest";
 import { createApp } from "app";
 import type { RouteApp } from "routes/helpers";
 
+interface RejectCase { payload: Record<string, unknown>; error: string }
+
 export const apiBase = `/api/${API_VERSION}`;
 export const testTimestamp = "2025-01-01T00:00:00.000Z";
 export const createTestApp = (): RouteApp => createApp({ server: { port: 4000 }, storage: { type: "sqlite", sqlite: { path: ":memory:" } } });
 
-interface RejectCase { payload: Record<string, unknown>; error: string }
+export async function get(app: RouteApp, resource: string, id: string, status = 200): Promise<Response> {
+  return request(app)
+    .get(`${apiBase}/${resource}/${id}`)
+    .expect(status);
+}
 
 export async function put(
   app: RouteApp,
@@ -25,9 +31,15 @@ export async function put(
     .expect(status);
 }
 
-export async function get(app: RouteApp, resource: string, id: string, status = 200): Promise<Response> {
+export async function post(
+  app: RouteApp,
+  path: string,
+  payload: Record<string, unknown>,
+  status = 200
+): Promise<Response> {
   return request(app)
-    .get(`${apiBase}/${resource}/${id}`)
+    .post(`${apiBase}/${path}`)
+    .send(payload)
     .expect(status);
 }
 

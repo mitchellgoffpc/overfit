@@ -1,4 +1,4 @@
-import type { Artifact, ID, Metric, Organization, OrganizationMember, Project, Run, User } from "@overfit/types";
+import type { Artifact, ID, Metric, Organization, OrganizationMember, Project, Run, Session, User, UserAuth } from "@overfit/types";
 
 export type StorageType = "sqlite" | "postgresql";
 
@@ -21,6 +21,8 @@ export interface EntityStore<T> {
 
 export interface Storage {
   users: EntityStore<User>;
+  userAuth: EntityStore<UserAuth>;
+  sessions: EntityStore<Session>;
   organizations: EntityStore<Organization>;
   organizationMembers: EntityStore<OrganizationMember>;
   projects: EntityStore<Project>;
@@ -63,6 +65,32 @@ export const schema: SchemaDef = {
       displayName: { kind: "string" },
       createdAt: { kind: "string" },
       updatedAt: { kind: "string" }
+    }
+  },
+  user_auth: {
+    columns: {
+      id: {
+        kind: "string",
+        primaryKey: true,
+        references: { table: "users", column: "id", onDelete: "CASCADE", onUpdate: "CASCADE" }
+      },
+      passwordHash: { kind: "string" },
+      passwordSalt: { kind: "string" },
+      passwordIterations: { kind: "integer" },
+      passwordDigest: { kind: "string" },
+      createdAt: { kind: "string" },
+      updatedAt: { kind: "string" }
+    }
+  },
+  sessions: {
+    columns: {
+      id: { kind: "string", primaryKey: true },
+      userId: {
+        kind: "string",
+        references: { table: "users", column: "id", onDelete: "CASCADE", onUpdate: "CASCADE" }
+      },
+      createdAt: { kind: "string" },
+      expiresAt: { kind: "string" }
     }
   },
   organizations: {

@@ -14,6 +14,23 @@ export interface User {
   updatedAt: Timestamp;
 }
 
+export interface UserAuth {
+  id: ID;
+  passwordHash: string;
+  passwordSalt: string;
+  passwordIterations: number;
+  passwordDigest: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface Session {
+  id: ID;
+  userId: ID;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+}
+
 export interface Organization {
   id: ID;
   name: string;

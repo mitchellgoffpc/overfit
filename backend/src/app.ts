@@ -5,6 +5,7 @@ import type { Express, Request, Response } from "express";
 
 import type { AppConfig } from "config";
 import { registerArtifactRoutes } from "routes/artifacts";
+import { registerAuthRoutes } from "routes/auth";
 import { registerMetricRoutes } from "routes/metrics";
 import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
@@ -20,11 +21,13 @@ export function createApp(config: AppConfig): Express {
 
   const apiBase = `/api/${API_VERSION}`;
   const storage = createStorage(config.storage);
+  app.locals.storage = storage;
 
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ status: "ok", version: API_VERSION });
   });
 
+  registerAuthRoutes(app, apiBase, storage.users, storage.userAuth, storage.sessions);
   registerUserRoutes(app, apiBase, storage.users, storage.organizations, storage.organizationMembers);
   registerOrganizationRoutes(app, apiBase, storage.organizations, storage.users, storage.organizationMembers);
   registerProjectRoutes(app, apiBase, storage.projects);

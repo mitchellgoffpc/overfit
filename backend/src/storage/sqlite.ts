@@ -1,4 +1,4 @@
-import type { Artifact, Metric, Organization, OrganizationMember, Project, Run, User } from "@overfit/types";
+import type { Artifact, Metric, Organization, OrganizationMember, Project, Run, Session, User, UserAuth } from "@overfit/types";
 import Database from "better-sqlite3";
 
 import { schema } from "storage/types";
@@ -123,6 +123,8 @@ export const createSqliteStorage = ({ path }: SqliteConfig): Storage => {
 
   return {
     users: createEntityStore<User>(db, "users"),
+    userAuth: createEntityStore<UserAuth>(db, "user_auth"),
+    sessions: createEntityStore<Session>(db, "sessions"),
     organizations: createEntityStore<Organization>(db, "organizations"),
     organizationMembers: createEntityStore<OrganizationMember>(db, "organization_members"),
     projects: createEntityStore<Project>(db, "projects"),
