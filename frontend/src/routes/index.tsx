@@ -9,7 +9,7 @@ import TabBar from "components/TabBar";
 const FALLBACK_USER: User = {
   id: "user-mitchell",
   email: "mitchell@overfit.local",
-  displayName: "mitchellgoffpc",
+  username: "mitchellgoffpc",
   createdAt: "2024-05-20T16:20:00Z",
   updatedAt: "2024-10-12T09:15:00Z"
 };

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { assertNotFound, assertRejectCases, createTestApp, get, put, seedProject } from "@overfit/backend/tests/routes/helpers";
+import { assertNotFound, assertRejectCases, createTestApp, get, put } from "@overfit/backend/tests/routes/helpers";
 
 describe("runs routes", () => {
   it("upserts and fetches a run", async () => {
     const app = createTestApp();
-    await seedProject(app);
+    await put(app, "projects", "project-1", { name: "Overfit" });
     const runPayload = {
       projectId: "project-1",
       name: "Run 1",

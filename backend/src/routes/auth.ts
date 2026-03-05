@@ -1,5 +1,6 @@
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
 
+import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testUsername } from "@overfit/types";
 import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -27,7 +28,7 @@ interface AuthResponse {
 
 interface RegisterPayload {
   email?: string;
-  displayName?: string;
+  username?: string;
   password?: string;
 }
 
@@ -64,56 +65,55 @@ const getSessionToken = (headers: Record<string, string | string[] | undefined>)
 export function registerAuthRoutes(app: RouteApp, apiBase: string, users: EntityStore<User>, userAuth: EntityStore<UserAuth>, sessions: EntityStore<Session>): void {
   const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload> = (req, res) => {
     const email = req.body.email ? normalizeEmail(req.body.email) : "";
-    const displayName = req.body.displayName?.trim() ?? "";
+    const username = req.body.username?.trim() ?? "";
     const password = req.body.password ?? "";
 
-    const missingFields = Object.entries({ email, displayName, password }).filter(([, value]) => !value).map(([label]) => label);
+    const missingFields = Object.entries({ email, username, password }).filter(([, value]) => !value).map(([label]) => label);
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Registration fields are required: ${missingFields.join(", ")}` });
-      return;
-    }
-    if (password.length < 8) {
-      res.status(400).json({ error: "Password must be at least 8 characters long" });
-      return;
-    }
-
-    const existing = users.list().find((user) => user.email.toLowerCase() === email);
-    if (existing) {
+    } else if (!testEmail(email)) {
+      res.status(400).json({ error: "Email must be valid" });
+    } else if (!testUsername(username)) {
+      res.status(400).json({ error: USERNAME_HINT });
+    } else if (!testPassword(password)) {
+      res.status(400).json({ error: PASSWORD_HINT });
+    } else if (users.list().find((user) => user.username.toLowerCase() === username.toLowerCase())) {
+      res.status(409).json({ error: "Username already in use" });
+    } else if (users.list().find((user) => user.email.toLowerCase() === email)) {
       res.status(409).json({ error: "Email already in use" });
-      return;
+    } else {
+      const timestamp = nowIso();
+      const user: User = {
+        id: randomBytes(16).toString("hex"),
+        email,
+        username,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      };
+
+      const salt = randomBytes(SALT_BYTES).toString("hex");
+      const passwordHash = hashPassword(password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
+      const auth: UserAuth = {
+        id: user.id,
+        passwordHash,
+        passwordSalt: salt,
+        passwordIterations: PASSWORD_ITERATIONS,
+        passwordDigest: PASSWORD_DIGEST,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      };
+
+      const createdAt = nowIso();
+      const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+      const token = randomBytes(SESSION_BYTES).toString("base64url");
+      const session: Session = { id: token, userId: user.id, createdAt, expiresAt };
+
+      users.upsert(user);
+      userAuth.upsert(auth);
+      sessions.upsert(session);
+
+      res.json({ user, session: { token, createdAt, expiresAt } });
     }
-
-    const timestamp = nowIso();
-    const user: User = {
-      id: randomBytes(16).toString("hex"),
-      email,
-      displayName,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-
-    const salt = randomBytes(SALT_BYTES).toString("hex");
-    const passwordHash = hashPassword(password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
-    const auth: UserAuth = {
-      id: user.id,
-      passwordHash,
-      passwordSalt: salt,
-      passwordIterations: PASSWORD_ITERATIONS,
-      passwordDigest: PASSWORD_DIGEST,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-
-    const createdAt = nowIso();
-    const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
-    const token = randomBytes(SESSION_BYTES).toString("base64url");
-    const session: Session = { id: token, userId: user.id, createdAt, expiresAt };
-
-    users.upsert(user);
-    userAuth.upsert(auth);
-    sessions.upsert(session);
-
-    res.json({ user, session: { token, createdAt, expiresAt } });
   };
 
   const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload> = (req, res) => {

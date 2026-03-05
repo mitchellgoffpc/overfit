@@ -12,12 +12,12 @@ export default function Sidebar({ user }: SidebarProps): ReactElement {
       <div className="sidebar__user">
         <div className="sidebar__avatar">MG</div>
         <div>
-          <p className="sidebar__user-name">{user.displayName}</p>
+          <p className="sidebar__user-name">{user.username}</p>
           <p className="sidebar__user-email">{user.email}</p>
         </div>
       </div>
       <div className="sidebar__org">
-        <p className="sidebar__org-title">{user.displayName}-projects</p>
+        <p className="sidebar__org-title">{user.username}-projects</p>
         <button className="sidebar__org-action" type="button">
           Share
         </button>
@@ -37,7 +37,7 @@ export default function Sidebar({ user }: SidebarProps): ReactElement {
         </button>
         <div className="sidebar__member">
           <span className="sidebar__member-avatar">MG</span>
-          <span className="sidebar__member-name">{user.displayName}</span>
+          <span className="sidebar__member-name">{user.username}</span>
         </div>
       </div>
     </aside>

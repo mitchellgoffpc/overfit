@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { assertNotFound, assertRejectCases, createTestApp, get, put, seedProjectAndRun } from "@overfit/backend/tests/routes/helpers";
+import { assertNotFound, assertRejectCases, createTestApp, get, put } from "@overfit/backend/tests/routes/helpers";
 
 describe("artifacts routes", () => {
   it("upserts and fetches an artifact", async () => {
     const app = createTestApp();
-    await seedProjectAndRun(app);
+    await put(app, "projects", "project-1", { name: "Overfit" });
+    await put(app, "runs", "run-1", { projectId: "project-1", name: "Run 1", status: "running" });
     const artifactPayload = {
       runId: "run-1",
       name: "model",

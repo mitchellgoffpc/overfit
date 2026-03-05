@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { assertNotFound, assertRejectCases, createTestApp, get, put, seedProjectAndRun, testTimestamp } from "@overfit/backend/tests/routes/helpers";
+import { assertNotFound, assertRejectCases, createTestApp, get, put, testTimestamp } from "@overfit/backend/tests/routes/helpers";
 
 describe("metrics routes", () => {
   it("upserts and fetches a metric", async () => {
     const app = createTestApp();
-    await seedProjectAndRun(app);
+    await put(app, "projects", "project-1", { name: "Overfit" });
+    await put(app, "runs", "run-1", { projectId: "project-1", name: "Run 1", status: "running" });
     const metricPayload = {
       runId: "run-1",
       name: "accuracy",
@@ -41,7 +42,8 @@ describe("metrics routes", () => {
 
   it("rejects non-numeric values", async () => {
     const app = createTestApp();
-    await seedProjectAndRun(app);
+    await put(app, "projects", "project-1", { name: "Overfit" });
+    await put(app, "runs", "run-1", { projectId: "project-1", name: "Run 1", status: "running" });
     const response = await put(app, "metrics", "metric-4", { runId: "run-1", name: "loss", value: "0.12", timestamp: testTimestamp }, 400);
     expect(response.body).toMatchObject({ error: "Metric value must be a number" });
   });

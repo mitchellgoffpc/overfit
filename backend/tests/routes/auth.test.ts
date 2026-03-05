@@ -1,8 +1,8 @@
+import { PASSWORD_HINT, USERNAME_HINT } from "@overfit/types";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { apiBase, createTestApp, post } from "@overfit/backend/tests/routes/helpers";
-import type { Storage } from "storage";
 
 async function getWithToken(app: ReturnType<typeof createTestApp>, path: string, token: string, status = 200) {
   return request(app)
@@ -21,9 +21,9 @@ async function postWithToken(app: ReturnType<typeof createTestApp>, path: string
 describe("auth routes", () => {
   it("registers, logs in, and returns current user", async () => {
     const app = createTestApp();
-    const register = await post(app, "auth/register", { email: "sam@example.com", displayName: "Sam", password: "password123" });
-    const registerBody = register.body as { user: { id: string; email: string; displayName: string }; session: { token: string } };
-    expect(registerBody.user).toMatchObject({ email: "sam@example.com", displayName: "Sam" });
+    const register = await post(app, "auth/register", { email: "sam@example.com", username: "sam", password: "password123" });
+    const registerBody = register.body as { user: { id: string; email: string; username: string }; session: { token: string } };
+    expect(registerBody.user).toMatchObject({ email: "sam@example.com", username: "sam" });
     expect(typeof registerBody.session.token).toBe("string");
 
     const login = await post(app, "auth/login", { email: "sam@example.com", password: "password123" });
@@ -33,12 +33,11 @@ describe("auth routes", () => {
 
     const current = await getWithToken(app, `${apiBase}/auth/me`, token);
     expect((current.body as { id: string }).id).toBe(registerBody.user.id);
-
   });
 
   it("rejects invalid credentials and expires sessions on logout", async () => {
     const app = createTestApp();
-    await post(app, "auth/register", { email: "jules@example.com", displayName: "Jules", password: "password123" });
+    await post(app, "auth/register", { email: "jules@example.com", username: "jules", password: "password123" });
 
     const badLogin = await post(app, "auth/login", { email: "jules@example.com", password: "bad" }, 401);
     expect(badLogin.body).toMatchObject({ error: "Invalid credentials" });
@@ -55,26 +54,49 @@ describe("auth routes", () => {
 
   });
 
-  it("rejects duplicate registration emails", async () => {
+  it("rejects duplicate usernames and emails", async () => {
     const app = createTestApp();
-    await post(app, "auth/register", { email: "dup@example.com", displayName: "Dup", password: "password123" });
-    const duplicate = await post(app, "auth/register", { email: "dup@example.com", displayName: "Dup", password: "password123" }, 409);
-    expect(duplicate.body).toMatchObject({ error: "Email already in use" });
+    await post(app, "auth/register", { email: "dup@example.com", username: "dup", password: "password123" });
+    const emailDup = await post(app, "auth/register", { email: "dup@example.com", username: "test", password: "password123" }, 409);
+    expect(emailDup.body).toMatchObject({ error: "Email already in use" });
+    const usernameDup = await post(app, "auth/register", { email: "second@example.com", username: "dup", password: "password123" }, 409);
+    expect(usernameDup.body).toMatchObject({ error: "Username already in use" });
+  });
+
+  it("rejects invalid emails, usernames, and passwords", async () => {
+    const app = createTestApp();
+    const badEmails = ["no-at", "bad@", "@bad.com", "bad@com", "bad@.com"];
+    const badUsernames = ["-bad", "bad-", "bad--name", "bad name", "bad_name"];
+    const badPasswords = ["short", "allletters", "12345678"];
+
+    for (const email of badEmails) {
+      const badEmail = await post(app, "auth/register", { email, username: "valid-user", password: "password123" }, 400);
+      expect(badEmail.body).toMatchObject({ error: "Email must be valid" });
+    }
+    for (const username of badUsernames) {
+      const badUsername = await post(app, "auth/register", { email: "bad@example.com", username, password: "password123" }, 400);
+      expect(badUsername.body).toMatchObject({ error: USERNAME_HINT });
+    }
+    for (const password of badPasswords) {
+      const badPassword = await post(app, "auth/register", { email: "pw@example.com", username: "valid-user", password }, 400);
+      expect(badPassword.body).toMatchObject({ error: PASSWORD_HINT });
+    }
   });
 
   it("rejects expired sessions and clears them", async () => {
     const app = createTestApp();
-    const register = await post(app, "auth/register", { email: "expired@example.com", displayName: "Expired", password: "password123" });
-    const registerBody = register.body as { session: { token: string } };
-    const token = registerBody.session.token;
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));
+      const register = await post(app, "auth/register", { email: "expired@example.com", username: "expired", password: "password123" });
+      const registerBody = register.body as { session: { token: string } };
+      const token = registerBody.session.token;
 
-    const storage = (app as unknown as { locals: { storage: Storage } }).locals.storage;
-    const session = storage.sessions.get(token);
-    if (!session) { throw new Error("Missing session for test"); }
-    storage.sessions.upsert({ ...session, expiresAt: "2000-01-01T00:00:00.000Z" });
-
-    const current = await getWithToken(app, `${apiBase}/auth/me`, token, 401);
-    expect(current.body).toMatchObject({ error: "Session is invalid or expired" });
-    expect(storage.sessions.get(token)).toBeUndefined();
+      vi.advanceTimersByTime(1000 * 60 * 60 * 24 * 31);
+      const current = await getWithToken(app, `${apiBase}/auth/me`, token, 401);
+      expect(current.body).toMatchObject({ error: "Session is invalid or expired" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

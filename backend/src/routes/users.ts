@@ -44,8 +44,8 @@ export function registerUserRoutes(
     const existing = users.get(id);
 
     const email = payload.email ?? existing?.email;
-    const displayName = payload.displayName ?? existing?.displayName;
-    const missingFields = Object.entries({ email, displayName }).filter(([, value]) => !value).map(([label]) => label);
+    const username = payload.username ?? existing?.username;
+    const missingFields = Object.entries({ email, username }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
       res.status(400).json({ error: `User fields are required: ${missingFields.join(", ")}` });
@@ -53,7 +53,7 @@ export function registerUserRoutes(
       const user: User = {
         id,
         email,
-        displayName,
+        username,
         createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };

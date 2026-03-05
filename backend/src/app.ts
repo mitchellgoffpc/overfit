@@ -21,7 +21,6 @@ export function createApp(config: AppConfig): Express {
 
   const apiBase = `/api/${API_VERSION}`;
   const storage = createStorage(config.storage);
-  app.locals.storage = storage;
 
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ status: "ok", version: API_VERSION });

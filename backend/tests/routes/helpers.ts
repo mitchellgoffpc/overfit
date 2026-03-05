@@ -18,25 +18,14 @@ export async function get(app: RouteApp, resource: string, id: string, status = 
     .expect(status);
 }
 
-export async function put(
-  app: RouteApp,
-  resource: string,
-  id: string,
-  payload: Record<string, unknown>,
-  status = 200
-): Promise<Response> {
+export async function put(app: RouteApp, resource: string, id: string, payload: Record<string, unknown>, status = 200): Promise<Response> {
   return request(app)
     .put(`${apiBase}/${resource}/${id}`)
     .send(payload)
     .expect(status);
 }
 
-export async function post(
-  app: RouteApp,
-  path: string,
-  payload: Record<string, unknown>,
-  status = 200
-): Promise<Response> {
+export async function post(app: RouteApp, path: string, payload: Record<string, unknown>, status = 200): Promise<Response> {
   return request(app)
     .post(`${apiBase}/${path}`)
     .send(payload)
@@ -53,23 +42,4 @@ export async function assertRejectCases(app: RouteApp, resource: string, cases: 
 export async function assertNotFound(app: RouteApp, resource: string, id: string, error: string): Promise<void> {
   const response = await get(app, resource, id, 404);
   expect(response.body).toMatchObject({ error });
-}
-
-export async function seedProject(app: RouteApp, id = "project-1", name = "Overfit"): Promise<void> {
-  await put(app, "projects", id, { name });
-}
-
-export async function seedRun(
-  app: RouteApp,
-  { runId = "run-1", projectId = "project-1", name = "Run 1", status = "running" } = {}
-): Promise<void> {
-  await put(app, "runs", runId, { projectId, name, status });
-}
-
-export async function seedProjectAndRun(
-  app: RouteApp,
-  { projectId = "project-1", projectName = "Overfit", runId = "run-1", runName = "Run 1", status = "running" } = {}
-): Promise<void> {
-  await seedProject(app, projectId, projectName);
-  await seedRun(app, { runId, projectId, name: runName, status });
 }

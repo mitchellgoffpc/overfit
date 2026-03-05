@@ -62,7 +62,7 @@ export const schema: SchemaDef = {
     columns: {
       id: { kind: "string", primaryKey: true },
       email: { kind: "string" },
-      displayName: { kind: "string" },
+      username: { kind: "string" },
       createdAt: { kind: "string" },
       updatedAt: { kind: "string" }
     }
