@@ -6,7 +6,7 @@ import {
   USERNAME_IN_USE_ERROR,
   testEmail,
   testPassword,
-  testUsername
+  testHandle
 } from "@overfit/types";
 import type { FormEvent, ReactElement } from "react";
 import { useState } from "react";
@@ -73,7 +73,7 @@ export default function SignupRoute(): ReactElement {
       const response = await fetch(`${apiBase}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, password })
+        body: JSON.stringify({ email, handle: username, password })
       });
 
       if (!response.ok) {
@@ -188,7 +188,7 @@ export default function SignupRoute(): ReactElement {
                 if (!trimmed) {
                   setUsernameHintError(null);
                 } else {
-                  const validationError = testUsername(trimmed);
+                  const validationError = testHandle(trimmed);
                   setUsernameHintError(validationError);
                   if (!validationError) {
                     void checkAvailability("username-exists", "username", username, setUsernameHintError, USERNAME_IN_USE_ERROR);

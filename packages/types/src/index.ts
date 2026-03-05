@@ -5,10 +5,17 @@ export type Timestamp = string;
 export type RunStatus = "queued" | "running" | "finished" | "failed" | "canceled";
 export type OrganizationRole = (typeof organizationRoles)[number];
 
+export interface Account {
+  id: ID;
+  handle: string;
+  displayName: string;
+}
+
 export interface User {
   id: ID;
   email: string;
-  username: string;
+  handle: string;
+  displayName: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -32,8 +39,8 @@ export interface Session {
 
 export interface Organization {
   id: ID;
-  name: string;
-  slug: string;
+  handle: string;
+  displayName: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -91,7 +98,7 @@ export interface Metric {
 export const API_VERSION = "v1";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const USERNAME_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
+const HANDLE_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
 
 export const USERNAME_HINT = "Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.";
 export const PASSWORD_HINT = "Password should be at least 8 characters and include a number and a letter.";
@@ -107,8 +114,8 @@ export const testEmail = (value: string): string | null => (
   EMAIL_PATTERN.test(value) ? null : EMAIL_INVALID_ERROR
 );
 
-export const testUsername = (value: string): string | null => (
-  USERNAME_PATTERN.test(value) ? null : USERNAME_HINT
+export const testHandle = (value: string): string | null => (
+  HANDLE_PATTERN.test(value) ? null : USERNAME_HINT
 );
 
 export const testPassword = (value: string): string | null => {
