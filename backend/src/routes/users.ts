@@ -1,9 +1,12 @@
-import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
+import type { Organization, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { Database } from "db/database";
+import { listOrganizationMembersByUserId } from "db/repositories/organization-members";
+import { getOrganization } from "db/repositories/organizations";
+import { getUser, upsertUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
-import type { EntityStore } from "storage/types";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 interface UserDetail extends User {
   organizations: (Organization & { role: OrganizationRole })[];
@@ -11,40 +14,29 @@ interface UserDetail extends User {
 
 type UpsertUserPayload = Partial<Omit<User, "id" | "updatedAt">>;
 
-export function registerUserRoutes(
-  app: RouteApp,
-  apiBase: string,
-  users: EntityStore<User>,
-  organizations: EntityStore<Organization>,
-  organizationMembers: EntityStore<OrganizationMember>
-): void {
-  const listUsers: RequestHandler<Record<string, string>, User[]> = (_req, res) => {
-    res.json(users.list());
-  };
-
-  const getUser: RequestHandler<RouteParams, UserDetail | ErrorResponse> = (req, res) => {
-    const user = users.get(req.params.id);
+export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database): void {
+  const getUserHandler: RequestHandler<RouteParams, UserDetail | ErrorResponse> = async (req, res) => {
+    const user = await getUser(db, req.params.id);
 
     if (!user) {
       res.status(404).json({ error: "User not found" });
     } else {
-      const memberships = organizationMembers.list().filter((member) => member.userId === user.id);
-      const userOrganizations = memberships.flatMap((member) => {
-        const organization = organizations.get(member.organizationId);
-        return organization ? [{ ...organization, role: member.role }] : [];
-      });
+      const memberships = await listOrganizationMembersByUserId(db, user.id);
+      const organizations = await Promise.all(memberships.map(async (member) => getOrganization(db, member.organizationId)));
+      const userOrganizations = organizations.flatMap((organization, index) => (
+        organization ? [{ ...organization, role: memberships[index].role }] : []
+      ));
 
       res.json({ ...user, organizations: userOrganizations });
     }
   };
 
-  const upsertUser: RequestHandler<RouteParams, User | ErrorResponse, UpsertUserPayload> = (req, res) => {
+  const upsertUserHandler: RequestHandler<RouteParams, User | ErrorResponse, UpsertUserPayload | undefined> = async (req, res) => {
     const id = req.params.id;
-    const payload = req.body;
-    const existing = users.get(id);
+    const existing = await getUser(db, id);
 
-    const email = payload.email ?? existing?.email;
-    const username = payload.username ?? existing?.username;
+    const email = req.body?.email ?? existing?.email;
+    const username = req.body?.username ?? existing?.username;
     const missingFields = Object.entries({ email, username }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
@@ -54,16 +46,15 @@ export function registerUserRoutes(
         id,
         email,
         username,
-        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };
 
-      users.upsert(user);
+      await upsertUser(db, user);
       res.json(user);
     }
   };
 
-  app.get(`${apiBase}/users`, listUsers);
-  app.get(`${apiBase}/users/:id`, getUser);
-  app.put(`${apiBase}/users/:id`, upsertUser);
+  app.get(`${apiBase}/users/:id`, getUserHandler);
+  app.put(`${apiBase}/users/:id`, upsertUserHandler);
 }

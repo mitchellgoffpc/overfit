@@ -5,7 +5,7 @@ import { apiBase, assertNotFound, assertRejectCases, createTestApp, get, put } f
 
 describe("users routes", () => {
   it("upserts and fetches a user", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const userPayload = { email: "ada@example.com", username: "Ada Lovelace" };
     const upsertResponse = await put(app, "users", "user-1", userPayload);
     expect(upsertResponse.body).toMatchObject({ id: "user-1", ...userPayload });
@@ -14,12 +14,12 @@ describe("users routes", () => {
   });
 
   it("rejects unknown users", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await assertNotFound(app, "users", "missing", "User not found");
   });
 
   it("rejects missing required fields", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const cases = [
       { payload: {}, error: "User fields are required: email, username" },
       { payload: { username: "Ada Lovelace" }, error: "User fields are required: email" },
@@ -29,7 +29,7 @@ describe("users routes", () => {
   });
 
   it("lists user organizations", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
     await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);

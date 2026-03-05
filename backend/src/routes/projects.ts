@@ -1,19 +1,20 @@
 import type { Project } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { Database } from "db/database";
+import { getProject, listProjects, upsertProject } from "db/repositories/projects";
 import { nowIso } from "routes/helpers";
-import type { EntityStore } from "storage/types";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertProjectPayload = Partial<Omit<Project, "id" | "updatedAt">>;
 
-export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: EntityStore<Project>): void {
-  const listProjects: RequestHandler<Record<string, string>, Project[]> = (_req, res) => {
-    res.json(projects.list());
+export function registerProjectRoutes(app: RouteApp, apiBase: string, db: Database): void {
+  const listProjectsHandler: RequestHandler<Record<string, string>, Project[]> = async (_req, res) => {
+    res.json(await listProjects(db));
   };
 
-  const getProject: RequestHandler<RouteParams, Project | ErrorResponse> = (req, res) => {
-    const project = projects.get(req.params.id);
+  const getProjectHandler: RequestHandler<RouteParams, Project | ErrorResponse> = async (req, res) => {
+    const project = await getProject(db, req.params.id);
 
     if (!project) {
       res.status(404).json({ error: "Project not found" });
@@ -22,12 +23,11 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
     }
   };
 
-  const upsertProject: RequestHandler<RouteParams, Project | ErrorResponse, UpsertProjectPayload> = (req, res) => {
+  const upsertProjectHandler: RequestHandler<RouteParams, Project | ErrorResponse, UpsertProjectPayload | undefined> = async (req, res) => {
     const id = req.params.id;
-    const payload = req.body;
-    const existing = projects.get(id);
+    const existing = await getProject(db, id);
 
-    const name = payload.name ?? existing?.name;
+    const name = req.body?.name ?? existing?.name;
     const missingFields = Object.entries({ name }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
@@ -36,17 +36,17 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, projects: 
       const project: Project = {
         id,
         name,
-        description: payload.description ?? existing?.description,
-        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        description: req.body?.description ?? existing?.description ?? null,
+        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };
 
-      projects.upsert(project);
+      await upsertProject(db, project);
       res.json(project);
     }
   };
 
-  app.get(`${apiBase}/projects`, listProjects);
-  app.get(`${apiBase}/projects/:id`, getProject);
-  app.put(`${apiBase}/projects/:id`, upsertProject);
+  app.get(`${apiBase}/projects`, listProjectsHandler);
+  app.get(`${apiBase}/projects/:id`, getProjectHandler);
+  app.put(`${apiBase}/projects/:id`, upsertProjectHandler);
 }

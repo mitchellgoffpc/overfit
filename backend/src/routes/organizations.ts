@@ -2,9 +2,18 @@ import { organizationRoles } from "@overfit/types";
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { Database } from "db/database";
+import {
+  deleteOrganizationMember,
+  getOrganizationMember,
+  hasOrganizationMember,
+  listOrganizationMembersByOrganizationId,
+  upsertOrganizationMember
+} from "db/repositories/organization-members";
+import { getOrganization, listOrganizations, upsertOrganization } from "db/repositories/organizations";
+import { getUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
-import type { EntityStore } from "storage/types";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 interface MemberRouteParams {
   id: string;
@@ -21,40 +30,31 @@ interface OrganizationMemberPayload {
 
 type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "updatedAt">>;
 
-export function registerOrganizationRoutes(
-  app: RouteApp,
-  apiBase: string,
-  organizations: EntityStore<Organization>,
-  users: EntityStore<User>,
-  organizationMembers: EntityStore<OrganizationMember>
-): void {
-  const listOrganizations: RequestHandler<Record<string, string>, Organization[]> = (_req, res) => {
-    res.json(organizations.list());
+export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: Database): void {
+  const listOrganizationsHandler: RequestHandler<Record<string, string>, Organization[]> = async (_req, res) => {
+    res.json(await listOrganizations(db));
   };
 
-  const getOrganization: RequestHandler<RouteParams, OrganizationDetail | ErrorResponse> = (req, res) => {
-    const organization = organizations.get(req.params.id);
+  const getOrganizationHandler: RequestHandler<RouteParams, OrganizationDetail | ErrorResponse> = async (req, res) => {
+    const organization = await getOrganization(db, req.params.id);
 
     if (!organization) {
       res.status(404).json({ error: "Organization not found" });
     } else {
-      const members = organizationMembers.list().filter((member) => member.organizationId === organization.id);
-      const organizationUsers = members.flatMap((member) => {
-        const user = users.get(member.userId);
-        return user ? [{ ...user, role: member.role }] : [];
-      });
+      const members = await listOrganizationMembersByOrganizationId(db, organization.id);
+      const users = await Promise.all(members.map(async (member) => getUser(db, member.userId)));
+      const organizationUsers = users.flatMap((user, index) => user ? [{ ...user, role: members[index].role }] : []);
 
       res.json({ ...organization, users: organizationUsers });
     }
   };
 
-  const upsertOrganization: RequestHandler<RouteParams, Organization | ErrorResponse, UpsertOrganizationPayload> = (req, res) => {
+  const upsertOrganizationHandler: RequestHandler<RouteParams, Organization | ErrorResponse, UpsertOrganizationPayload | undefined> = async (req, res) => {
     const id = req.params.id;
-    const payload = req.body;
-    const existing = organizations.get(id);
+    const existing = await getOrganization(db, id);
 
-    const name = payload.name ?? existing?.name;
-    const slug = payload.slug ?? existing?.slug;
+    const name = req.body?.name ?? existing?.name;
+    const slug = req.body?.slug ?? existing?.slug;
     const missingFields = Object.entries({ name, slug }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
@@ -64,29 +64,29 @@ export function registerOrganizationRoutes(
         id,
         name,
         slug,
-        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };
 
-      organizations.upsert(organization);
+      await upsertOrganization(db, organization);
       res.json(organization);
     }
   };
 
-  const upsertOrganizationMember: RequestHandler<MemberRouteParams, OrganizationMember | ErrorResponse, OrganizationMemberPayload> = (req, res) => {
+  const upsertOrganizationMemberHandler: RequestHandler<MemberRouteParams, OrganizationMember | ErrorResponse, OrganizationMemberPayload | undefined> = async (req, res) => {
     const organizationId = req.params.id;
     const userId = req.params.userId;
     const membershipId = `${organizationId}:${userId}`;
-    const organization = organizations.get(organizationId);
-    const user = users.get(userId);
-    const existing = organizationMembers.get(membershipId);
-    const role = req.body.role ?? existing?.role ?? "MEMBER";
+    const organization = await getOrganization(db, organizationId);
+    const user = await getUser(db, userId);
+    const existing = await getOrganizationMember(db, membershipId);
+    const role = req.body?.role ?? existing?.role ?? "MEMBER";
 
     if (!organization) {
       res.status(404).json({ error: "Organization not found" });
     } else if (!user) {
       res.status(404).json({ error: "User not found" });
-    } else if (!organizationRoles.has(role)) {
+    } else if (!organizationRoles.includes(role)) {
       res.status(400).json({ error: "Organization role is invalid" });
     } else {
       const member: OrganizationMember = {
@@ -98,33 +98,33 @@ export function registerOrganizationRoutes(
         updatedAt: nowIso()
       };
 
-      organizationMembers.upsert(member);
+      await upsertOrganizationMember(db, member);
       res.json(member);
     }
   };
 
-  const deleteOrganizationMember: RequestHandler<MemberRouteParams, { ok: true } | ErrorResponse> = (req, res) => {
+  const deleteOrganizationMemberHandler: RequestHandler<MemberRouteParams, { ok: true } | ErrorResponse> = async (req, res) => {
     const organizationId = req.params.id;
     const userId = req.params.userId;
     const membershipId = `${organizationId}:${userId}`;
-    const organization = organizations.get(organizationId);
-    const user = users.get(userId);
+    const organization = await getOrganization(db, organizationId);
+    const user = await getUser(db, userId);
 
     if (!organization) {
       res.status(404).json({ error: "Organization not found" });
     } else if (!user) {
       res.status(404).json({ error: "User not found" });
-    } else if (!organizationMembers.has(membershipId)) {
+    } else if (!await hasOrganizationMember(db, membershipId)) {
       res.status(404).json({ error: "Membership not found" });
     } else {
-      organizationMembers.delete(membershipId);
+      await deleteOrganizationMember(db, membershipId);
       res.json({ ok: true });
     }
   };
 
-  app.get(`${apiBase}/organizations`, listOrganizations);
-  app.get(`${apiBase}/organizations/:id`, getOrganization);
-  app.put(`${apiBase}/organizations/:id`, upsertOrganization);
-  app.put(`${apiBase}/organizations/:id/members/:userId`, upsertOrganizationMember);
-  app.delete(`${apiBase}/organizations/:id/members/:userId`, deleteOrganizationMember);
+  app.get(`${apiBase}/organizations`, listOrganizationsHandler);
+  app.get(`${apiBase}/organizations/:id`, getOrganizationHandler);
+  app.put(`${apiBase}/organizations/:id`, upsertOrganizationHandler);
+  app.put(`${apiBase}/organizations/:id/members/:userId`, upsertOrganizationMemberHandler);
+  app.delete(`${apiBase}/organizations/:id/members/:userId`, deleteOrganizationMemberHandler);
 }

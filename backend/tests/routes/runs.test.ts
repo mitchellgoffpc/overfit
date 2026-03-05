@@ -4,7 +4,7 @@ import { assertNotFound, assertRejectCases, createTestApp, get, put } from "@ove
 
 describe("runs routes", () => {
   it("upserts and fetches a run", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "projects", "project-1", { name: "Overfit" });
     const runPayload = {
       projectId: "project-1",
@@ -18,12 +18,12 @@ describe("runs routes", () => {
   });
 
   it("rejects unknown runs", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await assertNotFound(app, "runs", "missing", "Run not found");
   });
 
   it("rejects missing required fields", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const cases = [
       { payload: { status: "running" }, error: "Run fields are required: projectId, name" },
       { payload: { projectId: "project-1" }, error: "Run fields are required: name, status" },

@@ -5,7 +5,7 @@ import { apiBase, assertNotFound, assertRejectCases, createTestApp, get, put } f
 
 describe("organizations routes", () => {
   it("upserts and fetches an organization", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const organizationPayload = { name: "Core", slug: "core" };
     await put(app, "organizations", "org-1", organizationPayload);
     const response = await get(app, "organizations", "org-1");
@@ -13,12 +13,12 @@ describe("organizations routes", () => {
   });
 
   it("rejects unknown organizations", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await assertNotFound(app, "organizations", "missing", "Organization not found");
   });
 
   it("rejects missing required fields", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const cases = [
       { payload: {}, error: "Organization fields are required: name, slug" },
       { payload: { name: "Core" }, error: "Organization fields are required: slug" },
@@ -28,7 +28,7 @@ describe("organizations routes", () => {
   });
 
   it("lists organization members", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
     await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).expect(200);
@@ -42,7 +42,7 @@ describe("organizations routes", () => {
   });
 
   it("creates and deletes memberships", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
     await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);
@@ -53,7 +53,7 @@ describe("organizations routes", () => {
   });
 
   it("rejects invalid membership roles", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
     await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
     const response = await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).send({ role: "OWNER" }).expect(400);
@@ -61,7 +61,7 @@ describe("organizations routes", () => {
   });
 
   it("rejects unknown orgs and users when creating memberships", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
     await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
 
@@ -73,7 +73,7 @@ describe("organizations routes", () => {
   });
 
   it("rejects unknown orgs, users, and memberships when deleting memberships", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
     await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
 

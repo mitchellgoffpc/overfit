@@ -10,7 +10,9 @@ interface RejectCase { payload: Record<string, unknown>; error: string }
 
 export const apiBase = `/api/${API_VERSION}`;
 export const testTimestamp = "2025-01-01T00:00:00.000Z";
-export const createTestApp = (): RouteApp => createApp({ server: { port: 4000 }, storage: { type: "sqlite", sqlite: { path: ":memory:" } } });
+export const createTestApp = async (): Promise<RouteApp> => (
+  createApp({ server: { port: 4000 }, db: { type: "sqlite", sqlite: { path: ":memory:" } } })
+);
 
 export async function get(app: RouteApp, resource: string, id: string, status = 200): Promise<Response> {
   return request(app)

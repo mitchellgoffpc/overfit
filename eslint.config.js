@@ -20,7 +20,7 @@ const baseRules = {
   ...reactHooksPlugin.configs["recommended"].rules,
 };
 
-const manualRules = {
+const additionalRules = {
   "@typescript-eslint/consistent-type-exports": ["error", { "fixMixedExportsWithInlineTypeSpecifier": true }],
   "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
   "@typescript-eslint/no-shadow": "error",
@@ -78,7 +78,18 @@ const manualRules = {
   "jsx-a11y/anchor-is-valid": "error",
 };
 
-const duplicateRules = Object.keys(manualRules).filter((rule) => Object.prototype.hasOwnProperty.call(baseRules, rule));
+const overrideRules = {
+  "@typescript-eslint/no-unused-vars": [
+    "error",
+    {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "destructuredArrayIgnorePattern": "^_"
+    }
+  ],
+}
+
+const duplicateRules = Object.keys(additionalRules).filter((rule) => Object.prototype.hasOwnProperty.call(baseRules, rule));
 
 if (duplicateRules.length > 0) {
   throw new Error(`Manual ESLint rules duplicate base configs: ${duplicateRules.join(", ")}`);
@@ -117,7 +128,8 @@ export default [
     },
     rules: {
       ...baseRules,
-      ...manualRules
+      ...additionalRules,
+      ...overrideRules,
     }
   },
   {

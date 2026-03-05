@@ -3,20 +3,20 @@ import path from "node:path";
 
 import * as toml from "@iarna/toml";
 
-import type { StorageConfig } from "storage/types";
+import type { DatabaseConfig } from "db/types";
 
 export interface AppConfig {
   server: {
     port: number;
   };
-  storage: StorageConfig;
+  db: DatabaseConfig;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
   server: {
     port: 4000
   },
-  storage: {
+  db: {
     type: "sqlite",
     sqlite: {
       path: ":memory:"
@@ -34,8 +34,8 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
   }
 
   const serverConfig = isRecord(parsed.server) ? parsed.server : {};
-  const storageConfig = isRecord(parsed.storage) ? parsed.storage : {};
-  const sqliteConfig = isRecord(storageConfig.sqlite) ? storageConfig.sqlite : {};
+  const dbConfig = isRecord(parsed.db) ? parsed.db : {};
+  const sqliteConfig = isRecord(dbConfig.sqlite) ? dbConfig.sqlite : {};
 
   const portValue = serverConfig.port ?? DEFAULT_CONFIG.server.port;
 
@@ -49,32 +49,32 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
     throw new Error(`Invalid server.port value: ${String(portValue)}`);
   }
 
-  const typeValue = storageConfig.type ?? DEFAULT_CONFIG.storage.type;
+  const typeValue = dbConfig.type ?? DEFAULT_CONFIG.db.type;
 
   if (typeof typeValue !== "string") {
-    throw new Error(`Invalid storage.type type: ${typeof typeValue}`);
+    throw new Error(`Invalid db.type type: ${typeof typeValue}`);
   }
 
   if (typeValue !== "sqlite" && typeValue !== "postgresql") {
-    throw new Error(`Unsupported storage type: ${typeValue}`);
+    throw new Error(`Unsupported db type: ${typeValue}`);
   }
-  const storage: AppConfig["storage"] = { type: typeValue };
+  const db: AppConfig["db"] = { type: typeValue };
 
   if (typeValue === "sqlite") {
-    const sqlitePathValue = sqliteConfig.path ?? DEFAULT_CONFIG.storage.sqlite.path;
+    const sqlitePathValue = sqliteConfig.path ?? DEFAULT_CONFIG.db.sqlite.path;
 
     if (typeof sqlitePathValue !== "string" || sqlitePathValue.trim() === "") {
-      throw new Error("storage.sqlite.path must be a non-empty string");
+      throw new Error("db.sqlite.path must be a non-empty string");
     }
 
-    storage.sqlite = { path: sqlitePathValue };
+    db.sqlite = { path: sqlitePathValue };
   }
 
   return {
     server: {
       port
     },
-    storage
+    db
   };
 };
 

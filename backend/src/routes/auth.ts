@@ -4,9 +4,12 @@ import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testUsername } f
 import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp } from "routes/helpers";
+import type { Database } from "db/database";
+import { getSession, upsertSession, deleteSession } from "db/repositories/sessions";
+import { getUserAuth, upsertUserAuth } from "db/repositories/user-auth";
+import { findUserByEmail, findUserByUsername, getUser, upsertUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
-import type { EntityStore } from "storage/types";
+import type { ErrorResponse, RouteApp } from "routes/helpers";
 
 const PASSWORD_ITERATIONS = 310000;
 const PASSWORD_DIGEST = "sha256";
@@ -58,12 +61,13 @@ const resolveSessionToken = (value?: string) => {
 
 const getSessionToken = (headers: Record<string, string | string[] | undefined>) => {
   const headerValue = Array.isArray(headers.authorization) ? headers.authorization[0] : headers.authorization;
-  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"]);
+  const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
+  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader);
   return raw?.trim();
 };
 
-export function registerAuthRoutes(app: RouteApp, apiBase: string, users: EntityStore<User>, userAuth: EntityStore<UserAuth>, sessions: EntityStore<Session>): void {
-  const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload> = (req, res) => {
+export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database): void {
+  const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload> = async (req, res) => {
     const email = req.body.email ? normalizeEmail(req.body.email) : "";
     const username = req.body.username?.trim() ?? "";
     const password = req.body.password ?? "";
@@ -77,9 +81,9 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, users: Entity
       res.status(400).json({ error: USERNAME_HINT });
     } else if (!testPassword(password)) {
       res.status(400).json({ error: PASSWORD_HINT });
-    } else if (users.list().find((user) => user.username.toLowerCase() === username.toLowerCase())) {
+    } else if (await findUserByUsername(db, username)) {
       res.status(409).json({ error: "Username already in use" });
-    } else if (users.list().find((user) => user.email.toLowerCase() === email)) {
+    } else if (await findUserByEmail(db, email)) {
       res.status(409).json({ error: "Email already in use" });
     } else {
       const timestamp = nowIso();
@@ -108,15 +112,15 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, users: Entity
       const token = randomBytes(SESSION_BYTES).toString("base64url");
       const session: Session = { id: token, userId: user.id, createdAt, expiresAt };
 
-      users.upsert(user);
-      userAuth.upsert(auth);
-      sessions.upsert(session);
+      await upsertUser(db, user);
+      await upsertUserAuth(db, auth);
+      await upsertSession(db, session);
 
       res.json({ user, session: { token, createdAt, expiresAt } });
     }
   };
 
-  const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload> = (req, res) => {
+  const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload> = async (req, res) => {
     const email = req.body.email ? normalizeEmail(req.body.email) : "";
     const password = req.body.password ?? "";
 
@@ -125,13 +129,13 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, users: Entity
       return;
     }
 
-    const user = users.list().find((candidate) => candidate.email.toLowerCase() === email);
+    const user = await findUserByEmail(db, email);
     if (!user) {
       res.status(401).json({ error: "Invalid credentials" });
       return;
     }
 
-    const auth = userAuth.get(user.id);
+    const auth = await getUserAuth(db, user.id);
     if (!auth || !verifyPassword(password, auth)) {
       res.status(401).json({ error: "Invalid credentials" });
       return;
@@ -142,38 +146,38 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, users: Entity
     const token = randomBytes(SESSION_BYTES).toString("base64url");
     const session: Session = { id: token, userId: user.id, createdAt, expiresAt };
 
-    sessions.upsert(session);
+    await upsertSession(db, session);
     res.json({ user, session: { token, createdAt, expiresAt } });
   };
 
-  const logout: RequestHandler<Record<string, string>, { status: "ok" } | ErrorResponse> = (req, res) => {
+  const logout: RequestHandler<Record<string, string>, { status: "ok" } | ErrorResponse> = async (req, res) => {
     const token = getSessionToken(req.headers);
     if (!token) {
       res.status(401).json({ error: "Session token is required" });
       return;
     }
-    const session = sessions.get(token);
+    const session = await getSession(db, token);
     if (!session) {
       res.status(401).json({ error: "Session is invalid or expired" });
       return;
     }
-    sessions.delete(token);
+    await deleteSession(db, token);
     res.json({ status: "ok" });
   };
 
-  const me: RequestHandler<Record<string, string>, User | ErrorResponse> = (req, res) => {
+  const me: RequestHandler<Record<string, string>, User | ErrorResponse> = async (req, res) => {
     const token = getSessionToken(req.headers);
     if (!token) {
       res.status(401).json({ error: "Session token is required" });
       return;
     }
-    const session = sessions.get(token);
+    const session = await getSession(db, token);
     if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
-      if (session) { sessions.delete(token); }
+      if (session) { await deleteSession(db, token); }
       res.status(401).json({ error: "Session is invalid or expired" });
       return;
     }
-    const user = users.get(session.userId);
+    const user = await getUser(db, session.userId);
     if (!user) {
       res.status(401).json({ error: "Session is invalid" });
       return;

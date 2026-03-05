@@ -3,15 +3,16 @@ import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
 
 import { apiBase, createTestApp, post } from "@overfit/backend/tests/routes/helpers";
+import type { RouteApp } from "routes/helpers";
 
-async function getWithToken(app: ReturnType<typeof createTestApp>, path: string, token: string, status = 200) {
+async function getWithToken(app: RouteApp, path: string, token: string, status = 200) {
   return request(app)
     .get(path)
     .set("Authorization", `Bearer ${token}`)
     .expect(status);
 }
 
-async function postWithToken(app: ReturnType<typeof createTestApp>, path: string, token: string, status = 200) {
+async function postWithToken(app: RouteApp, path: string, token: string, status = 200) {
   return request(app)
     .post(path)
     .set("Authorization", `Bearer ${token}`)
@@ -20,7 +21,7 @@ async function postWithToken(app: ReturnType<typeof createTestApp>, path: string
 
 describe("auth routes", () => {
   it("registers, logs in, and returns current user", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const register = await post(app, "auth/register", { email: "sam@example.com", username: "sam", password: "password123" });
     const registerBody = register.body as { user: { id: string; email: string; username: string }; session: { token: string } };
     expect(registerBody.user).toMatchObject({ email: "sam@example.com", username: "sam" });
@@ -36,7 +37,7 @@ describe("auth routes", () => {
   });
 
   it("rejects invalid credentials and expires sessions on logout", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await post(app, "auth/register", { email: "jules@example.com", username: "jules", password: "password123" });
 
     const badLogin = await post(app, "auth/login", { email: "jules@example.com", password: "bad" }, 401);
@@ -55,7 +56,7 @@ describe("auth routes", () => {
   });
 
   it("rejects duplicate usernames and emails", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     await post(app, "auth/register", { email: "dup@example.com", username: "dup", password: "password123" });
     const emailDup = await post(app, "auth/register", { email: "dup@example.com", username: "test", password: "password123" }, 409);
     expect(emailDup.body).toMatchObject({ error: "Email already in use" });
@@ -64,7 +65,7 @@ describe("auth routes", () => {
   });
 
   it("rejects invalid emails, usernames, and passwords", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     const badEmails = ["no-at", "bad@", "@bad.com", "bad@com", "bad@.com"];
     const badUsernames = ["-bad", "bad-", "bad--name", "bad name", "bad_name"];
     const badPasswords = ["short", "allletters", "12345678"];
@@ -84,7 +85,7 @@ describe("auth routes", () => {
   });
 
   it("rejects expired sessions and clears them", async () => {
-    const app = createTestApp();
+    const app = await createTestApp();
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));

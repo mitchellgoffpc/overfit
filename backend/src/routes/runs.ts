@@ -1,19 +1,20 @@
 import type { Run } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { Database } from "db/database";
+import { getRun, listRuns, upsertRun } from "db/repositories/runs";
 import { nowIso } from "routes/helpers";
-import type { EntityStore } from "storage/types";
+import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertRunPayload = Partial<Omit<Run, "id" | "updatedAt">>;
 
-export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntityStore<Run>): void {
-  const listRuns: RequestHandler<Record<string, string>, Run[]> = (_req, res) => {
-    res.json(runs.list());
+export function registerRunRoutes(app: RouteApp, apiBase: string, db: Database): void {
+  const listRunsHandler: RequestHandler<Record<string, string>, Run[]> = async (_req, res) => {
+    res.json(await listRuns(db));
   };
 
-  const getRun: RequestHandler<RouteParams, Run | ErrorResponse> = (req, res) => {
-    const run = runs.get(req.params.id);
+  const getRunHandler: RequestHandler<RouteParams, Run | ErrorResponse> = async (req, res) => {
+    const run = await getRun(db, req.params.id);
 
     if (!run) {
       res.status(404).json({ error: "Run not found" });
@@ -22,14 +23,13 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntitySt
     }
   };
 
-  const upsertRun: RequestHandler<RouteParams, Run | ErrorResponse, UpsertRunPayload> = (req, res) => {
+  const upsertRunHandler: RequestHandler<RouteParams, Run | ErrorResponse, UpsertRunPayload | undefined> = async (req, res) => {
     const id = req.params.id;
-    const payload = req.body;
-    const existing = runs.get(id);
+    const existing = await getRun(db, id);
 
-    const projectId = payload.projectId ?? existing?.projectId;
-    const name = payload.name ?? existing?.name;
-    const status = payload.status ?? existing?.status;
+    const projectId = req.body?.projectId ?? existing?.projectId;
+    const name = req.body?.name ?? existing?.name;
+    const status = req.body?.status ?? existing?.status;
     const missingFields = Object.entries({ projectId, name, status }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
@@ -40,19 +40,19 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, runs: EntitySt
         projectId,
         name,
         status,
-        createdAt: existing?.createdAt ?? payload.createdAt ?? nowIso(),
+        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso(),
-        startedAt: payload.startedAt ?? existing?.startedAt,
-        finishedAt: payload.finishedAt ?? existing?.finishedAt,
-        metadata: payload.metadata ?? existing?.metadata
+        startedAt: req.body?.startedAt ?? existing?.startedAt ?? null,
+        finishedAt: req.body?.finishedAt ?? existing?.finishedAt ?? null,
+        metadata: req.body?.metadata ?? existing?.metadata ?? null
       };
 
-      runs.upsert(run);
+      await upsertRun(db, run);
       res.json(run);
     }
   };
 
-  app.get(`${apiBase}/runs`, listRuns);
-  app.get(`${apiBase}/runs/:id`, getRun);
-  app.put(`${apiBase}/runs/:id`, upsertRun);
+  app.get(`${apiBase}/runs`, listRunsHandler);
+  app.get(`${apiBase}/runs/:id`, getRunHandler);
+  app.put(`${apiBase}/runs/:id`, upsertRunHandler);
 }

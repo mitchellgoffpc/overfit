@@ -1,10 +1,9 @@
+export const organizationRoles = ["ADMIN", "MEMBER"] as const;
+
 export type ID = string;
-
 export type Timestamp = string;
-
-export type OrganizationRole = "ADMIN" | "MEMBER";
-
-export const organizationRoles: ReadonlySet<OrganizationRole> = new Set(["ADMIN", "MEMBER"]);
+export type RunStatus = "queued" | "running" | "finished" | "failed" | "canceled";
+export type OrganizationRole = (typeof organizationRoles)[number];
 
 export interface User {
   id: ID;
@@ -51,12 +50,10 @@ export interface OrganizationMember {
 export interface Project {
   id: ID;
   name: string;
-  description?: string;
+  description: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
-
-export type RunStatus = "queued" | "running" | "finished" | "failed" | "canceled";
 
 export interface Run {
   id: ID;
@@ -65,9 +62,9 @@ export interface Run {
   status: RunStatus;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  startedAt?: Timestamp;
-  finishedAt?: Timestamp;
-  metadata?: Record<string, unknown>;
+  startedAt: Timestamp | null;
+  finishedAt: Timestamp | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface Artifact {
@@ -78,8 +75,8 @@ export interface Artifact {
   version: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  uri?: string;
-  metadata?: Record<string, unknown>;
+  uri: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface Metric {
@@ -87,7 +84,7 @@ export interface Metric {
   runId: ID;
   name: string;
   value: number;
-  step?: number;
+  step: number | null;
   timestamp: Timestamp;
 }
 
