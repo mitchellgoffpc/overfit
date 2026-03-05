@@ -53,17 +53,17 @@ export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: D
     const id = req.params.id;
     const existing = await getOrganization(db, id);
 
-    const name = req.body?.name ?? existing?.name;
-    const slug = req.body?.slug ?? existing?.slug;
-    const missingFields = Object.entries({ name, slug }).filter(([, value]) => !value).map(([label]) => label);
+    const handle = req.body?.handle ?? existing?.handle;
+    const displayName = req.body?.displayName ?? existing?.displayName ?? handle;
+    const missingFields = Object.entries({ handle }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Organization fields are required: ${missingFields.join(", ")}` });
     } else {
       const organization: Organization = {
         id,
-        name,
-        slug,
+        handle,
+        displayName,
         createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };

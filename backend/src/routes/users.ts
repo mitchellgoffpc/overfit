@@ -2,9 +2,10 @@ import type { Organization, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db/database";
+import { handleExists } from "db/repositories/accounts";
 import { listOrganizationMembersByUserId } from "db/repositories/organization-members";
 import { getOrganization } from "db/repositories/organizations";
-import { emailExists, getUser, upsertUser, usernameExists } from "db/repositories/users";
+import { emailExists, getUser, upsertUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
@@ -14,11 +15,12 @@ interface UserDetail extends User {
 
 interface UpsertUserPayload {
   email?: string;
-  username?: string;
+  handle?: string;
+  displayName?: string;
   createdAt?: string;
 }
 interface EmailExistsQuery { email?: string }
-interface UsernameExistsQuery { username?: string }
+interface HandleExistsQuery { handle?: string }
 interface ExistsResponse { exists: boolean }
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database): void {
@@ -31,12 +33,12 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
     }
   };
 
-  const usernameExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, UsernameExistsQuery> = async (req, res) => {
-    const username = req.query.username?.trim() ?? "";
-    if (!username) {
-      res.status(400).json({ error: "Username is required" });
+  const handleExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, HandleExistsQuery> = async (req, res) => {
+    const handle = req.query.handle?.trim() ?? "";
+    if (!handle) {
+      res.status(400).json({ error: "Handle is required" });
     } else {
-      res.json({ exists: await usernameExists(db, username) });
+      res.json({ exists: await handleExists(db, handle) });
     }
   };
 
@@ -61,8 +63,9 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
     const existing = await getUser(db, id);
 
     const email = req.body?.email ?? existing?.email;
-    const username = req.body?.username ?? existing?.username;
-    const missingFields = Object.entries({ email, username }).filter(([, value]) => !value).map(([label]) => label);
+    const handle = req.body?.handle ?? existing?.handle;
+    const displayName = req.body?.displayName ?? existing?.displayName ?? handle;
+    const missingFields = Object.entries({ email, handle }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
       res.status(400).json({ error: `User fields are required: ${missingFields.join(", ")}` });
@@ -70,7 +73,8 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
       const user: User = {
         id,
         email,
-        username,
+        handle,
+        displayName,
         createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };
@@ -81,7 +85,7 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
   };
 
   app.get(`${apiBase}/users/email-exists`, emailExistsHandler);
-  app.get(`${apiBase}/users/username-exists`, usernameExistsHandler);
+  app.get(`${apiBase}/users/handle-exists`, handleExistsHandler);
   app.get(`${apiBase}/users/:id`, getUserHandler);
   app.put(`${apiBase}/users/:id`, upsertUserHandler);
 }

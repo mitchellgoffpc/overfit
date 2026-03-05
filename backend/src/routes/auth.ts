@@ -9,15 +9,16 @@ import {
   USERNAME_IN_USE_ERROR,
   testEmail,
   testPassword,
-  testUsername
+  testHandle
 } from "@overfit/types";
 import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db/database";
+import { handleExists } from "db/repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "db/repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "db/repositories/user-auth";
-import { findUserByEmail, findUserByUsername, getUser, upsertUser } from "db/repositories/users";
+import { emailExists, findUserByEmail, getUser, upsertUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp } from "routes/helpers";
 
@@ -41,7 +42,7 @@ interface AuthResponse {
 
 interface RegisterPayload {
   email?: string;
-  username?: string;
+  handle?: string;
   password?: string;
 }
 
@@ -78,37 +79,38 @@ const getSessionToken = (headers: Record<string, string | string[] | undefined>)
 
 export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database): void {
   const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload | undefined> = async (req, res) => {
-    const emailRaw = req.body?.email;
-    const email = emailRaw ? normalizeEmail(emailRaw) : "";
-    const username = req.body?.username?.trim() ?? "";
+    const rawEmail = req.body?.email;
+    const email = rawEmail ? normalizeEmail(rawEmail) : "";
+    const handle = req.body?.handle?.trim() ?? "";
     const password = req.body?.password ?? "";
 
-    const missingFields = Object.entries({ email, username, password }).filter(([, value]) => !value).map(([label]) => label);
+    const missingFields = Object.entries({ email, handle, password }).filter(([, value]) => !value).map(([label]) => label);
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Registration fields are required: ${missingFields.join(", ")}` });
       return;
     }
 
     const emailError = testEmail(email);
-    const usernameError = testUsername(username);
+    const handleError = testHandle(handle);
     const passwordError = testPassword(password);
 
     if (emailError) {
       res.status(400).json({ error: emailError });
-    } else if (usernameError) {
-      res.status(400).json({ error: usernameError });
+    } else if (handleError) {
+      res.status(400).json({ error: handleError });
     } else if (passwordError) {
       res.status(400).json({ error: passwordError });
-    } else if (await findUserByUsername(db, username)) {
+    } else if (await handleExists(db, handle)) {
       res.status(409).json({ error: USERNAME_IN_USE_ERROR });
-    } else if (await findUserByEmail(db, email)) {
+    } else if (await emailExists(db, email)) {
       res.status(409).json({ error: EMAIL_IN_USE_ERROR });
     } else {
       const timestamp = nowIso();
       const user: User = {
         id: randomBytes(16).toString("hex"),
         email,
-        username,
+        handle,
+        displayName: handle,
         createdAt: timestamp,
         updatedAt: timestamp
       };

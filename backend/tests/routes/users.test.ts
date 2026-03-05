@@ -6,7 +6,7 @@ import { apiBase, assertNotFound, assertRejectCases, createTestApp, get, put } f
 describe("users routes", () => {
   it("upserts and fetches a user", async () => {
     const app = await createTestApp();
-    const userPayload = { email: "ada@example.com", username: "Ada Lovelace" };
+    const userPayload = { email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" };
     const upsertResponse = await put(app, "users", "user-1", userPayload);
     expect(upsertResponse.body).toMatchObject({ id: "user-1", ...userPayload });
     const getResponse = await get(app, "users", "user-1");
@@ -21,30 +21,31 @@ describe("users routes", () => {
   it("rejects missing required fields", async () => {
     const app = await createTestApp();
     const cases = [
-      { payload: {}, error: "User fields are required: email, username" },
-      { payload: { username: "Ada Lovelace" }, error: "User fields are required: email" },
-      { payload: { email: "ada@example.com" }, error: "User fields are required: username" }
+      { payload: {}, error: "User fields are required: email, handle" },
+      { payload: { handle: "ada" }, error: "User fields are required: email" },
+      { payload: { email: "ada@example.com" }, error: "User fields are required: handle" }
     ];
     await assertRejectCases(app, "users", cases);
   });
 
   it("lists user organizations", async () => {
     const app = await createTestApp();
-    await put(app, "organizations", "org-1", { name: "Core", slug: "core" });
-    await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
+    await put(app, "organizations", "org-1", { handle: "core", displayName: "Core" });
+    await put(app, "users", "user-1", { email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);
     const response = await request(app).get(`${apiBase}/users/user-1`).expect(200);
     expect(response.body).toMatchObject({
       id: "user-1",
       email: "ada@example.com",
-      username: "Ada Lovelace",
-      organizations: [{ id: "org-1", name: "Core", slug: "core", role: "ADMIN" }]
+      handle: "ada",
+      displayName: "Ada Lovelace",
+      organizations: [{ id: "org-1", handle: "core", displayName: "Core", role: "ADMIN" }]
     });
   });
 
   it("checks whether an email exists", async () => {
     const app = await createTestApp();
-    await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
+    await put(app, "users", "user-1", { email: "ada@example.com", handle: "Ada Lovelace" });
 
     const missing = await request(app).get(`${apiBase}/users/email-exists`).expect(400);
     expect(missing.body).toMatchObject({ error: "Email is required" });
@@ -56,17 +57,17 @@ describe("users routes", () => {
     expect(absent.body).toMatchObject({ exists: false });
   });
 
-  it("checks whether a username exists", async () => {
+  it("checks whether a handle exists", async () => {
     const app = await createTestApp();
-    await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
+    await put(app, "users", "user-1", { email: "ada@example.com", handle: "Ada Lovelace" });
 
-    const missing = await request(app).get(`${apiBase}/users/username-exists`).expect(400);
-    expect(missing.body).toMatchObject({ error: "Username is required" });
+    const missing = await request(app).get(`${apiBase}/users/handle-exists`).expect(400);
+    expect(missing.body).toMatchObject({ error: "Handle is required" });
 
-    const exists = await request(app).get(`${apiBase}/users/username-exists`).query({ username: "Ada Lovelace" }).expect(200);
+    const exists = await request(app).get(`${apiBase}/users/handle-exists`).query({ handle: "Ada Lovelace" }).expect(200);
     expect(exists.body).toMatchObject({ exists: true });
 
-    const absent = await request(app).get(`${apiBase}/users/username-exists`).query({ username: "Grace Hopper" }).expect(200);
+    const absent = await request(app).get(`${apiBase}/users/handle-exists`).query({ handle: "Grace Hopper" }).expect(200);
     expect(absent.body).toMatchObject({ exists: false });
   });
 });

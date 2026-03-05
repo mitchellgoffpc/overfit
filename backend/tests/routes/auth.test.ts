@@ -30,9 +30,9 @@ async function postWithToken(app: RouteApp, path: string, token: string, status 
 describe("auth routes", () => {
   it("registers, logs in, and returns current user", async () => {
     const app = await createTestApp();
-    const register = await post(app, "auth/register", { email: "sam@example.com", username: "sam", password: "password123" });
-    const registerBody = register.body as { user: { id: string; email: string; username: string }; session: { token: string } };
-    expect(registerBody.user).toMatchObject({ email: "sam@example.com", username: "sam" });
+    const register = await post(app, "auth/register", { email: "sam@example.com", handle: "sam", password: "password123" });
+    const registerBody = register.body as { user: { id: string; email: string; handle: string }; session: { token: string } };
+    expect(registerBody.user).toMatchObject({ email: "sam@example.com", handle: "sam" });
     expect(typeof registerBody.session.token).toBe("string");
 
     const login = await post(app, "auth/login", { email: "sam@example.com", password: "password123" });
@@ -46,7 +46,7 @@ describe("auth routes", () => {
 
   it("rejects invalid credentials and expires sessions on logout", async () => {
     const app = await createTestApp();
-    await post(app, "auth/register", { email: "jules@example.com", username: "jules", password: "password123" });
+    await post(app, "auth/register", { email: "jules@example.com", handle: "jules", password: "password123" });
 
     const badLogin = await post(app, "auth/login", { email: "jules@example.com", password: "bad" }, 401);
     expect(badLogin.body).toMatchObject({ error: CREDENTIALS_INVALID_ERROR });
@@ -62,31 +62,31 @@ describe("auth routes", () => {
     expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
   });
 
-  it("rejects duplicate usernames and emails", async () => {
+  it("rejects duplicate handles and emails", async () => {
     const app = await createTestApp();
-    await post(app, "auth/register", { email: "dup@example.com", username: "dup", password: "password123" });
-    const emailDup = await post(app, "auth/register", { email: "dup@example.com", username: "test", password: "password123" }, 409);
+    await post(app, "auth/register", { email: "dup@example.com", handle: "dup", password: "password123" });
+    const emailDup = await post(app, "auth/register", { email: "dup@example.com", handle: "test", password: "password123" }, 409);
     expect(emailDup.body).toMatchObject({ error: EMAIL_IN_USE_ERROR });
-    const usernameDup = await post(app, "auth/register", { email: "second@example.com", username: "dup", password: "password123" }, 409);
-    expect(usernameDup.body).toMatchObject({ error: USERNAME_IN_USE_ERROR });
+    const handleDup = await post(app, "auth/register", { email: "second@example.com", handle: "dup", password: "password123" }, 409);
+    expect(handleDup.body).toMatchObject({ error: USERNAME_IN_USE_ERROR });
   });
 
-  it("rejects invalid emails, usernames, and passwords", async () => {
+  it("rejects invalid emails, handles, and passwords", async () => {
     const app = await createTestApp();
     const badEmails = ["no-at", "bad@", "@bad.com", "bad@com", "bad@.com"];
     const badUsernames = ["-bad", "bad-", "bad--name", "bad name", "bad_name"];
     const badPasswords = ["short", "allletters", "12345678"];
 
     for (const email of badEmails) {
-      const badEmail = await post(app, "auth/register", { email, username: "valid-user", password: "password123" }, 400);
+      const badEmail = await post(app, "auth/register", { email, handle: "valid-user", password: "password123" }, 400);
       expect(badEmail.body).toMatchObject({ error: EMAIL_INVALID_ERROR });
     }
-    for (const username of badUsernames) {
-      const badUsername = await post(app, "auth/register", { email: "bad@example.com", username, password: "password123" }, 400);
-      expect(badUsername.body).toMatchObject({ error: USERNAME_HINT });
+    for (const handle of badUsernames) {
+      const badHandle = await post(app, "auth/register", { email: "bad@example.com", handle, password: "password123" }, 400);
+      expect(badHandle.body).toMatchObject({ error: USERNAME_HINT });
     }
     for (const password of badPasswords) {
-      const badPassword = await post(app, "auth/register", { email: "pw@example.com", username: "valid-user", password }, 400);
+      const badPassword = await post(app, "auth/register", { email: "pw@example.com", handle: "valid-user", password }, 400);
       const passwordError = testPassword(password);
       expect(passwordError).toBeTruthy();
       expect(badPassword.body).toMatchObject({ error: passwordError });
@@ -98,7 +98,7 @@ describe("auth routes", () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));
-      const register = await post(app, "auth/register", { email: "expired@example.com", username: "expired", password: "password123" });
+      const register = await post(app, "auth/register", { email: "expired@example.com", handle: "expired", password: "password123" });
       const registerBody = register.body as { session: { token: string } };
       const token = registerBody.session.token;
 
