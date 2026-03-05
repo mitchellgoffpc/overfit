@@ -42,3 +42,13 @@ export const findUserByUsername = async (db: Database, username: string): Promis
     .where(sql`lower(username)`, "=", username.toLowerCase())
     .executeTakeFirst();
 };
+
+export const emailExists = async (db: Database, email: string): Promise<boolean> => {
+  const row = await db.selectFrom(table).select("id").where(sql`lower(email)`, "=", email.toLowerCase()).executeTakeFirst();
+  return Boolean(row);
+};
+
+export const usernameExists = async (db: Database, username: string): Promise<boolean> => {
+  const row = await db.selectFrom(table).select("id").where(sql`lower(username)`, "=", username.toLowerCase()).executeTakeFirst();
+  return Boolean(row);
+};
