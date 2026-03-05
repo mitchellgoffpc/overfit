@@ -95,7 +95,26 @@ const USERNAME_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
 
 export const USERNAME_HINT = "Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.";
 export const PASSWORD_HINT = "Password should be at least 8 characters and include a number and a letter.";
+export const EMAIL_INVALID_ERROR = "Invalid email address";
+export const EMAIL_IN_USE_ERROR = "Email address is already associated with an account";
+export const USERNAME_IN_USE_ERROR = "Username is already associated with an account";
+export const SESSION_TOKEN_REQUIRED_ERROR = "Session token is required";
+export const SESSION_INVALID_ERROR = "Session is invalid or expired";
+export const SESSION_USER_INVALID_ERROR = "Session is invalid";
+export const CREDENTIALS_INVALID_ERROR = "Invalid credentials";
 
-export const testEmail = (value: string): boolean => EMAIL_PATTERN.test(value);
-export const testUsername = (value: string): boolean => USERNAME_PATTERN.test(value);
-export const testPassword = (value: string): boolean => value.length >= 8 && /[A-Za-z]/.test(value) && /\d/.test(value);
+export const testEmail = (value: string): string | null => (
+  EMAIL_PATTERN.test(value) ? null : EMAIL_INVALID_ERROR
+);
+
+export const testUsername = (value: string): string | null => (
+  USERNAME_PATTERN.test(value) ? null : USERNAME_HINT
+);
+
+export const testPassword = (value: string): string | null => {
+  const issues: string[] = [];
+  if (value.length < 8) { issues.push("be at least 8 characters"); }
+  if (!/[A-Za-z]/.test(value)) { issues.push("include a letter"); }
+  if (!/\d/.test(value)) { issues.push("include a number"); }
+  return issues.length ? `Password must ${new Intl.ListFormat("en").format(issues)}.` : null;
+};

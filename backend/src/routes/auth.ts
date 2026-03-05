@@ -1,6 +1,16 @@
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
 
-import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testUsername } from "@overfit/types";
+import {
+  EMAIL_IN_USE_ERROR,
+  CREDENTIALS_INVALID_ERROR,
+  SESSION_INVALID_ERROR,
+  SESSION_TOKEN_REQUIRED_ERROR,
+  SESSION_USER_INVALID_ERROR,
+  USERNAME_IN_USE_ERROR,
+  testEmail,
+  testPassword,
+  testUsername
+} from "@overfit/types";
 import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -67,24 +77,32 @@ const getSessionToken = (headers: Record<string, string | string[] | undefined>)
 };
 
 export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database): void {
-  const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload> = async (req, res) => {
-    const email = req.body.email ? normalizeEmail(req.body.email) : "";
-    const username = req.body.username?.trim() ?? "";
-    const password = req.body.password ?? "";
+  const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload | undefined> = async (req, res) => {
+    const emailRaw = req.body?.email;
+    const email = emailRaw ? normalizeEmail(emailRaw) : "";
+    const username = req.body?.username?.trim() ?? "";
+    const password = req.body?.password ?? "";
 
     const missingFields = Object.entries({ email, username, password }).filter(([, value]) => !value).map(([label]) => label);
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Registration fields are required: ${missingFields.join(", ")}` });
-    } else if (!testEmail(email)) {
-      res.status(400).json({ error: "Email must be valid" });
-    } else if (!testUsername(username)) {
-      res.status(400).json({ error: USERNAME_HINT });
-    } else if (!testPassword(password)) {
-      res.status(400).json({ error: PASSWORD_HINT });
+      return;
+    }
+
+    const emailError = testEmail(email);
+    const usernameError = testUsername(username);
+    const passwordError = testPassword(password);
+
+    if (emailError) {
+      res.status(400).json({ error: emailError });
+    } else if (usernameError) {
+      res.status(400).json({ error: usernameError });
+    } else if (passwordError) {
+      res.status(400).json({ error: passwordError });
     } else if (await findUserByUsername(db, username)) {
-      res.status(409).json({ error: "Username already in use" });
+      res.status(409).json({ error: USERNAME_IN_USE_ERROR });
     } else if (await findUserByEmail(db, email)) {
-      res.status(409).json({ error: "Email already in use" });
+      res.status(409).json({ error: EMAIL_IN_USE_ERROR });
     } else {
       const timestamp = nowIso();
       const user: User = {
@@ -120,9 +138,10 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
     }
   };
 
-  const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload> = async (req, res) => {
-    const email = req.body.email ? normalizeEmail(req.body.email) : "";
-    const password = req.body.password ?? "";
+  const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload | undefined> = async (req, res) => {
+    const emailRaw = req.body?.email;
+    const email = emailRaw ? normalizeEmail(emailRaw) : "";
+    const password = req.body?.password ?? "";
 
     if (!email || !password) {
       res.status(400).json({ error: "Email and password are required" });
@@ -131,13 +150,13 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
 
     const user = await findUserByEmail(db, email);
     if (!user) {
-      res.status(401).json({ error: "Invalid credentials" });
+      res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
       return;
     }
 
     const auth = await getUserAuth(db, user.id);
     if (!auth || !verifyPassword(password, auth)) {
-      res.status(401).json({ error: "Invalid credentials" });
+      res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
       return;
     }
 
@@ -153,12 +172,12 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
   const logout: RequestHandler<Record<string, string>, { status: "ok" } | ErrorResponse> = async (req, res) => {
     const token = getSessionToken(req.headers);
     if (!token) {
-      res.status(401).json({ error: "Session token is required" });
+      res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
       return;
     }
     const session = await getSession(db, token);
     if (!session) {
-      res.status(401).json({ error: "Session is invalid or expired" });
+      res.status(401).json({ error: SESSION_INVALID_ERROR });
       return;
     }
     await deleteSession(db, token);
@@ -168,18 +187,18 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
   const me: RequestHandler<Record<string, string>, User | ErrorResponse> = async (req, res) => {
     const token = getSessionToken(req.headers);
     if (!token) {
-      res.status(401).json({ error: "Session token is required" });
+      res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
       return;
     }
     const session = await getSession(db, token);
     if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
       if (session) { await deleteSession(db, token); }
-      res.status(401).json({ error: "Session is invalid or expired" });
+      res.status(401).json({ error: SESSION_INVALID_ERROR });
       return;
     }
     const user = await getUser(db, session.userId);
     if (!user) {
-      res.status(401).json({ error: "Session is invalid" });
+      res.status(401).json({ error: SESSION_USER_INVALID_ERROR });
       return;
     }
     res.json(user);

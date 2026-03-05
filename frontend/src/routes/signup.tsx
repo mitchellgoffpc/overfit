@@ -1,4 +1,13 @@
-import { API_VERSION, PASSWORD_HINT, USERNAME_HINT } from "@overfit/types";
+import {
+  API_VERSION,
+  EMAIL_IN_USE_ERROR,
+  PASSWORD_HINT,
+  USERNAME_HINT,
+  USERNAME_IN_USE_ERROR,
+  testEmail,
+  testPassword,
+  testUsername
+} from "@overfit/types";
 import type { FormEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -11,6 +20,10 @@ interface AuthError {
   error?: string;
 }
 
+interface ExistsResponse {
+  exists?: boolean;
+}
+
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function SignupRoute(): ReactElement {
@@ -19,7 +32,37 @@ export default function SignupRoute(): ReactElement {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailHintError, setEmailHintError] = useState<string | null>(null);
+  const [usernameHintError, setUsernameHintError] = useState<string | null>(null);
+  const [passwordHintError, setPasswordHintError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const checkAvailability = async (
+    path: string,
+    param: "email" | "username",
+    value: string,
+    setHintError: (message: string | null) => void,
+    conflictMessage: string
+  ) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setHintError(null);
+    } else {
+      try {
+        const query = new URLSearchParams({ [param]: trimmed });
+        const response = await fetch(`${apiBase}/users/${path}?${query.toString()}`);
+        if (!response.ok) {
+          setHintError(`Unable to verify ${param}`);
+          return;
+        }
+        const body = (await response.json().catch(() => null)) as ExistsResponse | null;
+        setHintError(body?.exists ? conflictMessage : null);
+      } catch (caught) {
+        const message = caught instanceof Error ? caught.message : `Unable to verify ${param}`;
+        setHintError(message);
+      }
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -77,7 +120,7 @@ export default function SignupRoute(): ReactElement {
           <label className="auth__field">
             Email address
             <input
-              className="auth__input"
+              className={`auth__input${emailHintError ? " auth__input--error" : ""}`}
               type="email"
               name="email"
               autoComplete="email"
@@ -85,14 +128,28 @@ export default function SignupRoute(): ReactElement {
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
+                setEmailHintError(null);
+              }}
+              onBlur={() => {
+                const trimmed = email.trim();
+                if (!trimmed) {
+                  setEmailHintError(null);
+                } else {
+                  const validationError = testEmail(trimmed);
+                  setEmailHintError(validationError);
+                  if (!validationError) {
+                    void checkAvailability("email-exists", "email", email, setEmailHintError, EMAIL_IN_USE_ERROR);
+                  }
+                }
               }}
             />
+            <span className={`auth__hint${emailHintError ? " auth__hint--error" : ""}`}>{emailHintError ?? ""}</span>
           </label>
 
           <label className="auth__field">
             Password
             <input
-              className="auth__input"
+              className={`auth__input${passwordHintError ? " auth__input--error" : ""}`}
               type="password"
               name="password"
               autoComplete="new-password"
@@ -100,15 +157,23 @@ export default function SignupRoute(): ReactElement {
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value);
+                setPasswordHintError(null);
+              }}
+              onBlur={() => {
+                if (!password) {
+                  setPasswordHintError(null);
+                } else {
+                  setPasswordHintError(testPassword(password));
+                }
               }}
             />
-            <span className="auth__hint">{PASSWORD_HINT}</span>
+            <span className={`auth__hint${passwordHintError ? " auth__hint--error" : ""}`}>{passwordHintError ?? PASSWORD_HINT}</span>
           </label>
 
           <label className="auth__field">
             Username
             <input
-              className="auth__input"
+              className={`auth__input${usernameHintError ? " auth__input--error" : ""}`}
               type="text"
               name="username"
               autoComplete="username"
@@ -116,9 +181,22 @@ export default function SignupRoute(): ReactElement {
               value={username}
               onChange={(event) => {
                 setUsername(event.target.value);
+                setUsernameHintError(null);
+              }}
+              onBlur={() => {
+                const trimmed = username.trim();
+                if (!trimmed) {
+                  setUsernameHintError(null);
+                } else {
+                  const validationError = testUsername(trimmed);
+                  setUsernameHintError(validationError);
+                  if (!validationError) {
+                    void checkAvailability("username-exists", "username", username, setUsernameHintError, USERNAME_IN_USE_ERROR);
+                  }
+                }
               }}
             />
-            <span className="auth__hint">{USERNAME_HINT}</span>
+            <span className={`auth__hint${usernameHintError ? " auth__hint--error" : ""}`}>{usernameHintError ?? USERNAME_HINT}</span>
           </label>
 
           <button className="auth__button" type="submit" disabled={isLoading}>

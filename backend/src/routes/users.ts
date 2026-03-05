@@ -4,7 +4,7 @@ import type { RequestHandler } from "express";
 import type { Database } from "db/database";
 import { listOrganizationMembersByUserId } from "db/repositories/organization-members";
 import { getOrganization } from "db/repositories/organizations";
-import { getUser, upsertUser } from "db/repositories/users";
+import { emailExists, getUser, upsertUser, usernameExists } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
@@ -12,9 +12,34 @@ interface UserDetail extends User {
   organizations: (Organization & { role: OrganizationRole })[];
 }
 
-type UpsertUserPayload = Partial<Omit<User, "id" | "updatedAt">>;
+interface UpsertUserPayload {
+  email?: string;
+  username?: string;
+  createdAt?: string;
+}
+interface EmailExistsQuery { email?: string }
+interface UsernameExistsQuery { username?: string }
+interface ExistsResponse { exists: boolean }
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database): void {
+  const emailExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, EmailExistsQuery> = async (req, res) => {
+    const email = req.query.email?.trim() ?? "";
+    if (!email) {
+      res.status(400).json({ error: "Email is required" });
+    } else {
+      res.json({ exists: await emailExists(db, email) });
+    }
+  };
+
+  const usernameExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, UsernameExistsQuery> = async (req, res) => {
+    const username = req.query.username?.trim() ?? "";
+    if (!username) {
+      res.status(400).json({ error: "Username is required" });
+    } else {
+      res.json({ exists: await usernameExists(db, username) });
+    }
+  };
+
   const getUserHandler: RequestHandler<RouteParams, UserDetail | ErrorResponse> = async (req, res) => {
     const user = await getUser(db, req.params.id);
 
@@ -55,6 +80,8 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
     }
   };
 
+  app.get(`${apiBase}/users/email-exists`, emailExistsHandler);
+  app.get(`${apiBase}/users/username-exists`, usernameExistsHandler);
   app.get(`${apiBase}/users/:id`, getUserHandler);
   app.put(`${apiBase}/users/:id`, upsertUserHandler);
 }

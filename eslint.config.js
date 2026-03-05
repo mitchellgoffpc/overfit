@@ -98,6 +98,9 @@ if (duplicateRules.length > 0) {
 export default [
   eslint.configs.recommended,
   {
+    ignores: [".worktrees/**"]
+  },
+  {
     files: ["**/*.{ts,tsx,js,jsx}"] ,
     languageOptions: {
       parser: tsParser,

@@ -414,11 +414,21 @@ body {
   box-shadow: 0 0 0 3px rgba(26, 123, 125, 0.18);
 }
 
+.auth__input--error {
+  border-color: #b42318;
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.15);
+}
+
 .auth__hint {
   font-size: 12px;
   font-weight: 400;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+.auth__hint--error {
+  color: #b42318;
+  font-weight: 500;
 }
 
 .auth__row {

@@ -41,4 +41,32 @@ describe("users routes", () => {
       organizations: [{ id: "org-1", name: "Core", slug: "core", role: "ADMIN" }]
     });
   });
+
+  it("checks whether an email exists", async () => {
+    const app = await createTestApp();
+    await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
+
+    const missing = await request(app).get(`${apiBase}/users/email-exists`).expect(400);
+    expect(missing.body).toMatchObject({ error: "Email is required" });
+
+    const exists = await request(app).get(`${apiBase}/users/email-exists`).query({ email: "ada@example.com" }).expect(200);
+    expect(exists.body).toMatchObject({ exists: true });
+
+    const absent = await request(app).get(`${apiBase}/users/email-exists`).query({ email: "grace@example.com" }).expect(200);
+    expect(absent.body).toMatchObject({ exists: false });
+  });
+
+  it("checks whether a username exists", async () => {
+    const app = await createTestApp();
+    await put(app, "users", "user-1", { email: "ada@example.com", username: "Ada Lovelace" });
+
+    const missing = await request(app).get(`${apiBase}/users/username-exists`).expect(400);
+    expect(missing.body).toMatchObject({ error: "Username is required" });
+
+    const exists = await request(app).get(`${apiBase}/users/username-exists`).query({ username: "Ada Lovelace" }).expect(200);
+    expect(exists.body).toMatchObject({ exists: true });
+
+    const absent = await request(app).get(`${apiBase}/users/username-exists`).query({ username: "Grace Hopper" }).expect(200);
+    expect(absent.body).toMatchObject({ exists: false });
+  });
 });
