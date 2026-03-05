@@ -14,7 +14,7 @@ import {
 import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { Database } from "db/database";
+import type { Database } from "db";
 import { handleExists } from "db/repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "db/repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "db/repositories/user-auth";

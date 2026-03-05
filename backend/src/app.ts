@@ -4,7 +4,7 @@ import express from "express";
 import type { Express, Request, Response } from "express";
 
 import type { AppConfig } from "config";
-import { createDatabase } from "db/database";
+import { createDatabase } from "db";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
 import { registerMetricRoutes } from "routes/metrics";

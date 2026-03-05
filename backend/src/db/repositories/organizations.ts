@@ -1,6 +1,6 @@
 import type { ID, Organization } from "@overfit/types";
 
-import type { Database } from "db/database.js";
+import type { Database } from "db";
 
 export type OrganizationsTable = Omit<Organization, "handle" | "displayName">;
 

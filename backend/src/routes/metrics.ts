@@ -1,7 +1,7 @@
 import type { Metric } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { Database } from "db/database";
+import type { Database } from "db";
 import { getMetric, listMetrics, upsertMetric } from "db/repositories/metrics";
 import { hasRun } from "db/repositories/runs";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";

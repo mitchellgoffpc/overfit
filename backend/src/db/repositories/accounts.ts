@@ -1,7 +1,7 @@
 import type { Account, ID } from "@overfit/types";
 import { sql } from "kysely";
 
-import type { Database } from "db/database.js";
+import type { Database } from "db";
 
 const table = "accounts";
 

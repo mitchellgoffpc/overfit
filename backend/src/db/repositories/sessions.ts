@@ -1,6 +1,6 @@
 import type { ID, Session } from "@overfit/types";
 
-import type { Database } from "db/database.js";
+import type { Database } from "db";
 
 const table = "sessions";
 

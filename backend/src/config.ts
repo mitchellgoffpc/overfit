@@ -3,7 +3,7 @@ import path from "node:path";
 
 import * as toml from "@iarna/toml";
 
-import type { DatabaseConfig } from "db/types";
+import type { DatabaseConfig } from "db";
 
 export interface AppConfig {
   server: {

@@ -2,7 +2,7 @@ import { organizationRoles } from "@overfit/types";
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { Database } from "db/database";
+import type { Database } from "db";
 import {
   deleteOrganizationMember,
   getOrganizationMember,

@@ -1,6 +1,6 @@
 import type { ID, Run } from "@overfit/types";
 
-import type { Database } from "db/database.js";
+import type { Database } from "db";
 import { decodeJson, encodeJson } from "db/repositories/helpers.js";
 
 type RunsTable = Omit<Run, "metadata"> & { metadata: string | null };

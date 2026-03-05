@@ -1,7 +1,7 @@
 import type { Organization, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
-import type { Database } from "db/database";
+import type { Database } from "db";
 import { handleExists } from "db/repositories/accounts";
 import { listOrganizationMembersByUserId } from "db/repositories/organization-members";
 import { getOrganization } from "db/repositories/organizations";
