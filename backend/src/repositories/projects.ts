@@ -10,6 +10,7 @@ export const createProjectsTable = async (db: Database): Promise<void> => {
     .createTable(table)
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
+    .addColumn("accountId", "text", (col) => col.references("accounts.id").onDelete("cascade").onUpdate("cascade").notNull())
     .addColumn("name", "text", (col) => col.notNull())
     .addColumn("description", "text")
     .addColumn("createdAt", "text", (col) => col.notNull())

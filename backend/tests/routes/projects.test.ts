@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "app";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { upsertUser } from "repositories/users";
 
 describe("projects routes", () => {
   let db: Database;
@@ -13,12 +14,16 @@ describe("projects routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
     app = createApp(db);
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
   });
 
   it("upserts and fetches a project", async () => {
-    await request(app).put(`${API_BASE}/projects/project-1`).send({ name: "Overfit", description: "Tracking runs" }).expect(200);
+    await request(app)
+      .put(`${API_BASE}/projects/project-1`)
+      .send({ accountId: "user-1", name: "Overfit", description: "Tracking runs" })
+      .expect(200);
     const response = await request(app).get(`${API_BASE}/projects/project-1`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", name: "Overfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "Overfit", description: "Tracking runs" });
   });
 
   it("rejects unknown projects", async () => {
@@ -28,6 +33,6 @@ describe("projects routes", () => {
 
   it("rejects missing required fields", async () => {
     const response = await request(app).put(`${API_BASE}/projects/project-2`).send({ description: "Missing name" }).expect(400);
-    expect(response.body).toMatchObject({ error: "Project fields are required: name" });
+    expect(response.body).toMatchObject({ error: "Project fields are required: name, accountId" });
   });
 });

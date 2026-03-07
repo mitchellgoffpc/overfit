@@ -1,4 +1,4 @@
-import type { Account, ID, Organization, User } from "@overfit/types";
+import type { Account, AccountType, ID, Organization, User } from "@overfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
@@ -18,20 +18,8 @@ export const createAccountsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const getAccount = async (db: Database, id: ID): Promise<Account | undefined> => {
-  return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-};
-
-export const getAccountByHandle = async (db: Database, handle: string): Promise<User | Organization | undefined> => {
-  const account = await db
-    .selectFrom(table)
-    .select([`${table}.id as id`, `${table}.type as type`])
-    .where(sql`lower(handle)`, "=", handle.toLowerCase())
-    .executeTakeFirst();
-
-  if (!account) {
-    return undefined;
-  } else if (account.type === "USER") {
+const hydrateAccount = async (db: Database, account: { id: ID; type: AccountType }): Promise<User | Organization | undefined> => {
+  if (account.type === "USER") {
     return await db
       .selectFrom(usersTable)
       .innerJoin(table, `${table}.id`, `${usersTable}.id`)
@@ -61,6 +49,18 @@ export const getAccountByHandle = async (db: Database, handle: string): Promise<
       .where(`${table}.id`, "=", account.id)
       .executeTakeFirst();
   }
+};
+
+export const getAccount = async (db: Database, id: ID): Promise<User | Organization | undefined> => {
+  const query = db.selectFrom(table).select([`${table}.id as id`, `${table}.type as type`]);
+  const account = await query.where(`${table}.id`, "=", id).executeTakeFirst();
+  return account ? await hydrateAccount(db, account) : undefined;
+};
+
+export const getAccountByHandle = async (db: Database, handle: string): Promise<User | Organization | undefined> => {
+  const query = db.selectFrom(table).select([`${table}.id as id`, `${table}.type as type`]);
+  const account = await query.where(sql`lower(handle)`, "=", handle.toLowerCase()).executeTakeFirst();
+  return account ? await hydrateAccount(db, account) : undefined;
 };
 
 export const upsertAccount = async (db: Database, account: Account): Promise<Account> => {

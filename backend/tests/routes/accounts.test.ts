@@ -30,17 +30,31 @@ describe("accounts routes", () => {
     expect(absent.body).toMatchObject({ exists: false });
   });
 
+  it("fetches an account by id", async () => {
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+    await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
+
+    const userResponse = await request(app).get(`${API_BASE}/accounts/user-1`).expect(200);
+    expect(userResponse.body).toMatchObject({ id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+
+    const orgResponse = await request(app).get(`${API_BASE}/accounts/org-1`).expect(200);
+    expect(orgResponse.body).toMatchObject({ id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
+
+    const missing = await request(app).get(`${API_BASE}/accounts/unknown`).expect(404);
+    expect(missing.body).toMatchObject({ error: "Account not found" });
+  });
+
   it("fetches an account by handle", async () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
     await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
 
-    const userResponse = await request(app).get(`${API_BASE}/accounts/ada`).expect(200);
+    const userResponse = await request(app).get(`${API_BASE}/accounts/by-handle/ada`).expect(200);
     expect(userResponse.body).toMatchObject({ id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
 
-    const orgResponse = await request(app).get(`${API_BASE}/accounts/core`).expect(200);
+    const orgResponse = await request(app).get(`${API_BASE}/accounts/by-handle/core`).expect(200);
     expect(orgResponse.body).toMatchObject({ id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
 
-    const missing = await request(app).get(`${API_BASE}/accounts/unknown`).expect(404);
+    const missing = await request(app).get(`${API_BASE}/accounts/by-handle/unknown`).expect(404);
     expect(missing.body).toMatchObject({ error: "Account not found" });
   });
 });

@@ -28,14 +28,16 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
     const existing = await getProject(db, id);
 
     const name = req.body?.name ?? existing?.name;
-    const missingFields = Object.entries({ name }).filter(([, value]) => !value).map(([label]) => label);
+    const accountId = req.body?.accountId ?? existing?.accountId;
+    const missingFields = Object.entries({ name, accountId }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Project fields are required: ${missingFields.join(", ")}` });
     } else {
       const project = await upsertProject(db, {
         id,
-        name,
+        accountId: accountId,
+        name: name,
         description: req.body?.description ?? existing?.description ?? null
       });
       res.json(project);

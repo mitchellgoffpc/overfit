@@ -7,6 +7,7 @@ import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
 import { upsertRun } from "repositories/runs";
+import { upsertUser } from "repositories/users";
 
 const testTimestamp = "2025-01-01T00:00:00.000Z";
 
@@ -17,7 +18,8 @@ describe("metrics routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
     app = createApp(db);
-    await upsertProject(db, { id: "project-1", name: "Overfit", description: null });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Overfit", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", name: "Run 1", status: "running", startedAt: null, finishedAt: null, metadata: null });
   });
 
