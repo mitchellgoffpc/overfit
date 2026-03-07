@@ -2,15 +2,10 @@ import type { Organization, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { listOrganizationMembersByUserId } from "repositories/organization-members";
-import { getOrganization } from "repositories/organizations";
+import { listOrganizationMembershipsByUserId } from "repositories/organization-members";
 import { getUser, getUserByEmail, upsertUser } from "repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
-
-interface UserDetail extends User {
-  organizations: (Organization & { role: OrganizationRole })[];
-}
 
 interface UpsertUserPayload {
   email?: string;
@@ -20,6 +15,7 @@ interface UpsertUserPayload {
 }
 interface EmailExistsQuery { email?: string }
 interface ExistsResponse { exists: boolean }
+type UserMembershipsResponse = (Organization & { role: OrganizationRole })[];
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database): void {
   const emailExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, EmailExistsQuery> = async (req, res) => {
@@ -31,19 +27,13 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
     }
   };
 
-  const getUserHandler: RequestHandler<RouteParams, UserDetail | ErrorResponse> = async (req, res) => {
+  const getUserHandler: RequestHandler<RouteParams, User | ErrorResponse> = async (req, res) => {
     const user = await getUser(db, req.params.id);
 
     if (!user) {
       res.status(404).json({ error: "User not found" });
     } else {
-      const memberships = await listOrganizationMembersByUserId(db, user.id);
-      const organizations = await Promise.all(memberships.map(async (member) => getOrganization(db, member.organizationId)));
-      const userOrganizations = organizations.flatMap((organization, index) => (
-        organization ? [{ ...organization, role: memberships[index].role }] : []
-      ));
-
-      res.json({ ...user, organizations: userOrganizations });
+      res.json(user);
     }
   };
 
@@ -73,7 +63,24 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
     }
   };
 
+  const listUserMembershipsHandler: RequestHandler<RouteParams, UserMembershipsResponse | ErrorResponse> = async (req, res) => {
+    const user = await getUser(db, req.params.id);
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      res.json(await listOrganizationMembershipsByUserId(db, user.id));
+    }
+  };
+
+  const redirectUserMembershipHandler: RequestHandler<{ id: string; organizationId: string }> = (req, res) => {
+    res.redirect(307, `${apiBase}/organizations/${req.params.organizationId}/members/${req.params.id}`);
+  };
+
   app.get(`${apiBase}/users/email-exists`, emailExistsHandler);
   app.get(`${apiBase}/users/:id`, getUserHandler);
   app.put(`${apiBase}/users/:id`, upsertUserHandler);
+  app.get(`${apiBase}/users/:id/memberships`, listUserMembershipsHandler);
+  app.put(`${apiBase}/users/:id/memberships/:organizationId`, redirectUserMembershipHandler);
+  app.delete(`${apiBase}/users/:id/memberships/:organizationId`, redirectUserMembershipHandler);
 }

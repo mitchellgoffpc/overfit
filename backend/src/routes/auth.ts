@@ -79,8 +79,7 @@ const getSessionToken = (headers: Record<string, string | string[] | undefined>)
 
 export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database): void {
   const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload | undefined> = async (req, res) => {
-    const rawEmail = req.body?.email;
-    const email = rawEmail ? normalizeEmail(rawEmail) : "";
+    const email = normalizeEmail(req.body?.email ?? "");
     const handle = req.body?.handle?.trim() ?? "";
     const password = req.body?.password ?? "";
 
@@ -142,8 +141,7 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
   };
 
   const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload | undefined> = async (req, res) => {
-    const emailRaw = req.body?.email;
-    const email = emailRaw ? normalizeEmail(emailRaw) : "";
+    const email = normalizeEmail(req.body?.email ?? "");
     const password = req.body?.password ?? "";
 
     if (!email || !password) {

@@ -31,13 +31,10 @@ describe("organizations routes", () => {
     await put(app, "organizations", "org-1", { handle: "core", displayName: "Core" });
     await put(app, "users", "user-1", { email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).expect(200);
-    const response = await request(app).get(`${apiBase}/organizations/org-1`).expect(200);
-    expect(response.body).toMatchObject({
-      id: "org-1",
-      handle: "core",
-      displayName: "Core",
-      users: [{ id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", role: "MEMBER" }]
-    });
+    const response = await request(app).get(`${apiBase}/organizations/org-1/members`).expect(200);
+    expect(response.body).toMatchObject([
+      { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", role: "MEMBER" }
+    ]);
   });
 
   it("creates and deletes memberships", async () => {
@@ -46,9 +43,8 @@ describe("organizations routes", () => {
     await put(app, "users", "user-1", { email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);
     await request(app).delete(`${apiBase}/organizations/org-1/members/user-1`).expect(200);
-    const response = await request(app).get(`${apiBase}/organizations/org-1`).expect(200);
-    const body = response.body as { users: unknown[] };
-    expect(body.users).toEqual([]);
+    const response = await request(app).get(`${apiBase}/organizations/org-1/members`).expect(200);
+    expect(response.body).toEqual([]);
   });
 
   it("rejects invalid membership roles", async () => {

@@ -33,14 +33,10 @@ describe("users routes", () => {
     await put(app, "organizations", "org-1", { handle: "core", displayName: "Core" });
     await put(app, "users", "user-1", { email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
     await request(app).put(`${apiBase}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);
-    const response = await request(app).get(`${apiBase}/users/user-1`).expect(200);
-    expect(response.body).toMatchObject({
-      id: "user-1",
-      email: "ada@example.com",
-      handle: "ada",
-      displayName: "Ada Lovelace",
-      organizations: [{ id: "org-1", handle: "core", displayName: "Core", role: "ADMIN" }]
-    });
+    const response = await request(app).get(`${apiBase}/users/user-1/memberships`).expect(200);
+    expect(response.body).toMatchObject([
+      { id: "org-1", handle: "core", displayName: "Core", role: "ADMIN" }
+    ]);
   });
 
   it("checks whether an email exists", async () => {

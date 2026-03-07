@@ -7,7 +7,7 @@ import {
   deleteOrganizationMember,
   getOrganizationMember,
   hasOrganizationMember,
-  listOrganizationMembersByOrganizationId,
+  listOrganizationUsersByOrganizationId,
   upsertOrganizationMember
 } from "repositories/organization-members";
 import { getOrganization, listOrganizations, upsertOrganization } from "repositories/organizations";
@@ -20,13 +20,11 @@ interface MemberRouteParams {
   userId: string;
 }
 
-interface OrganizationDetail extends Organization {
-  users: (User & { role: OrganizationRole })[];
-}
-
 interface OrganizationMemberPayload {
   role?: OrganizationRole;
 }
+
+type OrganizationMembersResponse = (User & { role: OrganizationRole })[];
 
 type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "updatedAt">>;
 
@@ -35,17 +33,24 @@ export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: D
     res.json(await listOrganizations(db));
   };
 
-  const getOrganizationHandler: RequestHandler<RouteParams, OrganizationDetail | ErrorResponse> = async (req, res) => {
+  const getOrganizationHandler: RequestHandler<RouteParams, Organization | ErrorResponse> = async (req, res) => {
     const organization = await getOrganization(db, req.params.id);
 
     if (!organization) {
       res.status(404).json({ error: "Organization not found" });
     } else {
-      const members = await listOrganizationMembersByOrganizationId(db, organization.id);
-      const users = await Promise.all(members.map(async (member) => getUser(db, member.userId)));
-      const organizationUsers = users.flatMap((user, index) => user ? [{ ...user, role: members[index].role }] : []);
+      res.json(organization);
+    }
+  };
 
-      res.json({ ...organization, users: organizationUsers });
+  const listOrganizationMembersHandler: RequestHandler<RouteParams, OrganizationMembersResponse | ErrorResponse> = async (req, res) => {
+    const organization = await getOrganization(db, req.params.id);
+
+    if (!organization) {
+      res.status(404).json({ error: "Organization not found" });
+    } else {
+      const members = await listOrganizationUsersByOrganizationId(db, organization.id);
+      res.json(members);
     }
   };
 
@@ -125,6 +130,7 @@ export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: D
 
   app.get(`${apiBase}/organizations`, listOrganizationsHandler);
   app.get(`${apiBase}/organizations/:id`, getOrganizationHandler);
+  app.get(`${apiBase}/organizations/:id/members`, listOrganizationMembersHandler);
   app.put(`${apiBase}/organizations/:id`, upsertOrganizationHandler);
   app.put(`${apiBase}/organizations/:id/members/:userId`, upsertOrganizationMemberHandler);
   app.delete(`${apiBase}/organizations/:id/members/:userId`, deleteOrganizationMemberHandler);

@@ -1,6 +1,9 @@
-import type { ID, OrganizationMember } from "@overfit/types";
+import type { ID, Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
 
 import type { Database } from "db";
+import { table as accountsTable } from "repositories/accounts";
+import { table as organizationsTable } from "repositories/organizations";
+import { table as usersTable } from "repositories/users";
 
 const table = "organization_members";
 
@@ -35,10 +38,45 @@ export const deleteOrganizationMember = async (db: Database, id: ID): Promise<vo
   await db.deleteFrom(table).where("id", "=", id).execute();
 };
 
-export const listOrganizationMembersByOrganizationId = async (db: Database, organizationId: ID): Promise<OrganizationMember[]> => {
-  return await db.selectFrom(table).selectAll().where("organizationId", "=", organizationId).execute();
+export const listOrganizationUsersByOrganizationId = async (
+  db: Database,
+  organizationId: ID
+): Promise<(User & { role: OrganizationRole })[]> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(usersTable, `${usersTable}.id`, `${table}.userId`)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${usersTable}.id`)
+    .select([
+      `${usersTable}.id as id`,
+      `${usersTable}.email as email`,
+      `${accountsTable}.handle as handle`,
+      `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
+      `${usersTable}.createdAt as createdAt`,
+      `${usersTable}.updatedAt as updatedAt`,
+      `${table}.role as role`
+    ])
+    .where(`${table}.organizationId`, "=", organizationId)
+    .execute();
 };
 
-export const listOrganizationMembersByUserId = async (db: Database, userId: ID): Promise<OrganizationMember[]> => {
-  return await db.selectFrom(table).selectAll().where("userId", "=", userId).execute();
+export const listOrganizationMembershipsByUserId = async (
+  db: Database,
+  userId: ID
+): Promise<(Organization & { role: OrganizationRole })[]> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(organizationsTable, `${organizationsTable}.id`, `${table}.organizationId`)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${organizationsTable}.id`)
+    .select([
+      `${organizationsTable}.id as id`,
+      `${accountsTable}.handle as handle`,
+      `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
+      `${organizationsTable}.createdAt as createdAt`,
+      `${organizationsTable}.updatedAt as updatedAt`,
+      `${table}.role as role`
+    ])
+    .where(`${table}.userId`, "=", userId)
+    .execute();
 };
