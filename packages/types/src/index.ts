@@ -107,7 +107,6 @@ export const EMAIL_IN_USE_ERROR = "Email address is already associated with an a
 export const USERNAME_IN_USE_ERROR = "Username is already associated with an account";
 export const SESSION_TOKEN_REQUIRED_ERROR = "Session token is required";
 export const SESSION_INVALID_ERROR = "Session is invalid or expired";
-export const SESSION_USER_INVALID_ERROR = "Session is invalid";
 export const CREDENTIALS_INVALID_ERROR = "Invalid credentials";
 
 export const testEmail = (value: string): string | null => (

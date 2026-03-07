@@ -1,27 +1,13 @@
-import { API_BASE, SESSION_INVALID_ERROR, SESSION_TOKEN_REQUIRED_ERROR, SESSION_USER_INVALID_ERROR } from "@overfit/types";
+import { API_BASE } from "@overfit/types";
 import type { Project } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import { getProject, listProjects, listProjectsByUserActivity, upsertProject } from "repositories/projects";
-import { deleteSession, getSession } from "repositories/sessions";
-import { getUser } from "repositories/users";
+import { requireAuth } from "routes/auth";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertProjectPayload = Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>;
-
-const resolveSessionToken = (value?: string) => {
-  if (!value) { return undefined; }
-  const [type, token] = value.split(" ");
-  return type?.toLowerCase() === "bearer" && token ? token : value;
-};
-
-const getSessionToken = (headers: Record<string, string | string[] | undefined>) => {
-  const headerValue = Array.isArray(headers.authorization) ? headers.authorization[0] : headers.authorization;
-  const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
-  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader);
-  return raw?.trim();
-};
 
 export function registerProjectRoutes(app: RouteApp, db: Database): void {
   const listProjectsHandler: RequestHandler<Record<string, string>, Project[]> = async (_req, res) => {
@@ -29,26 +15,7 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
   };
 
   const listMyProjectsHandler: RequestHandler<Record<string, string>, Project[] | ErrorResponse> = async (req, res) => {
-    const token = getSessionToken(req.headers);
-    if (!token) {
-      res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
-      return;
-    }
-
-    const session = await getSession(db, token);
-    if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
-      if (session) { await deleteSession(db, token); }
-      res.status(401).json({ error: SESSION_INVALID_ERROR });
-      return;
-    }
-
-    const user = await getUser(db, session.userId);
-    if (!user) {
-      res.status(401).json({ error: SESSION_USER_INVALID_ERROR });
-      return;
-    }
-
-    res.json(await listProjectsByUserActivity(db, user.id));
+    res.json(await listProjectsByUserActivity(db, req.user.id));
   };
 
   const getProjectHandler: RequestHandler<RouteParams, Project | ErrorResponse> = async (req, res) => {
@@ -83,7 +50,7 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
   };
 
   app.get(`${API_BASE}/projects`, listProjectsHandler);
-  app.get(`${API_BASE}/projects/me`, listMyProjectsHandler);
+  app.get(`${API_BASE}/projects/me`, requireAuth(db), listMyProjectsHandler);
   app.get(`${API_BASE}/projects/:id`, getProjectHandler);
   app.put(`${API_BASE}/projects/:id`, upsertProjectHandler);
 }

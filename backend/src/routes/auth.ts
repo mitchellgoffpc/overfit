@@ -6,7 +6,6 @@ import {
   CREDENTIALS_INVALID_ERROR,
   SESSION_INVALID_ERROR,
   SESSION_TOKEN_REQUIRED_ERROR,
-  SESSION_USER_INVALID_ERROR,
   USERNAME_IN_USE_ERROR,
   testEmail,
   testPassword,
@@ -75,6 +74,29 @@ const getSessionToken = (headers: Record<string, string | string[] | undefined>)
   const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
   const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader);
   return raw?.trim();
+};
+
+export const requireAuth = (db: Database): RequestHandler => async (req, res, next) => {
+  const token = getSessionToken(req.headers);
+  if (!token) {
+    res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
+    return
+  }
+
+  const session = await getSession(db, token);
+  if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
+    if (session) { await deleteSession(db, token); }
+    res.status(401).json({ error: SESSION_INVALID_ERROR });
+    return;
+  }
+
+  const user = await getUser(db, session.userId);
+  if (!user) {
+    res.status(401).json({ error: SESSION_INVALID_ERROR });
+  } else {
+    req.user = user;
+    next();
+  }
 };
 
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
@@ -172,28 +194,12 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     res.json({ status: "ok" });
   };
 
-  const me: RequestHandler<Record<string, string>, User | ErrorResponse> = async (req, res) => {
-    const token = getSessionToken(req.headers);
-    if (!token) {
-      res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
-      return;
-    }
-    const session = await getSession(db, token);
-    if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
-      if (session) { await deleteSession(db, token); }
-      res.status(401).json({ error: SESSION_INVALID_ERROR });
-      return;
-    }
-    const user = await getUser(db, session.userId);
-    if (!user) {
-      res.status(401).json({ error: SESSION_USER_INVALID_ERROR });
-      return;
-    }
-    res.json(user);
+  const me: RequestHandler<Record<string, string>, User | ErrorResponse> = (req, res) => {
+    res.json(req.user);
   };
 
   app.post(`${API_BASE}/auth/register`, register);
   app.post(`${API_BASE}/auth/login`, login);
   app.post(`${API_BASE}/auth/logout`, logout);
-  app.get(`${API_BASE}/auth/me`, me);
+  app.get(`${API_BASE}/auth/me`, requireAuth(db), me);
 }
