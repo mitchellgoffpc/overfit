@@ -1,7 +1,7 @@
 import type { ID, Organization } from "@overfit/types";
 
 import type { Database } from "db";
-import { table as accountsTable } from "db/repositories/accounts";
+import { table as accountsTable } from "repositories/accounts";
 
 export type OrganizationsTable = Omit<Organization, "handle" | "displayName" | "type">;
 

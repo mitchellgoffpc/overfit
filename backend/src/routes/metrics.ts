@@ -2,8 +2,8 @@ import type { Metric } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getMetric, listMetrics, upsertMetric } from "db/repositories/metrics";
-import { hasRun } from "db/repositories/runs";
+import { getMetric, listMetrics, upsertMetric } from "repositories/metrics";
+import { hasRun } from "repositories/runs";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertMetricPayload = Partial<Omit<Metric, "id">>;

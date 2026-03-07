@@ -2,7 +2,7 @@ import type { Run } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getRun, listRuns, upsertRun } from "db/repositories/runs";
+import { getRun, listRuns, upsertRun } from "repositories/runs";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 

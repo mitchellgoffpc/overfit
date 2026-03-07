@@ -2,20 +2,20 @@ import type { Account, Metric, OrganizationMember, Project, Session, UserAuth } 
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 
-import { createAccountsTable } from "db/repositories/accounts.js";
-import type { ArtifactsTable } from "db/repositories/artifacts.js";
-import { createArtifactsTable } from "db/repositories/artifacts.js";
-import { createMetricsTable } from "db/repositories/metrics.js";
-import { createOrganizationMembersTable } from "db/repositories/organization-members.js";
-import type { OrganizationsTable } from "db/repositories/organizations.js";
-import { createOrganizationsTable } from "db/repositories/organizations.js";
-import { createProjectsTable } from "db/repositories/projects.js";
-import type { RunsTable } from "db/repositories/runs.js";
-import { createRunsTable } from "db/repositories/runs.js";
-import { createSessionsTable } from "db/repositories/sessions.js";
-import { createUserAuthTable } from "db/repositories/user-auth.js";
-import type { UsersTable } from "db/repositories/users.js";
-import { createUsersTable } from "db/repositories/users.js";
+import { createAccountsTable } from "repositories/accounts.js";
+import type { ArtifactsTable } from "repositories/artifacts.js";
+import { createArtifactsTable } from "repositories/artifacts.js";
+import { createMetricsTable } from "repositories/metrics.js";
+import { createOrganizationMembersTable } from "repositories/organization-members.js";
+import type { OrganizationsTable } from "repositories/organizations.js";
+import { createOrganizationsTable } from "repositories/organizations.js";
+import { createProjectsTable } from "repositories/projects.js";
+import type { RunsTable } from "repositories/runs.js";
+import { createRunsTable } from "repositories/runs.js";
+import { createSessionsTable } from "repositories/sessions.js";
+import { createUserAuthTable } from "repositories/user-auth.js";
+import type { UsersTable } from "repositories/users.js";
+import { createUsersTable } from "repositories/users.js";
 
 export type DatabaseType = "sqlite" | "postgresql";
 

@@ -1,7 +1,7 @@
 import type { Artifact, ID } from "@overfit/types";
 
 import type { Database } from "db";
-import { decodeJson, encodeJson } from "db/repositories/helpers.js";
+import { decodeJson, encodeJson } from "repositories/helpers.js";
 
 type ArtifactsTable = Omit<Artifact, "metadata"> & { metadata: string | null };
 

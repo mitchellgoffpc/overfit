@@ -2,7 +2,7 @@ import type { ID, User } from "@overfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
-import { table as accountsTable } from "db/repositories/accounts";
+import { table as accountsTable } from "repositories/accounts";
 
 export type UsersTable = Omit<User, "handle" | "displayName" | "type">;
 

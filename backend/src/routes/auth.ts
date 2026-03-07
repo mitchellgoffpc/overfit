@@ -15,10 +15,10 @@ import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getAccountByHandle } from "db/repositories/accounts";
-import { getSession, upsertSession, deleteSession } from "db/repositories/sessions";
-import { getUserAuth, upsertUserAuth } from "db/repositories/user-auth";
-import { getUserByEmail, getUser, upsertUser } from "db/repositories/users";
+import { getAccountByHandle } from "repositories/accounts";
+import { getSession, upsertSession, deleteSession } from "repositories/sessions";
+import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
+import { getUserByEmail, getUser, upsertUser } from "repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp } from "routes/helpers";
 

@@ -9,9 +9,9 @@ import {
   hasOrganizationMember,
   listOrganizationMembersByOrganizationId,
   upsertOrganizationMember
-} from "db/repositories/organization-members";
-import { getOrganization, listOrganizations, upsertOrganization } from "db/repositories/organizations";
-import { getUser } from "db/repositories/users";
+} from "repositories/organization-members";
+import { getOrganization, listOrganizations, upsertOrganization } from "repositories/organizations";
+import { getUser } from "repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 

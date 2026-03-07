@@ -2,7 +2,7 @@ import type { Organization, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getAccountByHandle } from "db/repositories/accounts";
+import { getAccountByHandle } from "repositories/accounts";
 import type { ErrorResponse, RouteApp } from "routes/helpers";
 
 interface HandleExistsQuery { handle?: string }

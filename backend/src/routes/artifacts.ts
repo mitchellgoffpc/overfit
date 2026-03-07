@@ -2,8 +2,8 @@ import type { Artifact } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getArtifact, listArtifacts, upsertArtifact } from "db/repositories/artifacts";
-import { hasRun } from "db/repositories/runs";
+import { getArtifact, listArtifacts, upsertArtifact } from "repositories/artifacts";
+import { hasRun } from "repositories/runs";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 

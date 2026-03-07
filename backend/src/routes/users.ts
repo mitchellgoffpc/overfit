@@ -2,9 +2,9 @@ import type { Organization, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { listOrganizationMembersByUserId } from "db/repositories/organization-members";
-import { getOrganization } from "db/repositories/organizations";
-import { getUser, getUserByEmail, upsertUser } from "db/repositories/users";
+import { listOrganizationMembersByUserId } from "repositories/organization-members";
+import { getOrganization } from "repositories/organizations";
+import { getUser, getUserByEmail, upsertUser } from "repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 

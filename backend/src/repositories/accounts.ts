@@ -2,8 +2,8 @@ import type { Account, ID, Organization, User } from "@overfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
-import { table as organizationsTable } from "db/repositories/organizations";
-import { table as usersTable } from "db/repositories/users";
+import { table as organizationsTable } from "repositories/organizations";
+import { table as usersTable } from "repositories/users";
 
 export const table = "accounts";
 

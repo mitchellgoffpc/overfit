@@ -2,7 +2,7 @@ import type { Project } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getProject, listProjects, upsertProject } from "db/repositories/projects";
+import { getProject, listProjects, upsertProject } from "repositories/projects";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
