@@ -8,6 +8,7 @@
     "packages/types"
   ],
   "scripts": {
+    "dev": "bash scripts/dev.sh",
     "dev:frontend": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
     "build": "npm run build -w @overfit/types && npm run build -w backend && npm run build -w frontend",
