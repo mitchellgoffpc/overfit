@@ -1,7 +1,7 @@
 import { API_VERSION, CREDENTIALS_INVALID_ERROR } from "@overfit/types";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import LoginRoute from "routes/login";
 
@@ -27,6 +27,11 @@ describe("LoginRoute", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("shows the backend error when login fails", async () => {
@@ -50,5 +55,33 @@ describe("LoginRoute", () => {
     }
     expect(await within(form).findByText(CREDENTIALS_INVALID_ERROR)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/login`, expect.any(Object));
+  });
+
+  it("stores the session token and navigates on successful login", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" } }));
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
+
+    render(
+      <MemoryRouter>
+        <LoginRoute />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@overfit.local" } });
+    fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correctpass1" } });
+    const submitButton = screen.getByRole("button", { name: "Sign in" });
+    const form = submitButton.closest("form");
+    expect(form).not.toBeNull();
+    if (!form) {
+      throw new Error("Expected login form to exist");
+    }
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(setItemSpy).toHaveBeenCalledWith("overfitSessionToken", "token-123");
+      expect(navigateMock).toHaveBeenCalledWith("/");
+    });
+
+    setItemSpy.mockRestore();
   });
 });

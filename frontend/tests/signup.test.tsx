@@ -5,7 +5,7 @@ import {
   USERNAME_HINT,
   USERNAME_IN_USE_ERROR
 } from "@overfit/types";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,6 +33,7 @@ describe("SignupRoute", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -143,5 +144,34 @@ describe("SignupRoute", () => {
       throw new Error("Expected signup form to exist");
     }
     expect(await within(form).findByText("Sign up failed")).toBeInTheDocument();
+  });
+
+  it("stores the session token and navigates on successful signup", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-456" } }));
+    const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
+
+    render(
+      <MemoryRouter>
+        <SignupRoute />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@overfit.local" } });
+    fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "password1" } });
+    fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "new-user" } });
+    const submitButton = screen.getByRole("button", { name: "Create account" });
+    const form = submitButton.closest("form");
+    expect(form).not.toBeNull();
+    if (!form) {
+      throw new Error("Expected signup form to exist");
+    }
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(setItemSpy).toHaveBeenCalledWith("overfitSessionToken", "token-456");
+      expect(navigateMock).toHaveBeenCalledWith("/");
+    });
+
+    setItemSpy.mockRestore();
   });
 });
