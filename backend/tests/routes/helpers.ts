@@ -42,13 +42,11 @@ export async function post(app: RouteApp, path: string, payload: Record<string, 
 }
 
 export async function createUser(db: Database, input: { id: string; email: string; handle: string; displayName?: string }): Promise<User> {
-  await upsertUser(db, {
+  return await upsertUser(db, {
     id: input.id,
     email: input.email,
     handle: input.handle,
-    displayName: input.displayName ?? input.handle,
-    createdAt: testTimestamp,
-    updatedAt: testTimestamp
+    displayName: input.displayName ?? input.handle
   });
 }
 

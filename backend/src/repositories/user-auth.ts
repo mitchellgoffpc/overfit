@@ -1,6 +1,7 @@
 import type { ID, UserAuth } from "@overfit/types";
 
 import type { Database } from "db";
+import { nowIso } from "repositories/helpers";
 
 const table = "user_auth";
 
@@ -22,8 +23,9 @@ export const getUserAuth = async (db: Database, id: ID): Promise<UserAuth | unde
   return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
 };
 
-export const upsertUserAuth = async (db: Database, auth: UserAuth): Promise<UserAuth> => {
-  const { id: _, ...updates } = auth;
-  await db.insertInto(table).values(auth).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return auth;
+export const upsertUserAuth = async (db: Database, auth: Omit<UserAuth, "createdAt" | "updatedAt">): Promise<UserAuth> => {
+  const payload: UserAuth = { ...auth, createdAt: nowIso(), updatedAt: nowIso() };
+  const { id: _, createdAt: __, ...updates } = payload;
+  await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
+  return await getUserAuth(db, auth.id) ?? payload;
 };

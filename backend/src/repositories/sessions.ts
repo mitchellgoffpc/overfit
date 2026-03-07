@@ -1,6 +1,7 @@
 import type { ID, Session } from "@overfit/types";
 
 import type { Database } from "db";
+import { nowIso } from "repositories/helpers";
 
 const table = "sessions";
 
@@ -19,10 +20,11 @@ export const getSession = async (db: Database, id: ID): Promise<Session | undefi
   return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
 };
 
-export const upsertSession = async (db: Database, session: Session): Promise<Session> => {
-  const { id: _, ...updates } = session;
-  await db.insertInto(table).values(session).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return session;
+export const upsertSession = async (db: Database, session: Omit<Session, "createdAt">): Promise<Session> => {
+  const payload: Session = { ...session, createdAt: nowIso() };
+  const { id: _, createdAt: __, ...updates } = payload;
+  await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
+  return await getSession(db, session.id) ?? payload;
 };
 
 export const deleteSession = async (db: Database, id: ID): Promise<void> => {

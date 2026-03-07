@@ -12,7 +12,7 @@ import {
   testPassword,
   testHandle
 } from "@overfit/types";
-import type { Session, User, UserAuth } from "@overfit/types";
+import type { User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
@@ -20,7 +20,6 @@ import { getAccountByHandle } from "repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
 import { getUserByEmail, getUser, upsertUser } from "repositories/users";
-import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp } from "routes/helpers";
 
 const PASSWORD_ITERATIONS = 310000;
@@ -105,39 +104,29 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     } else if (await getUserByEmail(db, email)) {
       res.status(409).json({ error: EMAIL_IN_USE_ERROR });
     } else {
-      const timestamp = nowIso();
-      const user: User = {
+      const user = await upsertUser(db, {
         id: randomBytes(16).toString("hex"),
         email,
         handle,
         displayName: handle,
-        type: "USER",
-        createdAt: timestamp,
-        updatedAt: timestamp
-      };
+        type: "USER"
+      });
 
       const salt = randomBytes(SALT_BYTES).toString("hex");
       const passwordHash = hashPassword(password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
-      const auth: UserAuth = {
+      await upsertUserAuth(db, {
         id: user.id,
         passwordHash,
         passwordSalt: salt,
         passwordIterations: PASSWORD_ITERATIONS,
-        passwordDigest: PASSWORD_DIGEST,
-        createdAt: timestamp,
-        updatedAt: timestamp
-      };
+        passwordDigest: PASSWORD_DIGEST
+      });
 
-      const createdAt = nowIso();
       const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
       const token = randomBytes(SESSION_BYTES).toString("base64url");
-      const session: Session = { id: token, userId: user.id, createdAt, expiresAt };
+      const session = await upsertSession(db, { id: token, userId: user.id, expiresAt });
 
-      await upsertUser(db, user);
-      await upsertUserAuth(db, auth);
-      await upsertSession(db, session);
-
-      res.json({ user, session: { token, createdAt, expiresAt } });
+      res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
     }
   };
 
@@ -162,13 +151,10 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
       return;
     }
 
-    const createdAt = nowIso();
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
     const token = randomBytes(SESSION_BYTES).toString("base64url");
-    const session: Session = { id: token, userId: user.id, createdAt, expiresAt };
-
-    await upsertSession(db, session);
-    res.json({ user, session: { token, createdAt, expiresAt } });
+    const session = await upsertSession(db, { id: token, userId: user.id, expiresAt });
+    res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
   };
 
   const logout: RequestHandler<Record<string, string>, { status: "ok" } | ErrorResponse> = async (req, res) => {

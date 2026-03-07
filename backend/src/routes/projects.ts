@@ -4,10 +4,9 @@ import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import { getProject, listProjects, upsertProject } from "repositories/projects";
-import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
-type UpsertProjectPayload = Partial<Omit<Project, "id" | "updatedAt">>;
+type UpsertProjectPayload = Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>;
 
 export function registerProjectRoutes(app: RouteApp, db: Database): void {
   const listProjectsHandler: RequestHandler<Record<string, string>, Project[]> = async (_req, res) => {
@@ -34,15 +33,11 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Project fields are required: ${missingFields.join(", ")}` });
     } else {
-      const project: Project = {
+      const project = await upsertProject(db, {
         id,
         name,
-        description: req.body?.description ?? existing?.description ?? null,
-        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
-        updatedAt: nowIso()
-      };
-
-      await upsertProject(db, project);
+        description: req.body?.description ?? existing?.description ?? null
+      });
       res.json(project);
     }
   };

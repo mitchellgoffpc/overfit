@@ -2,6 +2,7 @@ import type { ID, Organization } from "@overfit/types";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
+import { nowIso } from "repositories/helpers";
 
 export type OrganizationsTable = Omit<Organization, "handle" | "displayName" | "type">;
 
@@ -48,15 +49,16 @@ export const getOrganization = async (db: Database, id: ID): Promise<Organizatio
     .executeTakeFirst();
 };
 
-export const upsertOrganization = async (db: Database, organization: Organization): Promise<Organization> => {
-  const { type: _type, handle, displayName, ...organizationRow } = organization;
+export const upsertOrganization = async (db: Database, organization: Omit<Organization, "createdAt" | "updatedAt">): Promise<Organization> => {
+  const payload: Organization = { ...organization, createdAt: nowIso(), updatedAt: nowIso() };
+  const { type: _type, handle, displayName, ...organizationRow } = payload;
   await db
     .insertInto(accountsTable)
     .values({ id: organization.id, handle, displayName, type: "ORGANIZATION" })
     .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName, type: "ORGANIZATION" }))
     .execute();
 
-  const { id: _id, ...updates } = organizationRow;
+  const { id: _id, createdAt: __, ...updates } = organizationRow;
   await db.insertInto(table).values(organizationRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return organization;
+  return await getOrganization(db, organization.id) ?? payload;
 };

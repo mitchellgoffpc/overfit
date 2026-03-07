@@ -12,7 +12,6 @@ import {
 } from "repositories/organization-members";
 import { getOrganization, listOrganizations, upsertOrganization } from "repositories/organizations";
 import { getUser } from "repositories/users";
-import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 interface MemberRouteParams {
@@ -26,7 +25,7 @@ interface OrganizationMemberPayload {
 
 type OrganizationMembersResponse = (User & { role: OrganizationRole })[];
 
-type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "updatedAt">>;
+type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "createdAt" | "updatedAt">>;
 
 export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
   const listOrganizationsHandler: RequestHandler<Record<string, string>, Organization[]> = async (_req, res) => {
@@ -65,16 +64,12 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Organization fields are required: ${missingFields.join(", ")}` });
     } else {
-      const organization: Organization = {
+      const organization = await upsertOrganization(db, {
         id,
         handle,
         displayName,
-        type: "ORGANIZATION",
-        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
-        updatedAt: nowIso()
-      };
-
-      await upsertOrganization(db, organization);
+        type: "ORGANIZATION"
+      });
       res.json(organization);
     }
   };
@@ -95,16 +90,12 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     } else if (!organizationRoles.includes(role)) {
       res.status(400).json({ error: "Organization role is invalid" });
     } else {
-      const member: OrganizationMember = {
+      const member = await upsertOrganizationMember(db, {
         id: membershipId,
         organizationId,
         userId,
-        role,
-        createdAt: existing?.createdAt ?? nowIso(),
-        updatedAt: nowIso()
-      };
-
-      await upsertOrganizationMember(db, member);
+        role
+      });
       res.json(member);
     }
   };

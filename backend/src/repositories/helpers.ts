@@ -4,3 +4,4 @@ export const encodeJson = (value: Record<string, unknown> | null): string | null
 export const decodeJson = (value: string | null): Record<string, unknown> | null => (
   value ? JSON.parse(value) as Record<string, unknown> : null
 );
+export const nowIso = (): string => new Date().toISOString();

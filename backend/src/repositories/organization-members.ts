@@ -2,6 +2,7 @@ import type { ID, Organization, OrganizationMember, OrganizationRole, User } fro
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
+import { nowIso } from "repositories/helpers";
 import { table as organizationsTable } from "repositories/organizations";
 import { table as usersTable } from "repositories/users";
 
@@ -28,10 +29,11 @@ export const hasOrganizationMember = async (db: Database, id: ID): Promise<boole
   return Boolean(await db.selectFrom(table).select("id").where("id", "=", id).executeTakeFirst());
 };
 
-export const upsertOrganizationMember = async (db: Database, member: OrganizationMember): Promise<OrganizationMember> => {
-  const { id: _, ...updates } = member;
-  await db.insertInto(table).values(member).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return member;
+export const upsertOrganizationMember = async (db: Database, member: Omit<OrganizationMember, "createdAt" | "updatedAt">): Promise<OrganizationMember> => {
+  const payload: OrganizationMember = { ...member, createdAt: nowIso(), updatedAt: nowIso() };
+  const { id: _, createdAt: __, ...updates } = payload;
+  await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
+  return await getOrganizationMember(db, member.id) ?? payload;
 };
 
 export const deleteOrganizationMember = async (db: Database, id: ID): Promise<void> => {

@@ -1,7 +1,7 @@
 import type { ID, Run } from "@overfit/types";
 
 import type { Database } from "db";
-import { decodeJson, encodeJson } from "repositories/helpers.js";
+import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 
 type RunsTable = Omit<Run, "metadata"> & { metadata: string | null };
 
@@ -40,9 +40,10 @@ export const hasRun = async (db: Database, id: ID): Promise<boolean> => {
   return Boolean(await db.selectFrom(table).select("id").where("id", "=", id).executeTakeFirst());
 };
 
-export const upsertRun = async (db: Database, run: Run): Promise<Run> => {
-  const row = toRow(run);
-  const { id: _, ...updates } = row;
+export const upsertRun = async (db: Database, run: Omit<Run, "createdAt" | "updatedAt">): Promise<Run> => {
+  const payload: Run = { ...run, createdAt: nowIso(), updatedAt: nowIso() };
+  const row = toRow(payload);
+  const { id: _, createdAt: __, ...updates } = row;
   await db.insertInto(table).values(row).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return run;
+  return await getRun(db, run.id) ?? payload;
 };

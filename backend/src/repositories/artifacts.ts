@@ -1,7 +1,7 @@
 import type { Artifact, ID } from "@overfit/types";
 
 import type { Database } from "db";
-import { decodeJson, encodeJson } from "repositories/helpers.js";
+import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 
 type ArtifactsTable = Omit<Artifact, "metadata"> & { metadata: string | null };
 
@@ -36,9 +36,10 @@ export const getArtifact = async (db: Database, id: ID): Promise<Artifact | unde
   return row ? fromRow(row) : undefined;
 };
 
-export const upsertArtifact = async (db: Database, artifact: Artifact): Promise<Artifact> => {
-  const row = toRow(artifact);
-  const { id: _, ...updates } = row;
+export const upsertArtifact = async (db: Database, artifact: Omit<Artifact, "createdAt" | "updatedAt">): Promise<Artifact> => {
+  const payload: Artifact = { ...artifact, createdAt: nowIso(), updatedAt: nowIso() };
+  const row = toRow(payload);
+  const { id: _, createdAt: __, ...updates } = row;
   await db.insertInto(table).values(row).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return artifact;
+  return await getArtifact(db, artifact.id) ?? payload;
 };

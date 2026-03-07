@@ -1,6 +1,7 @@
 import type { ID, Project } from "@overfit/types";
 
 import type { Database } from "db";
+import { nowIso } from "repositories/helpers";
 
 const table = "projects";
 
@@ -24,8 +25,9 @@ export const getProject = async (db: Database, id: ID): Promise<Project | undefi
   return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
 };
 
-export const upsertProject = async (db: Database, project: Project): Promise<Project> => {
-  const { id: _, ...updates } = project;
-  await db.insertInto(table).values(project).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return project;
+export const upsertProject = async (db: Database, project: Omit<Project, "createdAt" | "updatedAt">): Promise<Project> => {
+  const payload: Project = { ...project, createdAt: nowIso(), updatedAt: nowIso() };
+  const { id: _, createdAt: __, ...updates } = payload;
+  await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
+  return await getProject(db, project.id) ?? payload;
 };

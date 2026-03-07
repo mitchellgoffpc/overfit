@@ -5,10 +5,9 @@ import type { RequestHandler } from "express";
 import type { Database } from "db";
 import { getArtifact, listArtifacts, upsertArtifact } from "repositories/artifacts";
 import { hasRun } from "repositories/runs";
-import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
-type UpsertArtifactPayload = Partial<Omit<Artifact, "id" | "updatedAt">>;
+type UpsertArtifactPayload = Partial<Omit<Artifact, "id" | "createdAt" | "updatedAt">>;
 
 export function registerArtifactRoutes(app: RouteApp, db: Database): void {
   const listArtifactsHandler: RequestHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
@@ -40,19 +39,15 @@ export function registerArtifactRoutes(app: RouteApp, db: Database): void {
     } else if (!await hasRun(db, runId)) {
       res.status(400).json({ error: "Artifact runId does not reference an existing run" });
     } else {
-      const artifact: Artifact = {
+      const artifact = await upsertArtifact(db, {
         id,
         runId,
         name,
         type,
         version,
-        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
-        updatedAt: nowIso(),
         uri: req.body?.uri ?? existing?.uri ?? null,
         metadata: req.body?.metadata ?? existing?.metadata ?? null
-      };
-
-      await upsertArtifact(db, artifact);
+      });
       res.json(artifact);
     }
   };

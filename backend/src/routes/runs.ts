@@ -4,10 +4,9 @@ import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import { getRun, listRuns, upsertRun } from "repositories/runs";
-import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
-type UpsertRunPayload = Partial<Omit<Run, "id" | "updatedAt">>;
+type UpsertRunPayload = Partial<Omit<Run, "id" | "createdAt" | "updatedAt">>;
 
 export function registerRunRoutes(app: RouteApp, db: Database): void {
   const listRunsHandler: RequestHandler<Record<string, string>, Run[]> = async (_req, res) => {
@@ -36,19 +35,15 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Run fields are required: ${missingFields.join(", ")}` });
     } else {
-      const run: Run = {
+      const run = await upsertRun(db, {
         id,
         projectId,
         name,
         status,
-        createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
-        updatedAt: nowIso(),
         startedAt: req.body?.startedAt ?? existing?.startedAt ?? null,
         finishedAt: req.body?.finishedAt ?? existing?.finishedAt ?? null,
         metadata: req.body?.metadata ?? existing?.metadata ?? null
-      };
-
-      await upsertRun(db, run);
+      });
       res.json(run);
     }
   };

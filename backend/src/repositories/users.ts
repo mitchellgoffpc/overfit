@@ -3,6 +3,7 @@ import { sql } from "kysely";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
+import { nowIso } from "repositories/helpers";
 
 export type UsersTable = Omit<User, "handle" | "displayName" | "type">;
 
@@ -53,15 +54,16 @@ export const getUserByEmail = async (db: Database, email: string): Promise<User 
     .executeTakeFirst();
 };
 
-export const upsertUser = async (db: Database, user: User): Promise<User> => {
-  const { type: _type, handle, displayName, ...userRow } = user;
+export const upsertUser = async (db: Database, user: Omit<User, "createdAt" | "updatedAt">): Promise<User> => {
+  const payload: User = { ...user, createdAt: nowIso(), updatedAt: nowIso() };
+  const { type: _type, handle, displayName, ...userRow } = payload;
   await db
     .insertInto(accountsTable)
     .values({ id: user.id, handle, displayName })
     .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName, type: "USER" }))
     .execute();
 
-  const { id: _id, ...updates } = userRow;
+  const { id: _id, createdAt: __, ...updates } = userRow;
   await db.insertInto(table).values(userRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return user;
+  return await getUser(db, user.id) ?? payload;
 };
