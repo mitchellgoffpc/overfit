@@ -42,8 +42,6 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
         userId,
         name,
         status,
-        startedAt: req.body?.startedAt ?? existing?.startedAt ?? null,
-        finishedAt: req.body?.finishedAt ?? existing?.finishedAt ?? null,
         metadata: req.body?.metadata ?? existing?.metadata ?? null
       });
       res.json(run);

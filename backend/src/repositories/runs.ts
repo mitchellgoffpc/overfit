@@ -21,14 +21,17 @@ export const createRunsTable = async (db: Database): Promise<void> => {
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
-    .addColumn("startedAt", "text")
-    .addColumn("finishedAt", "text")
     .addColumn("metadata", "text")
     .execute();
 };
 
 export const listRuns = async (db: Database): Promise<Run[]> => {
   const rows = await db.selectFrom(table).selectAll().execute();
+  return rows.map((row) => fromRow(row));
+};
+
+export const listRunsByUser = async (db: Database, userId: ID): Promise<Run[]> => {
+  const rows = await db.selectFrom(table).selectAll().where("userId", "=", userId).orderBy("createdAt", "desc").execute();
   return rows.map((row) => fromRow(row));
 };
 

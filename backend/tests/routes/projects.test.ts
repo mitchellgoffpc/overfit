@@ -41,10 +41,10 @@ describe("projects routes", () => {
     await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Overfit", description: null });
     await upsertProject(db, { id: "project-2", accountId: "user-1", name: "Telemetry", description: null });
-    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", startedAt: null, finishedAt: null, metadata: null });
-    await upsertRun(db, { id: "run-2", projectId: "project-2", userId: "user-1", name: "Run 2", status: "finished", startedAt: null, finishedAt: null, metadata: null });
-    await upsertRun(db, { id: "run-3", projectId: "project-2", userId: "user-1", name: "Run 3", status: "running", startedAt: null, finishedAt: null, metadata: null });
-    await upsertRun(db, { id: "run-4", projectId: "project-1", userId: "user-2", name: "Run 4", status: "running", startedAt: null, finishedAt: null, metadata: null });
+    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
+    await upsertRun(db, { id: "run-2", projectId: "project-2", userId: "user-1", name: "Run 2", status: "finished", metadata: null });
+    await upsertRun(db, { id: "run-3", projectId: "project-2", userId: "user-1", name: "Run 3", status: "running", metadata: null });
+    await upsertRun(db, { id: "run-4", projectId: "project-1", userId: "user-2", name: "Run 4", status: "running", metadata: null });
     await upsertSession(db, { id: "token-1", userId: "user-1", expiresAt: "2099-01-01T00:00:00.000Z" });
 
     const response = await request(app).get(`${API_BASE}/projects/me`).set("x-session-token", "token-1").expect(200);

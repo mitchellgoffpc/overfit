@@ -68,8 +68,6 @@ export interface Run {
   status: RunStatus;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  startedAt: Timestamp | null;
-  finishedAt: Timestamp | null;
   metadata: Record<string, unknown> | null;
 }
 
