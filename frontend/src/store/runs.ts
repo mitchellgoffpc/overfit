@@ -1,5 +1,5 @@
-import { API_VERSION } from "@overfit/types";
-import type { Run } from "@overfit/types";
+import { API_VERSION } from "@underfit/types";
+import type { Run } from "@underfit/types";
 import { create } from "zustand";
 
 interface RunState {
@@ -20,7 +20,7 @@ export const useRunStore = create<RunState>((set) => ({
       set({ runs: [], isLoading: false, error: "Missing user id" });
     } else {
       set({ isLoading: true, error: null });
-      const sessionToken = token ?? localStorage.getItem("overfitSessionToken") ?? "";
+      const sessionToken = token ?? localStorage.getItem("underfitSessionToken") ?? "";
       const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
 
       try {

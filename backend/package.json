@@ -1,5 +1,5 @@
 {
-  "name": "@overfit/backend",
+  "name": "@underfit/backend",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
-    "@overfit/types": "^0.0.0",
+    "@underfit/types": "^0.0.0",
     "better-sqlite3": "^12.6.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",

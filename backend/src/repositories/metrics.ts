@@ -1,4 +1,4 @@
-import type { ID, Metric } from "@overfit/types";
+import type { ID, Metric } from "@underfit/types";
 
 import type { Database } from "db";
 

@@ -1,4 +1,4 @@
-import type { ID, Project } from "@overfit/types";
+import type { ID, Project } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";

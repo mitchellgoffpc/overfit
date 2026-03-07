@@ -1,4 +1,4 @@
-import { API_BASE } from "@overfit/types";
+import { API_BASE } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 

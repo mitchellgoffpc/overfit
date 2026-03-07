@@ -1,5 +1,5 @@
-import { API_VERSION } from "@overfit/types";
-import type { Project } from "@overfit/types";
+import { API_VERSION } from "@underfit/types";
+import type { Project } from "@underfit/types";
 import { create } from "zustand";
 
 interface ProjectState {
@@ -17,7 +17,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   error: null,
   fetchProjects: async (token?: string) => {
     set({ isLoading: true, error: null });
-    const sessionToken = token ?? localStorage.getItem("overfitSessionToken") ?? "";
+    const sessionToken = token ?? localStorage.getItem("underfitSessionToken") ?? "";
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
 
     try {

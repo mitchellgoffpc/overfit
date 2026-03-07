@@ -1,11 +1,11 @@
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import {
   API_VERSION,
   EMAIL_IN_USE_ERROR,
   EMAIL_INVALID_ERROR,
   USERNAME_HINT,
   USERNAME_IN_USE_ERROR
-} from "@overfit/types";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+} from "@underfit/types";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -79,10 +79,10 @@ describe("SignupRoute", () => {
     );
 
     const emailInput = screen.getByLabelText("Email address");
-    fireEvent.change(emailInput, { target: { value: "existing@overfit.local" } });
+    fireEvent.change(emailInput, { target: { value: "existing@underfit.local" } });
     fireEvent.blur(emailInput);
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=existing%40overfit.local`);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=existing%40underfit.local`);
     const error = await screen.findByText(EMAIL_IN_USE_ERROR);
     expect(error).toHaveClass("auth__hint--error");
   });
@@ -100,7 +100,7 @@ describe("SignupRoute", () => {
     fireEvent.change(usernameInput, { target: { value: "existing-user" } });
     fireEvent.blur(usernameInput);
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/username-exists?username=existing-user`);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=existing-user`);
     const error = await screen.findByText(USERNAME_IN_USE_ERROR);
     expect(error).toHaveClass("auth__hint--error");
   });
@@ -132,7 +132,7 @@ describe("SignupRoute", () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@overfit.local" } });
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "password1" } });
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "new-user" } });
     const submitButton = screen.getByRole("button", { name: "Create account" });
@@ -156,7 +156,7 @@ describe("SignupRoute", () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@overfit.local" } });
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "password1" } });
     fireEvent.change(screen.getByLabelText(/Username/), { target: { value: "new-user" } });
     const submitButton = screen.getByRole("button", { name: "Create account" });
@@ -168,7 +168,7 @@ describe("SignupRoute", () => {
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(setItemSpy).toHaveBeenCalledWith("overfitSessionToken", "token-456");
+      expect(setItemSpy).toHaveBeenCalledWith("underfitSessionToken", "token-456");
       expect(navigateMock).toHaveBeenCalledWith("/");
     });
 

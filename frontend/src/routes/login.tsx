@@ -1,4 +1,4 @@
-import { API_VERSION } from "@overfit/types";
+import { API_VERSION } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -43,7 +43,7 @@ export default function LoginRoute(): ReactElement {
       const body = (await response.json()) as AuthResponse;
       const token = body.session?.token;
       if (token) {
-        localStorage.setItem("overfitSessionToken", token);
+        localStorage.setItem("underfitSessionToken", token);
       }
       setIsLoading(false);
       void navigate("/");
@@ -58,9 +58,9 @@ export default function LoginRoute(): ReactElement {
     <div className="auth">
       <div className="auth__shell">
         <div className="auth__brand">
-          <div className="auth__logo">O</div>
+          <div className="auth__logo">U</div>
           <div>
-            <h1 className="auth__title">Sign in to Overfit</h1>
+            <h1 className="auth__title">Sign in to Underfit</h1>
             <p className="auth__subtitle">Use your workspace credentials to continue.</p>
           </div>
         </div>
@@ -109,7 +109,7 @@ export default function LoginRoute(): ReactElement {
         </form>
 
         <div className="auth__footer">
-          New to Overfit? <Link className="auth__link" to="/signup">Create an account</Link>
+          New to Underfit? <Link className="auth__link" to="/signup">Create an account</Link>
         </div>
       </div>
     </div>

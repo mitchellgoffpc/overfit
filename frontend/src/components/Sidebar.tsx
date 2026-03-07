@@ -1,4 +1,4 @@
-import type { Project, User } from "@overfit/types";
+import type { Project, User } from "@underfit/types";
 import type { ReactElement } from "react";
 
 interface SidebarProps {
@@ -12,9 +12,9 @@ export default function Sidebar({ user, projects, isLoading, error }: SidebarPro
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
-        <div className="sidebar__logo">o</div>
+        <div className="sidebar__logo">U</div>
         <div>
-          <p className="sidebar__brand-title">Overfit</p>
+          <p className="sidebar__brand-title">Underfit</p>
           <p className="sidebar__brand-subtitle">Workspace</p>
         </div>
       </div>

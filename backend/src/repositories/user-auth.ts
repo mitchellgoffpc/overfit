@@ -1,4 +1,4 @@
-import type { ID, UserAuth } from "@overfit/types";
+import type { ID, UserAuth } from "@underfit/types";
 
 import type { Database } from "db";
 import { nowIso } from "repositories/helpers";

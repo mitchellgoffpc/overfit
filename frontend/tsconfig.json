@@ -14,7 +14,7 @@
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "types": ["vitest/globals"],
     "paths": {
-      "@overfit/types": ["../../packages/types/src"]
+      "@underfit/types": ["../../packages/types/src"]
     }
   },
   "include": ["src/**/*", "tests/**/*", "vite.config.ts"],

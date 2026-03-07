@@ -7,7 +7,7 @@ import {
   testPassword,
   USERNAME_HINT,
   USERNAME_IN_USE_ERROR
-} from "@overfit/types";
+} from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -1,4 +1,4 @@
-import type { Project, Run } from "@overfit/types";
+import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
 
 interface RunsPanelProps {
@@ -47,8 +47,8 @@ export default function RunsPanel({ runs, projects, isLoading, error }: RunsPane
             <div className="quickstart__step">
               <div className="quickstart__badge">1</div>
               <div>
-                <p className="quickstart__step-title">Install the Overfit SDK</p>
-                <div className="quickstart__code">pip install overfit</div>
+                <p className="quickstart__step-title">Install the Underfit SDK</p>
+                <div className="quickstart__code">pip install underfit</div>
               </div>
             </div>
 
@@ -56,7 +56,7 @@ export default function RunsPanel({ runs, projects, isLoading, error }: RunsPane
               <div className="quickstart__badge">2</div>
               <div>
                 <p className="quickstart__step-title">Authenticate with your workspace</p>
-                <div className="quickstart__code">overfit login</div>
+                <div className="quickstart__code">underfit login</div>
               </div>
             </div>
 
@@ -65,9 +65,9 @@ export default function RunsPanel({ runs, projects, isLoading, error }: RunsPane
               <div>
                 <p className="quickstart__step-title">Log your first run</p>
                 <pre className="quickstart__snippet">
-                  <code>{`import overfit
+                  <code>{`import underfit
 
-run = overfit.init(project="vision-baseline")
+run = underfit.init(project="vision-baseline")
 run.log({"accuracy": 0.92, "loss": 0.18})
 run.finish()`}</code>
                 </pre>

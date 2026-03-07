@@ -1,4 +1,4 @@
-import type { User } from "@overfit/types";
+import type { User } from "@underfit/types";
 
 declare global {
   namespace Express {

@@ -1,4 +1,4 @@
-import type { ID, Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
+import type { ID, Organization, OrganizationMember, OrganizationRole, User } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";

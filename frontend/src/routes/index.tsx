@@ -1,5 +1,5 @@
-import { API_VERSION } from "@overfit/types";
-import type { User } from "@overfit/types";
+import { API_VERSION } from "@underfit/types";
+import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -10,7 +10,7 @@ import { useRunStore } from "store/runs";
 
 const FALLBACK_USER: User = {
   id: "user-mitchell",
-  email: "mitchell@overfit.local",
+  email: "mitchell@underfit.local",
   handle: "mitchellgoffpc",
   displayName: "Mitchell Goff",
   createdAt: "2024-05-20T16:20:00Z",
@@ -20,7 +20,7 @@ const FALLBACK_USER: User = {
 export default function IndexRoute(): ReactElement {
   const [user, setUser] = useState<User>(FALLBACK_USER);
   const [userError, setUserError] = useState<string | null>(null);
-  const sessionToken = useMemo(() => localStorage.getItem("overfitSessionToken") ?? "", []);
+  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
   const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);

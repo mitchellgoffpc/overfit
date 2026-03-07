@@ -1,4 +1,4 @@
-import { API_BASE } from "@overfit/types";
+import { API_BASE } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -16,7 +16,7 @@ describe("runs routes", () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
     app = createApp(db);
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Overfit", description: null });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
   });
 
   it("upserts and fetches a run", async () => {

@@ -1,5 +1,5 @@
-import { API_VERSION, CREDENTIALS_INVALID_ERROR } from "@overfit/types";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { API_VERSION, CREDENTIALS_INVALID_ERROR } from "@underfit/types";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -43,7 +43,7 @@ describe("LoginRoute", () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@overfit.local" } });
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "wrongpass1" } });
     const submitButton = screen.getByRole("button", { name: "Sign in" });
     fireEvent.click(submitButton);
@@ -67,7 +67,7 @@ describe("LoginRoute", () => {
       </MemoryRouter>
     );
 
-    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@overfit.local" } });
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: "correctpass1" } });
     const submitButton = screen.getByRole("button", { name: "Sign in" });
     const form = submitButton.closest("form");
@@ -78,7 +78,7 @@ describe("LoginRoute", () => {
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(setItemSpy).toHaveBeenCalledWith("overfitSessionToken", "token-123");
+      expect(setItemSpy).toHaveBeenCalledWith("underfitSessionToken", "token-123");
       expect(navigateMock).toHaveBeenCalledWith("/");
     });
 

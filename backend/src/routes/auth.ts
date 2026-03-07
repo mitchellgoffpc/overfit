@@ -10,8 +10,8 @@ import {
   testEmail,
   testPassword,
   testHandle
-} from "@overfit/types";
-import type { User, UserAuth } from "@overfit/types";
+} from "@underfit/types";
+import type { User, UserAuth } from "@underfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";

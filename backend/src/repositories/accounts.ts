@@ -1,4 +1,4 @@
-import type { Account, AccountType, ID, Organization, User } from "@overfit/types";
+import type { Account, AccountType, ID, Organization, User } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";

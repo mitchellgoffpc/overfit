@@ -19,7 +19,7 @@ cd "$repo_path"
 
 npm install
 
-session_base="overfit-dev-$(basename "$repo_path")"
+session_base="underfit-dev-$(basename "$repo_path")"
 session="$(echo "$session_base" | tr -c 'A-Za-z0-9_.-' '_')"
 
 if tmux has-session -t "$session" 2>/dev/null; then

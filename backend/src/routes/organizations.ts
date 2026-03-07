@@ -1,5 +1,5 @@
-import { API_BASE, organizationRoles } from "@overfit/types";
-import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
+import { API_BASE, organizationRoles } from "@underfit/types";
+import type { Organization, OrganizationMember, OrganizationRole, User } from "@underfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";

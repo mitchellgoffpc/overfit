@@ -7,7 +7,7 @@ import {
   testEmail,
   testPassword,
   testHandle
-} from "@overfit/types";
+} from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -99,7 +99,7 @@ export default function SignupRoute(): ReactElement {
       const body = (await response.json()) as AuthResponse;
       const token = body.session?.token;
       if (token) {
-        localStorage.setItem("overfitSessionToken", token);
+        localStorage.setItem("underfitSessionToken", token);
       }
       setIsLoading(false);
       void navigate("/");
@@ -114,7 +114,7 @@ export default function SignupRoute(): ReactElement {
     <div className="auth">
       <div className="auth__shell">
         <div className="auth__brand">
-          <div className="auth__logo">O</div>
+          <div className="auth__logo">U</div>
           <div>
             <h1 className="auth__title">Create your account</h1>
             <p className="auth__subtitle">Set up a workspace in minutes.</p>

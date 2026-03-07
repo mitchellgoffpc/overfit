@@ -1,4 +1,4 @@
-import type { ID, Run } from "@overfit/types";
+import type { ID, Run } from "@underfit/types";
 
 import type { Database } from "db";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";

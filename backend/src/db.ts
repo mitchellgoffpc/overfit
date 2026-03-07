@@ -1,4 +1,4 @@
-import type { Account, Metric, OrganizationMember, Project, Session, UserAuth } from "@overfit/types";
+import type { Account, Metric, OrganizationMember, Project, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 
@@ -63,7 +63,7 @@ export const createDatabase = async (config: DatabaseConfig = {}): Promise<Datab
     throw new Error("PostgreSQL database is not implemented yet.");
   }
 
-  const sqlitePath = config.sqlite?.path ?? "overfit.db";
+  const sqlitePath = config.sqlite?.path ?? "underfit.db";
   const sqlite = new BetterSqlite3(sqlitePath);
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");

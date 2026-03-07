@@ -1,4 +1,4 @@
-import type { Artifact, ID } from "@overfit/types";
+import type { Artifact, ID } from "@underfit/types";
 
 import type { Database } from "db";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";

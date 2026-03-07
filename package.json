@@ -1,5 +1,5 @@
 {
-  "name": "overfit",
+  "name": "underfit",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -11,7 +11,7 @@
     "dev": "bash scripts/dev.sh",
     "dev:frontend": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
-    "build": "npm run build -w @overfit/types && npm run build -w backend && npm run build -w frontend",
+    "build": "npm run build -w @underfit/types && npm run build -w backend && npm run build -w frontend",
     "lint": "eslint .",
     "test": "vitest run"
   },
