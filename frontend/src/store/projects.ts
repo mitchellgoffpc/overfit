@@ -6,7 +6,7 @@ interface ProjectState {
   projects: Project[];
   isLoading: boolean;
   error: string | null;
-  fetchProjects: () => Promise<void>;
+  fetchProjects: (token?: string) => Promise<void>;
 }
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -15,11 +15,13 @@ export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],
   isLoading: false,
   error: null,
-  fetchProjects: async () => {
+  fetchProjects: async (token?: string) => {
     set({ isLoading: true, error: null });
+    const sessionToken = token ?? localStorage.getItem("overfitSessionToken") ?? "";
+    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
 
     try {
-      const response = await fetch(`${apiBase}/projects`);
+      const response = await fetch(`${apiBase}/projects/me`, { headers });
 
       if (!response.ok) {
         set({ error: `Failed to fetch projects (${String(response.status)})`, isLoading: false });

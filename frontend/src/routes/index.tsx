@@ -1,10 +1,12 @@
+import { API_VERSION } from "@overfit/types";
 import type { User } from "@overfit/types";
 import type { ReactElement } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import ProjectsPanel from "components/ProjectsPanel";
+import RunsPanel from "components/RunsPanel";
 import Sidebar from "components/Sidebar";
-import TabBar from "components/TabBar";
+import { useProjectStore } from "store/projects";
+import { useRunStore } from "store/runs";
 
 const FALLBACK_USER: User = {
   id: "user-mitchell",
@@ -16,26 +18,72 @@ const FALLBACK_USER: User = {
 };
 
 export default function IndexRoute(): ReactElement {
-  const user = useMemo(() => FALLBACK_USER, []);
+  const [user, setUser] = useState<User>(FALLBACK_USER);
+  const [userError, setUserError] = useState<string | null>(null);
+  const sessionToken = useMemo(() => localStorage.getItem("overfitSessionToken") ?? "", []);
+  const projects = useProjectStore((state) => state.projects);
+  const projectError = useProjectStore((state) => state.error);
+  const isProjectsLoading = useProjectStore((state) => state.isLoading);
+  const fetchProjects = useProjectStore((state) => state.fetchProjects);
+  const runs = useRunStore((state) => state.runs);
+  const runError = useRunStore((state) => state.error);
+  const isRunsLoading = useRunStore((state) => state.isLoading);
+  const fetchRuns = useRunStore((state) => state.fetchRuns);
+  const apiBase = useMemo(() => `http://localhost:4000/api/${API_VERSION}`, []);
+
+  useEffect(() => {
+    if (!sessionToken) { return; }
+
+    const loadUser = async () => {
+      setUserError(null);
+      try {
+        const response = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
+        if (!response.ok) {
+          setUserError(`Failed to load user (${String(response.status)})`);
+          return;
+        }
+        const loadedUser = (await response.json()) as User;
+        setUser(loadedUser);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load user";
+        setUserError(message);
+      }
+    };
+
+    void loadUser();
+  }, [apiBase, sessionToken]);
+
+  useEffect(() => {
+    if (sessionToken) { void fetchProjects(sessionToken); }
+  }, [fetchProjects, sessionToken]);
+
+  useEffect(() => {
+    if (sessionToken) { void fetchRuns(user.id, sessionToken); }
+  }, [fetchRuns, sessionToken, user.id]);
 
   return (
     <div className="layout">
-      <Sidebar user={user} />
+      <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />
 
       <main className="main">
         <header className="main__header">
           <div>
-            <p className="main__kicker">{user.handle}-projects</p>
-            <h1 className="main__title">Projects</h1>
+            <p className="main__kicker">{user.handle}</p>
+            <h1 className="main__title">Home</h1>
           </div>
-          <button className="main__cta" type="button">
-            + New project
-          </button>
+          <div className="main__cta-row">
+            <button className="main__cta main__cta--ghost" type="button">
+              View reports
+            </button>
+            <button className="main__cta" type="button">
+              + New run
+            </button>
+          </div>
         </header>
 
-        <TabBar activeTab="Projects" tabs={["Overview", "Reports", "Projects", "Users", "Service Accounts", "Settings"]} />
+        {userError ? <div className="panel__empty panel__empty--page">{userError}</div> : null}
 
-        <ProjectsPanel />
+        <RunsPanel runs={runs} projects={projects} isLoading={isRunsLoading} error={runError} />
       </main>
     </div>
   );

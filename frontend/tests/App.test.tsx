@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 import IndexRoute from "routes";
 
 describe("IndexRoute", () => {
-  it("renders the projects heading", () => {
+  it("renders the home heading", () => {
     render(<IndexRoute />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Projects" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
   });
 });

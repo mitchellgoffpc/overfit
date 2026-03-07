@@ -40,7 +40,7 @@ export default function SignupRoute(): ReactElement {
 
   const checkAvailability = async (
     path: string,
-    param: "email" | "username",
+    param: "email" | "handle",
     value: string,
     setHintError: (message: string | null) => void,
     conflictMessage: string
@@ -51,7 +51,7 @@ export default function SignupRoute(): ReactElement {
     } else {
       try {
         const query = new URLSearchParams({ [param]: trimmed });
-        const response = await fetch(`${apiBase}/users/${path}?${query.toString()}`);
+        const response = await fetch(`${apiBase}/${path}?${query.toString()}`);
         if (!response.ok) {
           setHintError(`Unable to verify ${param}`);
           return;
@@ -150,7 +150,7 @@ export default function SignupRoute(): ReactElement {
                   const validationError = testEmail(trimmed);
                   setEmailHintError(validationError);
                   if (!validationError) {
-                    void checkAvailability("email-exists", "email", email, setEmailHintError, EMAIL_IN_USE_ERROR);
+                    void checkAvailability("users/email-exists", "email", email, setEmailHintError, EMAIL_IN_USE_ERROR);
                   }
                 }
               }}
@@ -203,7 +203,7 @@ export default function SignupRoute(): ReactElement {
                   const validationError = testHandle(trimmed);
                   setUsernameHintError(validationError);
                   if (!validationError) {
-                    void checkAvailability("username-exists", "username", username, setUsernameHintError, USERNAME_IN_USE_ERROR);
+                    void checkAvailability("accounts/handle-exists", "handle", username, setUsernameHintError, USERNAME_IN_USE_ERROR);
                   }
                 }
               }}
