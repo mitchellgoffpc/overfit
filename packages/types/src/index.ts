@@ -1,21 +1,21 @@
 export const organizationRoles = ["ADMIN", "MEMBER"] as const;
+export const accountTypes = ["USER", "ORGANIZATION"] as const;
 
 export type ID = string;
 export type Timestamp = string;
 export type RunStatus = "queued" | "running" | "finished" | "failed" | "canceled";
 export type OrganizationRole = (typeof organizationRoles)[number];
+export type AccountType = (typeof accountTypes)[number];
 
 export interface Account {
   id: ID;
   handle: string;
   displayName: string;
+  type: AccountType;
 }
 
-export interface User {
-  id: ID;
+export interface User extends Account {
   email: string;
-  handle: string;
-  displayName: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -37,10 +37,7 @@ export interface Session {
   expiresAt: Timestamp;
 }
 
-export interface Organization {
-  id: ID;
-  handle: string;
-  displayName: string;
+export interface Organization extends Account {
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

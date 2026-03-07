@@ -2,10 +2,9 @@ import type { Organization, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { handleExists } from "db/repositories/accounts";
 import { listOrganizationMembersByUserId } from "db/repositories/organization-members";
 import { getOrganization } from "db/repositories/organizations";
-import { emailExists, getUser, upsertUser } from "db/repositories/users";
+import { getUser, getUserByEmail, upsertUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
@@ -20,7 +19,6 @@ interface UpsertUserPayload {
   createdAt?: string;
 }
 interface EmailExistsQuery { email?: string }
-interface HandleExistsQuery { handle?: string }
 interface ExistsResponse { exists: boolean }
 
 export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database): void {
@@ -29,16 +27,7 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
     if (!email) {
       res.status(400).json({ error: "Email is required" });
     } else {
-      res.json({ exists: await emailExists(db, email) });
-    }
-  };
-
-  const handleExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, HandleExistsQuery> = async (req, res) => {
-    const handle = req.query.handle?.trim() ?? "";
-    if (!handle) {
-      res.status(400).json({ error: "Handle is required" });
-    } else {
-      res.json({ exists: await handleExists(db, handle) });
+      res.json({ exists: Boolean(await getUserByEmail(db, email)) });
     }
   };
 
@@ -85,7 +74,6 @@ export function registerUserRoutes(app: RouteApp, apiBase: string, db: Database)
   };
 
   app.get(`${apiBase}/users/email-exists`, emailExistsHandler);
-  app.get(`${apiBase}/users/handle-exists`, handleExistsHandler);
   app.get(`${apiBase}/users/:id`, getUserHandler);
   app.put(`${apiBase}/users/:id`, upsertUserHandler);
 }

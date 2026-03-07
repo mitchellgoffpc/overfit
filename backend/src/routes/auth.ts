@@ -15,10 +15,10 @@ import type { Session, User, UserAuth } from "@overfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { handleExists } from "db/repositories/accounts";
+import { getAccountByHandle } from "db/repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "db/repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "db/repositories/user-auth";
-import { emailExists, findUserByEmail, getUser, upsertUser } from "db/repositories/users";
+import { getUserByEmail, getUser, upsertUser } from "db/repositories/users";
 import { nowIso } from "routes/helpers";
 import type { ErrorResponse, RouteApp } from "routes/helpers";
 
@@ -100,9 +100,9 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
       res.status(400).json({ error: handleError });
     } else if (passwordError) {
       res.status(400).json({ error: passwordError });
-    } else if (await handleExists(db, handle)) {
+    } else if (await getAccountByHandle(db, handle)) {
       res.status(409).json({ error: USERNAME_IN_USE_ERROR });
-    } else if (await emailExists(db, email)) {
+    } else if (await getUserByEmail(db, email)) {
       res.status(409).json({ error: EMAIL_IN_USE_ERROR });
     } else {
       const timestamp = nowIso();
@@ -111,6 +111,7 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
         email,
         handle,
         displayName: handle,
+        type: "USER",
         createdAt: timestamp,
         updatedAt: timestamp
       };
@@ -150,7 +151,7 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
       return;
     }
 
-    const user = await findUserByEmail(db, email);
+    const user = await getUserByEmail(db, email);
     if (!user) {
       res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
       return;

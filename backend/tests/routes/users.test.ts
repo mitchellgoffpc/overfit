@@ -56,18 +56,4 @@ describe("users routes", () => {
     const absent = await request(app).get(`${apiBase}/users/email-exists`).query({ email: "grace@example.com" }).expect(200);
     expect(absent.body).toMatchObject({ exists: false });
   });
-
-  it("checks whether a handle exists", async () => {
-    const app = await createTestApp();
-    await put(app, "users", "user-1", { email: "ada@example.com", handle: "Ada Lovelace" });
-
-    const missing = await request(app).get(`${apiBase}/users/handle-exists`).expect(400);
-    expect(missing.body).toMatchObject({ error: "Handle is required" });
-
-    const exists = await request(app).get(`${apiBase}/users/handle-exists`).query({ handle: "Ada Lovelace" }).expect(200);
-    expect(exists.body).toMatchObject({ exists: true });
-
-    const absent = await request(app).get(`${apiBase}/users/handle-exists`).query({ handle: "Grace Hopper" }).expect(200);
-    expect(absent.body).toMatchObject({ exists: false });
-  });
 });

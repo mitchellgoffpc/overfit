@@ -1,11 +1,11 @@
 import type { ID, Organization } from "@overfit/types";
 
 import type { Database } from "db";
+import { table as accountsTable } from "db/repositories/accounts";
 
-export type OrganizationsTable = Omit<Organization, "handle" | "displayName">;
+export type OrganizationsTable = Omit<Organization, "handle" | "displayName" | "type">;
 
-const table = "organizations";
-const accountsTable = "accounts";
+export const table = "organizations";
 
 export const createOrganizationsTable = async (db: Database): Promise<void> => {
   await db.schema
@@ -25,6 +25,7 @@ export const listOrganizations = async (db: Database): Promise<Organization[]> =
       `${table}.id as id`,
       `${accountsTable}.handle as handle`,
       `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
       `${table}.createdAt as createdAt`,
       `${table}.updatedAt as updatedAt`
     ])
@@ -39,6 +40,7 @@ export const getOrganization = async (db: Database, id: ID): Promise<Organizatio
       `${table}.id as id`,
       `${accountsTable}.handle as handle`,
       `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
       `${table}.createdAt as createdAt`,
       `${table}.updatedAt as updatedAt`
     ])
@@ -47,14 +49,14 @@ export const getOrganization = async (db: Database, id: ID): Promise<Organizatio
 };
 
 export const upsertOrganization = async (db: Database, organization: Organization): Promise<Organization> => {
-  const { handle, displayName, ...organizationRow } = organization;
+  const { type: _type, handle, displayName, ...organizationRow } = organization;
   await db
     .insertInto(accountsTable)
-    .values({ id: organization.id, handle, displayName })
-    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName }))
+    .values({ id: organization.id, handle, displayName, type: "ORGANIZATION" })
+    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName, type: "ORGANIZATION" }))
     .execute();
 
-  const { id: _, ...updates } = organizationRow;
+  const { id: _id, ...updates } = organizationRow;
   await db.insertInto(table).values(organizationRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
   return organization;
 };

@@ -5,6 +5,7 @@ import type { Express, Request, Response } from "express";
 
 import type { AppConfig } from "config";
 import { createDatabase } from "db";
+import { registerAccountRoutes } from "routes/accounts";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
 import { registerMetricRoutes } from "routes/metrics";
@@ -27,6 +28,7 @@ export async function createApp(config: AppConfig): Promise<Express> {
   });
 
   registerAuthRoutes(app, apiBase, db);
+  registerAccountRoutes(app, apiBase, db);
   registerUserRoutes(app, apiBase, db);
   registerOrganizationRoutes(app, apiBase, db);
   registerProjectRoutes(app, apiBase, db);

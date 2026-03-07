@@ -64,6 +64,7 @@ export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: D
         id,
         handle,
         displayName,
+        type: "ORGANIZATION",
         createdAt: existing?.createdAt ?? req.body?.createdAt ?? nowIso(),
         updatedAt: nowIso()
       };

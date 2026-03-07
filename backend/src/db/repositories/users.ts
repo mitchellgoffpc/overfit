@@ -2,11 +2,11 @@ import type { ID, User } from "@overfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
+import { table as accountsTable } from "db/repositories/accounts";
 
-export type UsersTable = Omit<User, "handle" | "displayName">;
+export type UsersTable = Omit<User, "handle" | "displayName" | "type">;
 
-const table = "users";
-const accountsTable = "accounts";
+export const table = "users";
 
 export const createUsersTable = async (db: Database): Promise<void> => {
   await db.schema
@@ -28,6 +28,7 @@ export const getUser = async (db: Database, id: ID): Promise<User | undefined> =
       `${table}.email as email`,
       `${accountsTable}.handle as handle`,
       `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
       `${table}.createdAt as createdAt`,
       `${table}.updatedAt as updatedAt`
     ])
@@ -35,20 +36,7 @@ export const getUser = async (db: Database, id: ID): Promise<User | undefined> =
     .executeTakeFirst();
 };
 
-export const upsertUser = async (db: Database, user: User): Promise<User> => {
-  const { handle, displayName, ...userRow } = user;
-  await db
-    .insertInto(accountsTable)
-    .values({ id: user.id, handle, displayName })
-    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName }))
-    .execute();
-
-  const { id: _, ...updates } = userRow;
-  await db.insertInto(table).values(userRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return user;
-};
-
-export const findUserByEmail = async (db: Database, email: string): Promise<User | undefined> => {
+export const getUserByEmail = async (db: Database, email: string): Promise<User | undefined> => {
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
@@ -57,6 +45,7 @@ export const findUserByEmail = async (db: Database, email: string): Promise<User
       `${table}.email as email`,
       `${accountsTable}.handle as handle`,
       `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
       `${table}.createdAt as createdAt`,
       `${table}.updatedAt as updatedAt`
     ])
@@ -64,7 +53,15 @@ export const findUserByEmail = async (db: Database, email: string): Promise<User
     .executeTakeFirst();
 };
 
-export const emailExists = async (db: Database, email: string): Promise<boolean> => {
-  const row = await db.selectFrom(table).select("id").where(sql`lower(email)`, "=", email.toLowerCase()).executeTakeFirst();
-  return Boolean(row);
+export const upsertUser = async (db: Database, user: User): Promise<User> => {
+  const { type: _type, handle, displayName, ...userRow } = user;
+  await db
+    .insertInto(accountsTable)
+    .values({ id: user.id, handle, displayName })
+    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName, type: "USER" }))
+    .execute();
+
+  const { id: _id, ...updates } = userRow;
+  await db.insertInto(table).values(userRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
+  return user;
 };
