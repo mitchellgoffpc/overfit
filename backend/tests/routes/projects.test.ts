@@ -1,27 +1,33 @@
-import { describe, expect, it } from "vitest";
+import { API_BASE } from "@overfit/types";
+import request from "supertest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { assertNotFound, createTestApp, createTestDb, get, put } from "@overfit/backend/tests/routes/helpers";
+import { createApp } from "app";
+import { createDatabase } from "db";
+import type { Database } from "db";
 
 describe("projects routes", () => {
+  let db: Database;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
+    app = createApp(db);
+  });
+
   it("upserts and fetches a project", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    const projectPayload = { name: "Overfit", description: "Tracking runs" };
-    await put(app, "projects", "project-1", projectPayload);
-    const response = await get(app, "projects", "project-1");
-    expect(response.body).toMatchObject({ id: "project-1", ...projectPayload });
+    await request(app).put(`${API_BASE}/projects/project-1`).send({ name: "Overfit", description: "Tracking runs" }).expect(200);
+    const response = await request(app).get(`${API_BASE}/projects/project-1`).expect(200);
+    expect(response.body).toMatchObject({ id: "project-1", name: "Overfit", description: "Tracking runs" });
   });
 
   it("rejects unknown projects", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    await assertNotFound(app, "projects", "missing", "Project not found");
+    const response = await request(app).get(`${API_BASE}/projects/missing`).expect(404);
+    expect(response.body).toMatchObject({ error: "Project not found" });
   });
 
   it("rejects missing required fields", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    const response = await put(app, "projects", "project-2", { description: "Missing name" }, 400);
+    const response = await request(app).put(`${API_BASE}/projects/project-2`).send({ description: "Missing name" }).expect(400);
     expect(response.body).toMatchObject({ error: "Project fields are required: name" });
   });
 });

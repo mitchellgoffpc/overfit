@@ -1,41 +1,42 @@
+import { API_BASE } from "@overfit/types";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { API_BASE, assertNotFound, createTestApp, createTestDb, createUser, get, put } from "@overfit/backend/tests/routes/helpers";
+import { createApp } from "app";
+import { createDatabase } from "db";
+import type { Database } from "db";
+import { upsertOrganizationMember } from "repositories/organization-members.js";
+import { upsertOrganization } from "repositories/organizations";
+import { upsertUser } from "repositories/users";
 
 describe("users routes", () => {
+  let db: Database;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
+    app = createApp(db);
+    await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+    await upsertOrganizationMember(db, { organizationId: "org-1", userId: "user-1", role: "ADMIN" });
+  });
+
   it("fetches a user", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    const userPayload = { email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" };
-    await createUser(db, { id: "user-1", ...userPayload });
-    const getResponse = await get(app, "users", "user-1");
-    expect(getResponse.body).toMatchObject({ id: "user-1", ...userPayload });
+    const getResponse = await request(app).get(`${API_BASE}/users/user-1`).expect(200);
+    expect(getResponse.body).toMatchObject({ id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
   });
 
   it("rejects unknown users", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    await assertNotFound(app, "users", "missing", "User not found");
+    const response = await request(app).get(`${API_BASE}/users/missing`).expect(404);
+    expect(response.body).toMatchObject({ error: "User not found" });
   });
 
   it("lists user organizations", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    await put(app, "organizations", "org-1", { handle: "core", displayName: "Core" });
-    await createUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
-    await request(app).put(`${API_BASE}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);
     const response = await request(app).get(`${API_BASE}/users/user-1/memberships`).expect(200);
-    expect(response.body).toMatchObject([
-      { id: "org-1", handle: "core", displayName: "Core", role: "ADMIN" }
-    ]);
+    expect(response.body).toMatchObject([{ id: "org-1", handle: "core", displayName: "Core", role: "ADMIN" }]);
   });
 
   it("checks whether an email exists", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    await createUser(db, { id: "user-1", email: "ada@example.com", handle: "Ada Lovelace" });
-
     const missing = await request(app).get(`${API_BASE}/users/email-exists`).expect(400);
     expect(missing.body).toMatchObject({ error: "Email is required" });
 

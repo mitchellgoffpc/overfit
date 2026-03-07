@@ -1,4 +1,5 @@
 import {
+  API_BASE,
   EMAIL_IN_USE_ERROR,
   EMAIL_INVALID_ERROR,
   CREDENTIALS_INVALID_ERROR,
@@ -8,9 +9,11 @@ import {
   USERNAME_IN_USE_ERROR
 } from "@overfit/types";
 import request from "supertest";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { API_BASE, createTestApp, createTestDb, post } from "@overfit/backend/tests/routes/helpers";
+import { createApp } from "app";
+import { createDatabase } from "db";
+import type { Database } from "db";
 import type { RouteApp } from "routes/helpers";
 
 async function getWithToken(app: RouteApp, path: string, token: string, status = 200) {
@@ -27,10 +30,23 @@ async function postWithToken(app: RouteApp, path: string, token: string, status 
     .expect(status);
 }
 
+async function post(app: RouteApp, path: string, payload: Record<string, unknown>, status = 200): Promise<Response> {
+  return request(app)
+    .post(`${API_BASE}/${path}`)
+    .send(payload)
+    .expect(status);
+}
+
 describe("auth routes", () => {
+  let db: Database;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
+    app = createApp(db);
+  });
+
   it("registers, logs in, and returns current user", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
     const register = await post(app, "auth/register", { email: "sam@example.com", handle: "sam", password: "password123" });
     const registerBody = register.body as { user: { id: string; email: string; handle: string }; session: { token: string } };
     expect(registerBody.user).toMatchObject({ email: "sam@example.com", handle: "sam" });
@@ -46,8 +62,6 @@ describe("auth routes", () => {
   });
 
   it("rejects invalid credentials and expires sessions on logout", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
     await post(app, "auth/register", { email: "jules@example.com", handle: "jules", password: "password123" });
 
     const badLogin = await post(app, "auth/login", { email: "jules@example.com", password: "bad" }, 401);
@@ -65,8 +79,6 @@ describe("auth routes", () => {
   });
 
   it("rejects duplicate handles and emails", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
     await post(app, "auth/register", { email: "dup@example.com", handle: "dup", password: "password123" });
     const emailDup = await post(app, "auth/register", { email: "dup@example.com", handle: "test", password: "password123" }, 409);
     expect(emailDup.body).toMatchObject({ error: EMAIL_IN_USE_ERROR });
@@ -75,8 +87,6 @@ describe("auth routes", () => {
   });
 
   it("rejects invalid emails, handles, and passwords", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
     const badEmails = ["no-at", "bad@", "@bad.com", "bad@com", "bad@.com"];
     const badUsernames = ["-bad", "bad-", "bad--name", "bad name", "bad_name"];
     const badPasswords = ["short", "allletters", "12345678"];
@@ -98,8 +108,6 @@ describe("auth routes", () => {
   });
 
   it("rejects expired sessions and clears them", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));

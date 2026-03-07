@@ -1,13 +1,24 @@
+import { API_BASE } from "@overfit/types";
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { API_BASE, createTestApp, createTestDb, createUser, put } from "@overfit/backend/tests/routes/helpers";
+import { createApp } from "app";
+import { createDatabase } from "db";
+import type { Database } from "db";
+import { upsertOrganization } from "repositories/organizations";
+import { upsertUser } from "repositories/users";
 
 describe("accounts routes", () => {
+  let db: Database;
+  let app: ReturnType<typeof createApp>;
+
+  beforeEach(async () => {
+    db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
+    app = createApp(db);
+  });
+
   it("checks whether a handle exists", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    await createUser(db, { id: "user-1", email: "ada@example.com", handle: "Ada Lovelace" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "Ada Lovelace", displayName: "Ada Lovelace", type: "USER" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/handle-exists`).expect(400);
     expect(missing.body).toMatchObject({ error: "Handle is required" });
@@ -20,10 +31,8 @@ describe("accounts routes", () => {
   });
 
   it("fetches an account by handle", async () => {
-    const db = await createTestDb();
-    const app = createTestApp(db);
-    await createUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace" });
-    await put(app, "organizations", "org-1", { handle: "core", displayName: "Core" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+    await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
 
     const userResponse = await request(app).get(`${API_BASE}/accounts/ada`).expect(200);
     expect(userResponse.body).toMatchObject({ id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
