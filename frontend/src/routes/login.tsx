@@ -1,5 +1,5 @@
 import { API_VERSION } from "@overfit/types";
-import type { FormEvent, ReactElement } from "react";
+import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -20,7 +20,7 @@ export default function LoginRoute(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setIsLoading(true);
