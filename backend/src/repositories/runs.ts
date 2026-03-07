@@ -5,7 +5,7 @@ import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 
 type RunsTable = Omit<Run, "metadata"> & { metadata: string | null };
 
-const table = "runs";
+export const table = "runs";
 
 const toRow = (run: Run): RunsTable => ({ ...run, metadata: encodeJson(run.metadata) });
 const fromRow = (row: RunsTable): Run => ({ ...row, metadata: decodeJson(row.metadata) });
@@ -16,6 +16,7 @@ export const createRunsTable = async (db: Database): Promise<void> => {
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("projectId", "text", (col) => col.references("projects.id").onDelete("cascade").onUpdate("cascade").notNull())
+    .addColumn("userId", "text", (col) => col.references("users.id").onDelete("cascade").onUpdate("cascade").notNull())
     .addColumn("name", "text", (col) => col.notNull())
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())

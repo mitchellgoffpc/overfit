@@ -63,6 +63,7 @@ export interface Project {
 export interface Run {
   id: ID;
   projectId: ID;
+  userId: ID;
   name: string;
   status: RunStatus;
   createdAt: Timestamp;

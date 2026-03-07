@@ -28,9 +28,10 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     const existing = await getRun(db, id);
 
     const projectId = req.body?.projectId ?? existing?.projectId;
+    const userId = req.body?.userId ?? existing?.userId;
     const name = req.body?.name ?? existing?.name;
     const status = req.body?.status ?? existing?.status;
-    const missingFields = Object.entries({ projectId, name, status }).filter(([, value]) => !value).map(([label]) => label);
+    const missingFields = Object.entries({ projectId, userId, name, status }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Run fields are required: ${missingFields.join(", ")}` });
@@ -38,6 +39,7 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
       const run = await upsertRun(db, {
         id,
         projectId,
+        userId,
         name,
         status,
         startedAt: req.body?.startedAt ?? existing?.startedAt ?? null,

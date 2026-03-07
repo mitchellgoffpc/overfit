@@ -20,7 +20,7 @@ describe("runs routes", () => {
   });
 
   it("upserts and fetches a run", async () => {
-    const runPayload = { projectId: "project-1", name: "Run 1", status: "running", metadata: { lr: 0.001 } };
+    const runPayload = { projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: { lr: 0.001 } };
     await request(app).put(`${API_BASE}/runs/run-1`).send(runPayload).expect(200);
     const response = await request(app).get(`${API_BASE}/runs/run-1`).expect(200);
     expect(response.body).toMatchObject({ id: "run-1", ...runPayload });
@@ -33,12 +33,12 @@ describe("runs routes", () => {
 
   it("rejects missing required fields", async () => {
     const missingProject = await request(app).put(`${API_BASE}/runs/reject-0`).send({ status: "running" }).expect(400);
-    expect(missingProject.body).toMatchObject({ error: "Run fields are required: projectId, name" });
+    expect(missingProject.body).toMatchObject({ error: "Run fields are required: projectId, userId, name" });
 
     const missingName = await request(app).put(`${API_BASE}/runs/reject-1`).send({ projectId: "project-1" }).expect(400);
-    expect(missingName.body).toMatchObject({ error: "Run fields are required: name, status" });
+    expect(missingName.body).toMatchObject({ error: "Run fields are required: userId, name, status" });
 
     const missingStatus = await request(app).put(`${API_BASE}/runs/reject-2`).send({ projectId: "project-1", name: "Run 2" }).expect(400);
-    expect(missingStatus.body).toMatchObject({ error: "Run fields are required: status" });
+    expect(missingStatus.body).toMatchObject({ error: "Run fields are required: userId, status" });
   });
 });

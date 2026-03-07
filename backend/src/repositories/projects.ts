@@ -1,7 +1,9 @@
 import type { ID, Project } from "@overfit/types";
+import { sql } from "kysely";
 
 import type { Database } from "db";
 import { nowIso } from "repositories/helpers";
+import { table as runsTable } from "repositories/runs";
 
 const table = "projects";
 
@@ -31,4 +33,29 @@ export const upsertProject = async (db: Database, project: Omit<Project, "create
   const { id: _, createdAt: __, ...updates } = payload;
   await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
   return await getProject(db, project.id) ?? payload;
+};
+
+export const listProjectsByUserActivity = async (db: Database, userId: ID): Promise<Project[]> => {
+  return await db
+    .selectFrom(runsTable)
+    .innerJoin(table, `${table}.id`, `${runsTable}.projectId`)
+    .select([
+      `${table}.id as id`,
+      `${table}.accountId as accountId`,
+      `${table}.name as name`,
+      `${table}.description as description`,
+      `${table}.createdAt as createdAt`,
+      `${table}.updatedAt as updatedAt`
+    ])
+    .where(`${runsTable}.userId`, "=", userId)
+    .groupBy([
+      `${table}.id`,
+      `${table}.accountId`,
+      `${table}.name`,
+      `${table}.description`,
+      `${table}.createdAt`,
+      `${table}.updatedAt`
+    ])
+    .orderBy(sql`count(${sql.ref(`${runsTable}.id`)})`, "desc")
+    .execute();
 };
