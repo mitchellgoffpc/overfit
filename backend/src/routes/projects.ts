@@ -1,3 +1,4 @@
+import { API_BASE } from "@overfit/types";
 import type { Project } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -8,7 +9,7 @@ import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertProjectPayload = Partial<Omit<Project, "id" | "updatedAt">>;
 
-export function registerProjectRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerProjectRoutes(app: RouteApp, db: Database): void {
   const listProjectsHandler: RequestHandler<Record<string, string>, Project[]> = async (_req, res) => {
     res.json(await listProjects(db));
   };
@@ -46,7 +47,7 @@ export function registerProjectRoutes(app: RouteApp, apiBase: string, db: Databa
     }
   };
 
-  app.get(`${apiBase}/projects`, listProjectsHandler);
-  app.get(`${apiBase}/projects/:id`, getProjectHandler);
-  app.put(`${apiBase}/projects/:id`, upsertProjectHandler);
+  app.get(`${API_BASE}/projects`, listProjectsHandler);
+  app.get(`${API_BASE}/projects/:id`, getProjectHandler);
+  app.put(`${API_BASE}/projects/:id`, upsertProjectHandler);
 }

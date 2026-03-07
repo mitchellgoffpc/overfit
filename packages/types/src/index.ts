@@ -93,6 +93,7 @@ export interface Metric {
 }
 
 export const API_VERSION = "v1";
+export const API_BASE = `/api/${API_VERSION}`;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HANDLE_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;

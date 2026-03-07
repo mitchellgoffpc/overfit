@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { assertNotFound, createTestApp, get, put } from "@overfit/backend/tests/routes/helpers";
+import { assertNotFound, createTestApp, createTestDb, get, put } from "@overfit/backend/tests/routes/helpers";
 
 describe("projects routes", () => {
   it("upserts and fetches a project", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     const projectPayload = { name: "Overfit", description: "Tracking runs" };
     await put(app, "projects", "project-1", projectPayload);
     const response = await get(app, "projects", "project-1");
@@ -12,12 +13,14 @@ describe("projects routes", () => {
   });
 
   it("rejects unknown projects", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     await assertNotFound(app, "projects", "missing", "Project not found");
   });
 
   it("rejects missing required fields", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     const response = await put(app, "projects", "project-2", { description: "Missing name" }, 400);
     expect(response.body).toMatchObject({ error: "Project fields are required: name" });
   });

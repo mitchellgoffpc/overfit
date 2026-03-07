@@ -1,4 +1,4 @@
-import { organizationRoles } from "@overfit/types";
+import { API_BASE, organizationRoles } from "@overfit/types";
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -28,7 +28,7 @@ type OrganizationMembersResponse = (User & { role: OrganizationRole })[];
 
 type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "updatedAt">>;
 
-export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
   const listOrganizationsHandler: RequestHandler<Record<string, string>, Organization[]> = async (_req, res) => {
     res.json(await listOrganizations(db));
   };
@@ -128,10 +128,10 @@ export function registerOrganizationRoutes(app: RouteApp, apiBase: string, db: D
     }
   };
 
-  app.get(`${apiBase}/organizations`, listOrganizationsHandler);
-  app.get(`${apiBase}/organizations/:id`, getOrganizationHandler);
-  app.get(`${apiBase}/organizations/:id/members`, listOrganizationMembersHandler);
-  app.put(`${apiBase}/organizations/:id`, upsertOrganizationHandler);
-  app.put(`${apiBase}/organizations/:id/members/:userId`, upsertOrganizationMemberHandler);
-  app.delete(`${apiBase}/organizations/:id/members/:userId`, deleteOrganizationMemberHandler);
+  app.get(`${API_BASE}/organizations`, listOrganizationsHandler);
+  app.get(`${API_BASE}/organizations/:id`, getOrganizationHandler);
+  app.get(`${API_BASE}/organizations/:id/members`, listOrganizationMembersHandler);
+  app.put(`${API_BASE}/organizations/:id`, upsertOrganizationHandler);
+  app.put(`${API_BASE}/organizations/:id/members/:userId`, upsertOrganizationMemberHandler);
+  app.delete(`${API_BASE}/organizations/:id/members/:userId`, deleteOrganizationMemberHandler);
 }

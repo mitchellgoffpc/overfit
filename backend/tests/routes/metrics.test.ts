@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { assertNotFound, assertRejectCases, createTestApp, get, put, testTimestamp } from "@overfit/backend/tests/routes/helpers";
+import { assertNotFound, assertRejectCases, createTestApp, createTestDb, get, put, testTimestamp } from "@overfit/backend/tests/routes/helpers";
 
 describe("metrics routes", () => {
   it("upserts and fetches a metric", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     await put(app, "projects", "project-1", { name: "Overfit" });
     await put(app, "runs", "run-1", { projectId: "project-1", name: "Run 1", status: "running" });
     const metricPayload = {
@@ -20,12 +21,14 @@ describe("metrics routes", () => {
   });
 
   it("rejects unknown metrics", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     await assertNotFound(app, "metrics", "missing", "Metric not found");
   });
 
   it("rejects missing required fields", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     const cases = [
       { payload: { value: 0.12, timestamp: testTimestamp }, error: "Metric fields are required: runId, name" },
       { payload: { runId: "run-1", value: 0.12 }, error: "Metric fields are required: name, timestamp" },
@@ -35,13 +38,15 @@ describe("metrics routes", () => {
   });
 
   it("rejects invalid run references", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     const response = await put(app, "metrics", "metric-3", { runId: "missing-run", name: "loss", value: 0.12, timestamp: testTimestamp }, 400);
     expect(response.body).toMatchObject({ error: "Metric runId does not reference an existing run" });
   });
 
   it("rejects non-numeric values", async () => {
-    const app = await createTestApp();
+    const db = await createTestDb();
+    const app = createTestApp(db);
     await put(app, "projects", "project-1", { name: "Overfit" });
     await put(app, "runs", "run-1", { projectId: "project-1", name: "Run 1", status: "running" });
     const response = await put(app, "metrics", "metric-4", { runId: "run-1", name: "loss", value: "0.12", timestamp: testTimestamp }, 400);

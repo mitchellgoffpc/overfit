@@ -1,6 +1,7 @@
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
 
 import {
+  API_BASE,
   EMAIL_IN_USE_ERROR,
   CREDENTIALS_INVALID_ERROR,
   SESSION_INVALID_ERROR,
@@ -77,7 +78,7 @@ const getSessionToken = (headers: Record<string, string | string[] | undefined>)
   return raw?.trim();
 };
 
-export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerAuthRoutes(app: RouteApp, db: Database): void {
   const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload | undefined> = async (req, res) => {
     const email = normalizeEmail(req.body?.email ?? "");
     const handle = req.body?.handle?.trim() ?? "";
@@ -205,8 +206,8 @@ export function registerAuthRoutes(app: RouteApp, apiBase: string, db: Database)
     res.json(user);
   };
 
-  app.post(`${apiBase}/auth/register`, register);
-  app.post(`${apiBase}/auth/login`, login);
-  app.post(`${apiBase}/auth/logout`, logout);
-  app.get(`${apiBase}/auth/me`, me);
+  app.post(`${API_BASE}/auth/register`, register);
+  app.post(`${API_BASE}/auth/login`, login);
+  app.post(`${API_BASE}/auth/logout`, logout);
+  app.get(`${API_BASE}/auth/me`, me);
 }

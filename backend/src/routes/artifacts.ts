@@ -1,3 +1,4 @@
+import { API_BASE } from "@overfit/types";
 import type { Artifact } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -9,7 +10,7 @@ import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertArtifactPayload = Partial<Omit<Artifact, "id" | "updatedAt">>;
 
-export function registerArtifactRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerArtifactRoutes(app: RouteApp, db: Database): void {
   const listArtifactsHandler: RequestHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
@@ -56,7 +57,7 @@ export function registerArtifactRoutes(app: RouteApp, apiBase: string, db: Datab
     }
   };
 
-  app.get(`${apiBase}/artifacts`, listArtifactsHandler);
-  app.get(`${apiBase}/artifacts/:id`, getArtifactHandler);
-  app.put(`${apiBase}/artifacts/:id`, upsertArtifactHandler);
+  app.get(`${API_BASE}/artifacts`, listArtifactsHandler);
+  app.get(`${API_BASE}/artifacts/:id`, getArtifactHandler);
+  app.put(`${API_BASE}/artifacts/:id`, upsertArtifactHandler);
 }

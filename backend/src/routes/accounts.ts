@@ -1,3 +1,4 @@
+import { API_BASE } from "@overfit/types";
 import type { Organization, User } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -8,7 +9,7 @@ import type { ErrorResponse, RouteApp } from "routes/helpers";
 interface HandleExistsQuery { handle?: string }
 interface ExistsResponse { exists: boolean }
 
-export function registerAccountRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerAccountRoutes(app: RouteApp, db: Database): void {
   const handleExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, HandleExistsQuery> = async (req, res) => {
     const handle = req.query.handle?.trim() ?? "";
     if (!handle) {
@@ -33,6 +34,6 @@ export function registerAccountRoutes(app: RouteApp, apiBase: string, db: Databa
     }
   };
 
-  app.get(`${apiBase}/accounts/handle-exists`, handleExistsHandler);
-  app.get(`${apiBase}/accounts/:handle`, getAccountByHandleHandler);
+  app.get(`${API_BASE}/accounts/handle-exists`, handleExistsHandler);
+  app.get(`${API_BASE}/accounts/:handle`, getAccountByHandleHandler);
 }

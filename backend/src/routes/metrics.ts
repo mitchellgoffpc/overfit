@@ -1,3 +1,4 @@
+import { API_BASE } from "@overfit/types";
 import type { Metric } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -8,7 +9,7 @@ import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertMetricPayload = Partial<Omit<Metric, "id">>;
 
-export function registerMetricRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerMetricRoutes(app: RouteApp, db: Database): void {
   const listMetricsHandler: RequestHandler<Record<string, string>, Metric[]> = async (_req, res) => {
     res.json(await listMetrics(db));
   };
@@ -54,7 +55,7 @@ export function registerMetricRoutes(app: RouteApp, apiBase: string, db: Databas
     }
   };
 
-  app.get(`${apiBase}/metrics`, listMetricsHandler);
-  app.get(`${apiBase}/metrics/:id`, getMetricHandler);
-  app.put(`${apiBase}/metrics/:id`, upsertMetricHandler);
+  app.get(`${API_BASE}/metrics`, listMetricsHandler);
+  app.get(`${API_BASE}/metrics/:id`, getMetricHandler);
+  app.put(`${API_BASE}/metrics/:id`, upsertMetricHandler);
 }

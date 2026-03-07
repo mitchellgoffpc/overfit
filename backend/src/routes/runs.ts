@@ -1,3 +1,4 @@
+import { API_BASE } from "@overfit/types";
 import type { Run } from "@overfit/types";
 import type { RequestHandler } from "express";
 
@@ -8,7 +9,7 @@ import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertRunPayload = Partial<Omit<Run, "id" | "updatedAt">>;
 
-export function registerRunRoutes(app: RouteApp, apiBase: string, db: Database): void {
+export function registerRunRoutes(app: RouteApp, db: Database): void {
   const listRunsHandler: RequestHandler<Record<string, string>, Run[]> = async (_req, res) => {
     res.json(await listRuns(db));
   };
@@ -52,7 +53,7 @@ export function registerRunRoutes(app: RouteApp, apiBase: string, db: Database):
     }
   };
 
-  app.get(`${apiBase}/runs`, listRunsHandler);
-  app.get(`${apiBase}/runs/:id`, getRunHandler);
-  app.put(`${apiBase}/runs/:id`, upsertRunHandler);
+  app.get(`${API_BASE}/runs`, listRunsHandler);
+  app.get(`${API_BASE}/runs/:id`, getRunHandler);
+  app.put(`${API_BASE}/runs/:id`, upsertRunHandler);
 }
