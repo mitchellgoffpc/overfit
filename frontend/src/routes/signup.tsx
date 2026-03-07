@@ -36,6 +36,7 @@ export default function SignupRoute(): ReactElement {
   const [usernameHintError, setUsernameHintError] = useState<string | null>(null);
   const [passwordHintError, setPasswordHintError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const hasHintErrors = Boolean(emailHintError ?? usernameHintError ?? passwordHintError);
 
   const checkAvailability = async (
     path: string,
@@ -66,6 +67,17 @@ export default function SignupRoute(): ReactElement {
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const trimmedEmail = email.trim();
+    const trimmedUsername = username.trim();
+    const nextEmailError = emailHintError ?? (trimmedEmail ? testEmail(trimmedEmail) : null);
+    const nextPasswordError = passwordHintError ?? (password ? testPassword(password) : null);
+    const nextUsernameError = usernameHintError ?? (trimmedUsername ? testHandle(trimmedUsername) : null);
+    setEmailHintError(nextEmailError);
+    setPasswordHintError(nextPasswordError);
+    setUsernameHintError(nextUsernameError);
+    if (nextEmailError || nextPasswordError || nextUsernameError) {
+      return;
+    }
     setError(null);
     setIsLoading(true);
 
@@ -199,7 +211,7 @@ export default function SignupRoute(): ReactElement {
             <span className={`auth__hint${usernameHintError ? " auth__hint--error" : ""}`}>{usernameHintError ?? USERNAME_HINT}</span>
           </label>
 
-          <button className="auth__button" type="submit" disabled={isLoading}>
+          <button className="auth__button" type="submit" disabled={isLoading || hasHintErrors}>
             {isLoading ? "Creating account..." : "Create account"}
           </button>
         </form>
