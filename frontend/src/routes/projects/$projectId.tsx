@@ -42,28 +42,28 @@ export default function ProjectDetailRoute(): ReactElement {
   const projectRuns = runs.filter((run) => run.projectId === projectId);
 
   return (
-    <div className="layout">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text lg:grid lg:grid-cols-[280px_1fr]">
       <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />
 
-      <main className="main">
-        <header className="main__header">
+      <main className="p-6 lg:p-8">
+        <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="main__kicker">{user?.handle}</p>
-            <h1 className="main__title">{project?.name ?? "Project"}</h1>
-            {project?.description ? <p className="main__subtitle">{project.description}</p> : null}
+            <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{user?.handle}</p>
+            <h1 className="mt-1 font-display text-3xl">{project?.name ?? "Project"}</h1>
+            {project?.description ? <p className="mt-1 text-sm text-brand-textMuted">{project.description}</p> : null}
           </div>
-          <div className="main__cta-row">
-            <button className="main__cta main__cta--ghost" type="button">
+          <div className="flex flex-wrap gap-2">
+            <button className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 font-semibold text-brand-text shadow-none" type="button">
               View reports
             </button>
-            <button className="main__cta" type="button">
+            <button className="rounded-xl bg-brand-accent px-4 py-2.5 font-semibold text-white shadow-soft" type="button">
               + New run
             </button>
           </div>
         </header>
 
-        {userError ? <div className="panel__empty panel__empty--page">{userError}</div> : null}
-        {!project && !isProjectsLoading ? <div className="panel__empty panel__empty--page">Project not found.</div> : null}
+        {userError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{userError}</div> : null}
+        {!project && !isProjectsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">Project not found.</div> : null}
         {project ? (
           <ProjectRunsTable
             runs={projectRuns}

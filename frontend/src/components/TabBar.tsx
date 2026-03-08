@@ -7,9 +7,15 @@ interface TabBarProps {
 
 export default function TabBar({ activeTab, tabs }: TabBarProps): ReactElement {
   return (
-    <div className="tabs">
+    <div className="mb-5 flex gap-4 border-b border-brand-border pb-2.5">
       {tabs.map((tab) => (
-        <button className={tab === activeTab ? "tabs__item tabs__item--active" : "tabs__item"} key={tab} type="button">
+        <button
+          className={tab === activeTab
+            ? "border-b-2 border-brand-accent pb-1 text-sm font-semibold text-brand-text"
+            : "border-b-2 border-transparent pb-1 text-sm text-brand-textMuted"}
+          key={tab}
+          type="button"
+        >
           {tab}
         </button>
       ))}

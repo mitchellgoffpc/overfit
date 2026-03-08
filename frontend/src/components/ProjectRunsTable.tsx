@@ -43,30 +43,37 @@ const formatMetadataValue = (metadata: Run["metadata"], key: string): string => 
 };
 
 const formatStatus = (status: Run["status"]): string => status.replace(/^[a-z]/, (char) => char.toUpperCase());
+const statusClasses: Record<Run["status"], string> = {
+  queued: "bg-[#f7e9d5] text-[#9a5c0b]",
+  running: "bg-[#dff0f0] text-brand-accentStrong",
+  finished: "bg-[#e1f2e7] text-[#1f6b3f]",
+  failed: "bg-[#fee4e2] text-[#b42318]",
+  canceled: "bg-[#eceff1] text-[#4a5560]",
+};
 
 export default function ProjectRunsTable({ runs, project, user, isLoading, error }: ProjectRunsTableProps): ReactElement {
   return (
-    <section className="panel panel--runs-table">
-      <div className="panel__header">
+    <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="panel__title">Runs</h2>
-          <p className="panel__subtitle">All runs logged in this project.</p>
+          <h2 className="text-xl">Runs</h2>
+          <p className="mt-1.5 text-[13px] text-brand-textMuted">All runs logged in this project.</p>
         </div>
-        <div className="panel__actions">
-          <div className="panel__pager">showing {runs.length}</div>
+        <div className="flex items-center">
+          <div className="text-xs text-brand-textMuted">showing {runs.length}</div>
         </div>
       </div>
 
-      {error ? <div className="panel__empty">{error}</div> : null}
-      {!error && isLoading ? <div className="panel__empty">Loading runs...</div> : null}
+      {error ? <div className="py-3 text-[13px] text-brand-textMuted">{error}</div> : null}
+      {!error && isLoading ? <div className="py-3 text-[13px] text-brand-textMuted">Loading runs...</div> : null}
 
       {!error && !isLoading ? (
         runs.length === 0 ? (
-          <div className="panel__empty">No runs yet for {project.name}.</div>
+          <div className="py-3 text-[13px] text-brand-textMuted">No runs yet for {project.name}.</div>
         ) : (
-          <div className="table__scroll">
-            <div className="table table--runs">
-              <div className="table__head">
+          <div className="overflow-x-auto pb-2">
+            <div className="min-w-[1240px]">
+              <div className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 border-b border-brand-border px-3 py-2 text-xs uppercase tracking-[0.08em] text-brand-textMuted">
                 <span>Name</span>
                 <span>State</span>
                 <span>Notes</span>
@@ -82,18 +89,23 @@ export default function ProjectRunsTable({ runs, project, user, isLoading, error
                 <span>Dropout</span>
               </div>
               {runs.map((run) => (
-                <div className="table__row" key={run.id}>
+                <div
+                  className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 rounded-xl bg-brand-surfaceMuted px-3 py-2"
+                  key={run.id}
+                >
                   <div>
-                    <p className="table__name">{run.name}</p>
-                    <p className="table__description">{project.name}</p>
+                    <p className="font-semibold">{run.name}</p>
+                    <p className="mt-1 text-xs text-brand-textMuted">{project.name}</p>
                   </div>
-                  <span className={`runs__status runs__status--${run.status}`}>{formatStatus(run.status)}</span>
-                  <span className="table__muted">—</span>
+                  <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClasses[run.status]}`}>
+                    {formatStatus(run.status)}
+                  </span>
+                  <span className="text-[13px] text-brand-textMuted">—</span>
                   <span>{user?.handle ?? run.userId}</span>
-                  <span className="table__muted">—</span>
+                  <span className="text-[13px] text-brand-textMuted">—</span>
                   <span>{formatRunTime(run.createdAt)}</span>
                   <span>{formatDuration(run.createdAt, run.updatedAt)}</span>
-                  <span className="table__muted">—</span>
+                  <span className="text-[13px] text-brand-textMuted">—</span>
                   <span>{formatMetadataValue(run.metadata, "batch_size")}</span>
                   <span>{formatMetadataValue(run.metadata, "d_ff")}</span>
                   <span>{formatMetadataValue(run.metadata, "d_model")}</span>

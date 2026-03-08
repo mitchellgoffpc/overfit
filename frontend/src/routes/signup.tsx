@@ -111,28 +111,32 @@ export default function SignupRoute(): ReactElement {
   };
 
   return (
-    <div className="auth">
-      <div className="auth__shell">
-        <div className="auth__brand">
-          <div className="auth__logo">U</div>
+    <div className="grid min-h-screen place-items-center bg-[radial-gradient(circle_at_top,_#e6f1f1_0%,_#f2f6f6_45%,_#f7f8fc_100%)] px-4 py-8">
+      <div className="grid w-full max-w-[420px] gap-5">
+        <div className="grid place-items-center gap-2.5 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-brand-text text-[22px] text-white">
+            <span className="font-display">U</span>
+          </div>
           <div>
-            <h1 className="auth__title">Create your account</h1>
-            <p className="auth__subtitle">Set up a workspace in minutes.</p>
+            <h1 className="text-xl font-semibold">Create your account</h1>
+            <p className="mt-1 text-[13px] text-brand-textMuted">Set up a workspace in minutes.</p>
           </div>
         </div>
 
         <form
-          className="auth__card"
+          className="grid gap-3.5 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft"
           onSubmit={(event) => {
             void handleSubmit(event);
           }}
         >
-          {error ? <div className="auth__error">{error}</div> : null}
+          {error ? <div className="rounded-[10px] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{error}</div> : null}
 
-          <label className="auth__field">
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Email address
             <input
-              className={`auth__input${emailHintError ? " auth__input--error" : ""}`}
+              className={emailHintError
+                ? "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20"
+                : "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"}
               type="email"
               name="email"
               autoComplete="email"
@@ -155,13 +159,17 @@ export default function SignupRoute(): ReactElement {
                 }
               }}
             />
-            <span className={`auth__hint${emailHintError ? " auth__hint--error" : ""}`}>{emailHintError ?? ""}</span>
+            <span className={emailHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
+              {emailHintError ?? ""}
+            </span>
           </label>
 
-          <label className="auth__field">
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Password
             <input
-              className={`auth__input${passwordHintError ? " auth__input--error" : ""}`}
+              className={passwordHintError
+                ? "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20"
+                : "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"}
               type="password"
               name="password"
               autoComplete="new-password"
@@ -179,13 +187,17 @@ export default function SignupRoute(): ReactElement {
                 }
               }}
             />
-            <span className={`auth__hint${passwordHintError ? " auth__hint--error" : ""}`}>{passwordHintError ?? PASSWORD_HINT}</span>
+            <span className={passwordHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
+              {passwordHintError ?? PASSWORD_HINT}
+            </span>
           </label>
 
-          <label className="auth__field">
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Username
             <input
-              className={`auth__input${usernameHintError ? " auth__input--error" : ""}`}
+              className={usernameHintError
+                ? "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20"
+                : "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"}
               type="text"
               name="username"
               autoComplete="username"
@@ -208,16 +220,22 @@ export default function SignupRoute(): ReactElement {
                 }
               }}
             />
-            <span className={`auth__hint${usernameHintError ? " auth__hint--error" : ""}`}>{usernameHintError ?? USERNAME_HINT}</span>
+            <span className={usernameHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
+              {usernameHintError ?? USERNAME_HINT}
+            </span>
           </label>
 
-          <button className="auth__button" type="submit" disabled={isLoading || hasHintErrors}>
+          <button
+            className="rounded-[10px] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+            type="submit"
+            disabled={isLoading || hasHintErrors}
+          >
             {isLoading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
-        <div className="auth__footer">
-          Already have an account? <Link className="auth__link" to="/login">Sign in</Link>
+        <div className="text-center text-[13px] text-brand-textMuted">
+          Already have an account? <Link className="font-semibold text-brand-accentStrong no-underline" to="/login">Sign in</Link>
         </div>
       </div>
     </div>
