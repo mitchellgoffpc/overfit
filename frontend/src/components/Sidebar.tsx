@@ -12,16 +12,6 @@ interface SidebarProps {
 export default function Sidebar({ user, projects, isLoading, error }: SidebarProps): ReactElement {
   return (
     <aside className="flex h-full flex-col gap-5 border-b border-brand-border bg-[#f0f6f7] px-5 py-6 lg:border-b-0 lg:border-r">
-      <div className="flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-accent text-[22px] font-semibold text-white">
-          <span className="font-display">U</span>
-        </div>
-        <div>
-          <p className="text-[15px] font-semibold">Underfit</p>
-          <p className="mt-1 text-xs text-brand-textMuted">Workspace</p>
-        </div>
-      </div>
-
       {user ? (
         <>
           <label className="flex w-full items-center gap-2 rounded-xl border border-brand-border bg-brand-surfaceMuted px-3 py-2">
@@ -58,16 +48,6 @@ export default function Sidebar({ user, projects, isLoading, error }: SidebarPro
                 {projects.length === 0 ? <div className="px-1 py-1.5 text-xs text-brand-textMuted">No projects yet.</div> : null}
               </div>
             ) : null}
-          </div>
-
-          <div className="mt-auto flex items-center gap-3 border-t border-brand-border pt-4">
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
-              {user.displayName.slice(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <p className="text-sm font-semibold">{user.displayName}</p>
-              <p className="mt-1 text-xs text-brand-textMuted">{user.email}</p>
-            </div>
           </div>
         </>
       ) : (
