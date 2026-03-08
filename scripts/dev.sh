@@ -31,7 +31,7 @@ fi
 data_path="$repo_path/.underfit"
 mkdir -p "$data_path"
 
-tmux new-session -d -s "$session" -c "$repo_path" "npm run dev:backend -- db.sqlite.path=$data_path/dev.db storage.path=$data_path/storage"
+tmux new-session -d -s "$session" -c "$repo_path" "npm run dev:backend -- db.sqlite.path=$data_path/dev.db storage.file.baseDir=$data_path/storage"
 tmux split-window -h -t "$session" -c "$repo_path" "npm run dev:frontend"
 tmux select-layout -t "$session" even-horizontal
 bash "$repo_path/scripts/seed.sh"

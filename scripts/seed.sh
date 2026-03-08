@@ -51,7 +51,7 @@ auth_status="${auth_response##*$'\n'}"
 auth_body="${auth_response%$'\n'*}"
 
 if [[ "$auth_status" -eq 409 ]]; then
-  auth_body="$(json_request "POST" "/auth/login" '{"email":"test@test.com","password":"test"}')"
+  auth_body="$(json_request "POST" "/auth/login" '{"email":"test@test.com","password":"test1234"}')"
 elif [[ "$auth_status" -lt 200 || "$auth_status" -ge 300 ]]; then
   echo "Seed request failed ($auth_status): $auth_body" >&2
   exit 1
