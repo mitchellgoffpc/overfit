@@ -10,6 +10,7 @@ interface NavbarProps {
 
 export default function Navbar({ user, locationLabel }: NavbarProps): ReactElement {
   const ownerLabel = user?.handle ?? "workspace";
+  const displayName = user?.name ?? user?.displayName ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,11 +80,11 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
             }}
           >
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold">{user.displayName}</p>
+              <p className="text-sm font-semibold">{displayName}</p>
               <p className="mt-1 text-xs text-brand-textMuted">{user.email}</p>
             </div>
             <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
-              {user.displayName.slice(0, 2).toUpperCase()}
+              {displayName.slice(0, 2).toUpperCase()}
             </div>
           </button>
           {isMenuOpen ? (
@@ -100,9 +101,9 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
               <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/runs">
                 Runs
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/settings">
-                Settings
-              </Link>
+                <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/settings/profile">
+                  Settings
+                </Link>
               <div className="my-2 border-t border-brand-border" />
               <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/logout">
                 Sign Out

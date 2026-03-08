@@ -15,9 +15,16 @@ export const createUsersTable = async (db: Database): Promise<void> => {
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("email", "text", (col) => col.notNull())
+    .addColumn("name", "text")
+    .addColumn("bio", "text")
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
     .execute();
+
+  const columns = await sql<{ name: string }>`PRAGMA table_info(${sql.table(table)})`.execute(db);
+  const existing = new Set(columns.rows.map((row) => row.name));
+  if (!existing.has("name")) { await db.schema.alterTable(table).addColumn("name", "text").execute(); }
+  if (!existing.has("bio")) { await db.schema.alterTable(table).addColumn("bio", "text").execute(); }
 };
 
 export const getUser = async (db: Database, id: ID): Promise<User | undefined> => {
@@ -27,6 +34,8 @@ export const getUser = async (db: Database, id: ID): Promise<User | undefined> =
     .select([
       `${table}.id as id`,
       `${table}.email as email`,
+      `${table}.name as name`,
+      `${table}.bio as bio`,
       `${accountsTable}.handle as handle`,
       `${accountsTable}.displayName as displayName`,
       `${accountsTable}.type as type`,
@@ -44,6 +53,8 @@ export const getUserByEmail = async (db: Database, email: string): Promise<User 
     .select([
       `${table}.id as id`,
       `${table}.email as email`,
+      `${table}.name as name`,
+      `${table}.bio as bio`,
       `${accountsTable}.handle as handle`,
       `${accountsTable}.displayName as displayName`,
       `${accountsTable}.type as type`,
@@ -66,4 +77,19 @@ export const upsertUser = async (db: Database, user: Omit<User, "createdAt" | "u
   const { id: _id, createdAt: __, ...updates } = userRow;
   await db.insertInto(table).values(userRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
   return await getUser(db, user.id) ?? payload;
+};
+
+export const updateUserProfile = async (
+  db: Database,
+  id: ID,
+  updates: { name?: string | null; bio?: string | null; displayName?: string }
+): Promise<User | undefined> => {
+  const { displayName, ...userUpdates } = updates;
+  if (Object.keys(userUpdates).length > 0) {
+    await db.updateTable(table).set({ ...userUpdates, updatedAt: nowIso() }).where("id", "=", id).execute();
+  }
+  if (displayName) {
+    await db.updateTable(accountsTable).set({ displayName }).where("id", "=", id).execute();
+  }
+  return await getUser(db, id);
 };

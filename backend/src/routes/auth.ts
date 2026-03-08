@@ -131,6 +131,8 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
         email,
         handle,
         displayName: handle,
+        name: handle,
+        bio: null,
         type: "USER"
       });
 

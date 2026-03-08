@@ -8,6 +8,7 @@ interface AuthState {
   error: string | null;
   authFailed: boolean;
   loadUser: (token?: string) => Promise<void>;
+  setUser: (user: User | null) => void;
   clearAuth: () => void;
 }
 
@@ -38,6 +39,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       const message = error instanceof Error ? error.message : "Failed to load user";
       set({ user: null, isLoading: false, error: message, authFailed: true });
     }
+  },
+  setUser: (user: User | null) => {
+    set({ user });
   },
   clearAuth: () => {
     set({ user: null, isLoading: false, error: null, authFailed: false });

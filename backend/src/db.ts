@@ -1,8 +1,9 @@
-import type { Account, Metric, OrganizationMember, Project, Session, UserAuth } from "@underfit/types";
+import type { Account, ApiKey, Metric, OrganizationMember, Project, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 
 import { createAccountsTable } from "repositories/accounts.js";
+import { createApiKeysTable } from "repositories/api-keys.js";
 import type { ArtifactsTable } from "repositories/artifacts.js";
 import { createArtifactsTable } from "repositories/artifacts.js";
 import { createMetricsTable } from "repositories/metrics.js";
@@ -31,6 +32,7 @@ export interface DatabaseConfig {
 export interface DatabaseSchema {
   accounts: Account;
   users: UsersTable;
+  api_keys: ApiKey;
   user_auth: UserAuth;
   sessions: Session;
   organizations: OrganizationsTable;
@@ -46,6 +48,7 @@ export type Database = Kysely<DatabaseSchema>;
 const initDatabase = async (db: Database): Promise<void> => {
   await createAccountsTable(db);
   await createUsersTable(db);
+  await createApiKeysTable(db);
   await createUserAuthTable(db);
   await createSessionsTable(db);
   await createOrganizationsTable(db);
