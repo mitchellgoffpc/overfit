@@ -12,6 +12,8 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { useAuthStore } from "store/auth";
+
 interface AuthResponse {
   session?: { token?: string };
 }
@@ -36,6 +38,8 @@ export default function SignupRoute(): ReactElement {
   const [usernameHintError, setUsernameHintError] = useState<string | null>(null);
   const [passwordHintError, setPasswordHintError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const loadUser = useAuthStore((state) => state.loadUser);
   const hasHintErrors = Boolean(emailHintError ?? usernameHintError ?? passwordHintError);
 
   const checkAvailability = async (
@@ -100,6 +104,8 @@ export default function SignupRoute(): ReactElement {
       const token = body.session?.token;
       if (token) {
         localStorage.setItem("underfitSessionToken", token);
+        clearAuth();
+        void loadUser(token);
       }
       setIsLoading(false);
       void navigate("/");

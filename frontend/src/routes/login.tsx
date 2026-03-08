@@ -3,6 +3,8 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { useAuthStore } from "store/auth";
+
 interface AuthResponse {
   session?: { token?: string };
 }
@@ -19,6 +21,8 @@ export default function LoginRoute(): ReactElement {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const loadUser = useAuthStore((state) => state.loadUser);
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,6 +48,8 @@ export default function LoginRoute(): ReactElement {
       const token = body.session?.token;
       if (token) {
         localStorage.setItem("underfitSessionToken", token);
+        clearAuth();
+        void loadUser(token);
       }
       setIsLoading(false);
       void navigate("/");
