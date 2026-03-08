@@ -151,6 +151,8 @@ body {
   border-radius: 12px;
   text-align: left;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 
 .sidebar__project:hover {
@@ -303,6 +305,13 @@ body {
   font-family: "Fraunces", serif;
 }
 
+.main__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 640px;
+}
+
 .main__cta-row {
   display: flex;
   gap: 10px;
@@ -450,6 +459,24 @@ body {
 .table__row {
   background: var(--surface-muted);
   border-radius: 12px;
+}
+
+.table__scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.table--runs {
+  min-width: 1240px;
+}
+
+.table--runs .table__head,
+.table--runs .table__row {
+  grid-template-columns: 1.6fr 0.9fr 0.9fr 0.9fr 0.9fr 0.9fr 0.8fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr;
+}
+
+.table--runs .runs__status {
+  display: inline-flex;
 }
 
 .table__name {
@@ -855,5 +882,22 @@ body {
 
   .table__row span:nth-child(5) {
     grid-area: traces;
+  }
+
+  .table--runs .table__head,
+  .table--runs .table__row {
+    grid-template-columns: 1.6fr 0.9fr 0.9fr 0.9fr 0.9fr 0.9fr 0.8fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr;
+    grid-template-areas: none;
+  }
+
+  .table--runs .table__row > div {
+    grid-area: auto;
+  }
+
+  .table--runs .table__row span:nth-child(2),
+  .table--runs .table__row span:nth-child(3),
+  .table--runs .table__row span:nth-child(4),
+  .table--runs .table__row span:nth-child(5) {
+    grid-area: auto;
   }
 }

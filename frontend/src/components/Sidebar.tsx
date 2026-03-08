@@ -1,5 +1,6 @@
 import type { Project, User } from "@underfit/types";
 import type { ReactElement } from "react";
+import { Link } from "react-router-dom";
 
 interface SidebarProps {
   readonly user: User | null;
@@ -38,13 +39,13 @@ export default function Sidebar({ user, projects, isLoading, error }: SidebarPro
             {!error && !isLoading ? (
               <div className="sidebar__projects">
                 {projects.map((project) => (
-                  <button className="sidebar__project" type="button" key={project.id}>
+                  <Link className="sidebar__project" to={`/projects/${project.id}`} key={project.id}>
                     <span className="sidebar__project-icon">{project.name.slice(0, 1).toUpperCase()}</span>
                     <span className="sidebar__project-text">
                       <span className="sidebar__project-name">{project.name}</span>
                       <span className="sidebar__project-meta">{user.handle}/{project.name}</span>
                     </span>
-                  </button>
+                  </Link>
                 ))}
                 {projects.length === 0 ? <div className="sidebar__empty">No projects yet.</div> : null}
               </div>
