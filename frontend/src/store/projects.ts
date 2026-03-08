@@ -19,9 +19,10 @@ export const useProjectStore = create<ProjectState>((set) => ({
     set({ isLoading: true, error: null });
     const sessionToken = token ?? localStorage.getItem("underfitSessionToken") ?? "";
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
+    const endpoint = sessionToken ? "projects/me" : "projects";
 
     try {
-      const response = await fetch(`${apiBase}/projects/me`, { headers });
+      const response = await fetch(`${apiBase}/${endpoint}`, { headers });
 
       if (!response.ok) {
         set({ error: `Failed to fetch projects (${String(response.status)})`, isLoading: false });

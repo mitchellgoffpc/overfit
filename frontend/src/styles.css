@@ -317,6 +317,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   box-shadow: var(--shadow);
+  text-decoration: none;
 }
 
 .main__cta--ghost {
@@ -325,6 +326,7 @@ body {
   border: 1px solid var(--border);
   box-shadow: none;
 }
+
 
 .tabs {
   display: flex;
