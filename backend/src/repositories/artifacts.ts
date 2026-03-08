@@ -3,12 +3,12 @@ import type { Artifact, ID } from "@underfit/types";
 import type { Database } from "db";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 
-type ArtifactsTable = Omit<Artifact, "metadata"> & { metadata: string | null };
+export type ArtifactRow = Omit<Artifact, "metadata"> & { metadata: string | null };
 
 const table = "artifacts";
 
-const toRow = (artifact: Artifact): ArtifactsTable => ({ ...artifact, metadata: encodeJson(artifact.metadata) });
-const fromRow = (row: ArtifactsTable): Artifact => ({ ...row, metadata: decodeJson(row.metadata) });
+const toRow = (artifact: Artifact): ArtifactRow => ({ ...artifact, metadata: encodeJson(artifact.metadata) });
+const fromRow = (row: ArtifactRow): Artifact => ({ ...row, metadata: decodeJson(row.metadata) });
 
 export const createArtifactsTable = async (db: Database): Promise<void> => {
   await db.schema

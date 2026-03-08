@@ -4,7 +4,7 @@ import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 
-export type OrganizationsTable = Omit<Organization, "handle" | "displayName" | "type">;
+export type OrganizationRow = Omit<Organization, "handle" | "displayName" | "type">;
 
 export const table = "organizations";
 

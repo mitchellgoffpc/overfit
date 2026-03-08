@@ -5,7 +5,7 @@ import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 
-export type UsersTable = Omit<User, "handle" | "displayName" | "type">;
+export type UserRow = Omit<User, "handle" | "displayName" | "type">;
 
 export const table = "users";
 

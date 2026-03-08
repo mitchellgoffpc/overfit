@@ -3,12 +3,12 @@ import type { ID, Run } from "@underfit/types";
 import type { Database } from "db";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 
-type RunsTable = Omit<Run, "metadata"> & { metadata: string | null };
+export type RunRow = Omit<Run, "metadata"> & { metadata: string | null };
 
 export const table = "runs";
 
-const toRow = (run: Run): RunsTable => ({ ...run, metadata: encodeJson(run.metadata) });
-const fromRow = (row: RunsTable): Run => ({ ...row, metadata: decodeJson(row.metadata) });
+const toRow = (run: Run): RunRow => ({ ...run, metadata: encodeJson(run.metadata) });
+const fromRow = (row: RunRow): Run => ({ ...row, metadata: decodeJson(row.metadata) });
 
 export const createRunsTable = async (db: Database): Promise<void> => {
   await db.schema

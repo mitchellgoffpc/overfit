@@ -4,18 +4,18 @@ import { Kysely, SqliteDialect } from "kysely";
 
 import { createAccountsTable } from "repositories/accounts.js";
 import { createApiKeysTable } from "repositories/api-keys.js";
-import type { ArtifactsTable } from "repositories/artifacts.js";
+import type { ArtifactRow } from "repositories/artifacts.js";
 import { createArtifactsTable } from "repositories/artifacts.js";
 import { createMetricsTable } from "repositories/metrics.js";
 import { createOrganizationMembersTable } from "repositories/organization-members.js";
-import type { OrganizationsTable } from "repositories/organizations.js";
+import type { OrganizationRow } from "repositories/organizations.js";
 import { createOrganizationsTable } from "repositories/organizations.js";
 import { createProjectsTable } from "repositories/projects.js";
-import type { RunsTable } from "repositories/runs.js";
+import type { RunRow } from "repositories/runs.js";
 import { createRunsTable } from "repositories/runs.js";
 import { createSessionsTable } from "repositories/sessions.js";
 import { createUserAuthTable } from "repositories/user-auth.js";
-import type { UsersTable } from "repositories/users.js";
+import type { UserRow } from "repositories/users.js";
 import { createUsersTable } from "repositories/users.js";
 
 export type DatabaseType = "sqlite" | "postgresql";
@@ -31,15 +31,15 @@ export interface DatabaseConfig {
 
 export interface DatabaseSchema {
   accounts: Account;
-  users: UsersTable;
+  users: UserRow;
   api_keys: ApiKey;
   user_auth: UserAuth;
   sessions: Session;
-  organizations: OrganizationsTable;
+  organizations: OrganizationRow;
   organization_members: OrganizationMember;
   projects: Project;
-  runs: RunsTable;
-  artifacts: ArtifactsTable;
+  runs: RunRow;
+  artifacts: ArtifactRow;
   metrics: Metric;
 }
 
