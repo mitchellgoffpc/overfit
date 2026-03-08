@@ -10,6 +10,9 @@ export interface AppConfig {
     port: number;
   };
   db: DatabaseConfig;
+  storage: {
+    path: string;
+  };
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -21,6 +24,9 @@ export const DEFAULT_CONFIG: AppConfig = {
     sqlite: {
       path: ":memory:"
     }
+  },
+  storage: {
+    path: ".underfit/storage"
   }
 };
 
@@ -36,6 +42,7 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
   const serverConfig = isRecord(parsed.server) ? parsed.server : {};
   const dbConfig = isRecord(parsed.db) ? parsed.db : {};
   const sqliteConfig = isRecord(dbConfig.sqlite) ? dbConfig.sqlite : {};
+  const storageConfig = isRecord(parsed.storage) ? parsed.storage : {};
 
   const portValue = serverConfig.port ?? DEFAULT_CONFIG.server.port;
 
@@ -70,17 +77,57 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
     db.sqlite = { path: sqlitePathValue };
   }
 
+  const storagePathValue = storageConfig.path ?? DEFAULT_CONFIG.storage.path;
+
+  if (typeof storagePathValue !== "string" || storagePathValue.trim() === "") {
+    throw new Error("storage.path must be a non-empty string");
+  }
+
   return {
     server: {
       port
     },
-    db
+    db,
+    storage: {
+      path: storagePathValue
+    }
   };
 };
 
-export const loadConfig = (configPath?: string): AppConfig => {
+const parseOverrideValue = (value: string): string | number | boolean | null => {
+  if (value === "true") { return true; }
+  if (value === "false") { return false; }
+  if (value === "null") { return null; }
+  const numeric = Number(value);
+  return Number.isNaN(numeric) ? value : numeric;
+};
+
+const applyOverrides = (config: AppConfig, overrides: string[]): AppConfig => {
+  const getRecord = (value: unknown, configPath: string): Record<string, unknown> => {
+    if (!isRecord(value)) { throw new Error(`Unknown config path: ${configPath}`); }
+    return value;
+  };
+
+  for (const override of overrides) {
+    if (!override.includes("=")) { continue; }
+    const [rawKey, ...rest] = override.split("=");
+    const keyPath = rawKey.split(".").filter(Boolean);
+    if (!rawKey || !keyPath.length) { continue; }
+    let cursor: Record<string, unknown> = config as unknown as Record<string, unknown>;
+    for (let i = 0; i < keyPath.length - 1; i += 1) {
+      cursor = getRecord(cursor[keyPath[i]], rawKey);
+    }
+    const leaf = keyPath[keyPath.length - 1];
+    if (!(leaf in cursor)) { throw new Error(`Unknown config path: ${rawKey}`); }
+    cursor[leaf] = parseOverrideValue(rest.join("="));
+  }
+  return config;
+};
+
+export const loadConfig = (configPath?: string, overrides: string[] = []): AppConfig => {
   if (!configPath) {
-    return DEFAULT_CONFIG;
+    const base = JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as AppConfig;
+    return applyOverrides(base, overrides);
   }
 
   const resolvedPath = path.resolve(process.cwd(), configPath);
@@ -96,5 +143,5 @@ export const loadConfig = (configPath?: string): AppConfig => {
     throw error;
   }
 
-  return parseAppConfig(rawConfig);
+  return applyOverrides(parseAppConfig(rawConfig), overrides);
 };

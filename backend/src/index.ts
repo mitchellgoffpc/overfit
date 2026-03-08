@@ -2,8 +2,10 @@ import { createApp } from "app";
 import { loadConfig } from "config";
 import { createDatabase } from "db";
 
-const configPath = process.argv[2];
-const config = loadConfig(configPath);
+const args = process.argv.slice(2);
+const configPath = args[0] && !args[0].includes("=") ? args[0] : undefined;
+const overrides = configPath ? args.slice(1) : args;
+const config = loadConfig(configPath, overrides);
 const db = await createDatabase(config.db);
 const app = createApp(db);
 
