@@ -12,8 +12,9 @@ import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
 import { registerUserRoutes } from "routes/users";
+import type { StorageBackend } from "storage";
 
-export function createApp(db: Database): Express {
+export function createApp(db: Database, storage: StorageBackend | null = null): Express {
   const app = express();
 
   app.use(cors());
@@ -29,7 +30,7 @@ export function createApp(db: Database): Express {
   registerOrganizationRoutes(app, db);
   registerProjectRoutes(app, db);
   registerRunRoutes(app, db);
-  registerArtifactRoutes(app, db);
+  registerArtifactRoutes(app, db, storage);
   registerMetricRoutes(app, db);
 
   return app;

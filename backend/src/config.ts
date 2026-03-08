@@ -4,15 +4,14 @@ import path from "node:path";
 import * as toml from "@iarna/toml";
 
 import type { DatabaseConfig } from "db";
+import type { StorageConfig } from "storage";
 
 export interface AppConfig {
   server: {
     port: number;
   };
   db: DatabaseConfig;
-  storage: {
-    path: string;
-  };
+  storage: StorageConfig;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -26,7 +25,10 @@ export const DEFAULT_CONFIG: AppConfig = {
     }
   },
   storage: {
-    path: ".underfit/storage"
+    type: "file",
+    file: {
+      baseDir: "artifacts"
+    }
   }
 };
 
@@ -41,8 +43,9 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
 
   const serverConfig = isRecord(parsed.server) ? parsed.server : {};
   const dbConfig = isRecord(parsed.db) ? parsed.db : {};
-  const sqliteConfig = isRecord(dbConfig.sqlite) ? dbConfig.sqlite : {};
   const storageConfig = isRecord(parsed.storage) ? parsed.storage : {};
+  const sqliteConfig = isRecord(dbConfig.sqlite) ? dbConfig.sqlite : {};
+  const fileConfig = isRecord(storageConfig.file) ? storageConfig.file : {};
 
   const portValue = serverConfig.port ?? DEFAULT_CONFIG.server.port;
 
@@ -77,20 +80,29 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
     db.sqlite = { path: sqlitePathValue };
   }
 
-  const storagePathValue = storageConfig.path ?? DEFAULT_CONFIG.storage.path;
+  const storageTypeValue = typeof storageConfig.type === "string" ? storageConfig.type : DEFAULT_CONFIG.storage.type;
 
-  if (typeof storagePathValue !== "string" || storagePathValue.trim() === "") {
-    throw new Error("storage.path must be a non-empty string");
+  if (storageTypeValue !== "file") {
+    throw new Error(`Unsupported storage type: ${storageTypeValue}`);
   }
+
+  const baseDirValue = fileConfig.baseDir ?? DEFAULT_CONFIG.storage.file.baseDir;
+
+  if (typeof baseDirValue !== "string" || baseDirValue.trim() === "") {
+    throw new Error("storage.file.baseDir must be a non-empty string");
+  }
+
+  const storage: AppConfig["storage"] = {
+    type: storageTypeValue,
+    file: { baseDir: baseDirValue }
+  };
 
   return {
     server: {
       port
     },
     db,
-    storage: {
-      path: storagePathValue
-    }
+    storage
   };
 };
 
