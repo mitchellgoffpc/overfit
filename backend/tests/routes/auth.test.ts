@@ -57,7 +57,7 @@ describe("auth routes", () => {
     const token = loginBody.session.token;
     expect(loginBody.user.id).toBe(registerBody.user.id);
 
-    const current = await getWithToken(app, `${API_BASE}/auth/me`, token);
+    const current = await getWithToken(app, `${API_BASE}/users/me`, token);
     expect((current.body as { id: string }).id).toBe(registerBody.user.id);
   });
 
@@ -74,7 +74,7 @@ describe("auth routes", () => {
     const logout = await postWithToken(app, `${API_BASE}/auth/logout`, token);
     expect(logout.body).toMatchObject({ status: "ok" });
 
-    const current = await getWithToken(app, `${API_BASE}/auth/me`, token, 401);
+    const current = await getWithToken(app, `${API_BASE}/users/me`, token, 401);
     expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
   });
 
@@ -116,7 +116,7 @@ describe("auth routes", () => {
       const token = registerBody.session.token;
 
       vi.advanceTimersByTime(1000 * 60 * 60 * 24 * 31);
-      const current = await getWithToken(app, `${API_BASE}/auth/me`, token, 401);
+      const current = await getWithToken(app, `${API_BASE}/users/me`, token, 401);
       expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
     } finally {
       vi.useRealTimers();

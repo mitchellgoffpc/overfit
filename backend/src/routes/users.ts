@@ -87,6 +87,10 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
+  const getCurrentUserHandler: RequestHandler<Record<string, string>, User | ErrorResponse> = (req, res) => {
+    res.json(req.user);
+  };
+
   const listApiKeysHandler: RequestHandler<Record<string, string>, ApiKey[] | ErrorResponse> = async (req, res) => {
     res.json(await listApiKeysByUser(db, req.user.id));
   };
@@ -107,14 +111,15 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     res.json({ status: "ok" });
   };
 
+  app.get(`${API_BASE}/users/me`, requireAuth(db), getCurrentUserHandler);
+  app.patch(`${API_BASE}/users/me`, requireAuth(db), updateProfileHandler);
+  app.get(`${API_BASE}/users/me/api-keys`, requireAuth(db), listApiKeysHandler);
+  app.post(`${API_BASE}/users/me/api-keys`, requireAuth(db), createApiKeyHandler);
+  app.delete(`${API_BASE}/users/me/api-keys/:id`, requireAuth(db), deleteApiKeyHandler);
   app.get(`${API_BASE}/users/email-exists`, emailExistsHandler);
   app.get(`${API_BASE}/users/:id`, getUserHandler);
   app.get(`${API_BASE}/users/:id/memberships`, listUserMembershipsHandler);
   app.get(`${API_BASE}/users/:id/runs`, listUserRunsHandler);
   app.put(`${API_BASE}/users/:id/memberships/:organizationId`, redirectUserMembershipHandler);
   app.delete(`${API_BASE}/users/:id/memberships/:organizationId`, redirectUserMembershipHandler);
-  app.patch(`${API_BASE}/users/me`, requireAuth(db), updateProfileHandler);
-  app.get(`${API_BASE}/users/me/api-keys`, requireAuth(db), listApiKeysHandler);
-  app.post(`${API_BASE}/users/me/api-keys`, requireAuth(db), createApiKeyHandler);
-  app.delete(`${API_BASE}/users/me/api-keys/:id`, requireAuth(db), deleteApiKeyHandler);
 }

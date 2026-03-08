@@ -28,7 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     set({ isLoading: true, error: null, authFailed: false });
     try {
-      const response = await fetch(`${apiBase}/auth/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
+      const response = await fetch(`${apiBase}/users/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
       if (!response.ok) {
         set({ user: null, isLoading: false, error: `Failed to load user (${String(response.status)})`, authFailed: true });
       } else {

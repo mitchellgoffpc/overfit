@@ -1,4 +1,5 @@
 import { API_VERSION } from "@underfit/types";
+import type { User } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,6 +8,7 @@ import { useAuthStore } from "store/auth";
 
 interface AuthResponse {
   session?: { token?: string };
+  user?: User;
 }
 
 interface AuthError {
@@ -23,6 +25,7 @@ export default function LoginRoute(): ReactElement {
   const [isLoading, setIsLoading] = useState(false);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const loadUser = useAuthStore((state) => state.loadUser);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,10 +49,15 @@ export default function LoginRoute(): ReactElement {
 
       const body = (await response.json()) as AuthResponse;
       const token = body.session?.token;
+      const user = body.user ?? null;
       if (token) {
         localStorage.setItem("underfitSessionToken", token);
         clearAuth();
-        void loadUser(token);
+        if (user) {
+          setUser(user);
+        } else {
+          void loadUser(token);
+        }
       }
       setIsLoading(false);
       void navigate("/");

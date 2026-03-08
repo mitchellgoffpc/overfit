@@ -196,12 +196,7 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     res.json({ status: "ok" });
   };
 
-  const me: RequestHandler<Record<string, string>, User | ErrorResponse> = (req, res) => {
-    res.json(req.user);
-  };
-
   app.post(`${API_BASE}/auth/register`, register);
   app.post(`${API_BASE}/auth/login`, login);
   app.post(`${API_BASE}/auth/logout`, logout);
-  app.get(`${API_BASE}/auth/me`, requireAuth(db), me);
 }
