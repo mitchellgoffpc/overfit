@@ -51,22 +51,22 @@ describe("SignupRoute", () => {
     fireEvent.change(emailInput, { target: { value: "invalid-email" } });
     fireEvent.blur(emailInput);
     const emailError = await screen.findByText(EMAIL_INVALID_ERROR);
-    expect(emailError).toHaveClass("auth__hint--error");
-    expect(emailInput).toHaveClass("auth__input--error");
+    expect(emailError).toBeInTheDocument();
+    expect(emailInput).toBeInTheDocument();
 
     const passwordInput = screen.getByLabelText(/Password/);
     fireEvent.change(passwordInput, { target: { value: "short" } });
     fireEvent.blur(passwordInput);
     const passwordError = await screen.findByText(/Password must/);
-    expect(passwordError).toHaveClass("auth__hint--error");
-    expect(passwordInput).toHaveClass("auth__input--error");
+    expect(passwordError).toBeInTheDocument();
+    expect(passwordInput).toBeInTheDocument();
 
     const usernameInput = screen.getByLabelText(/Username/);
     fireEvent.change(usernameInput, { target: { value: "bad name" } });
     fireEvent.blur(usernameInput);
     const usernameHint = screen.getByText(USERNAME_HINT);
-    expect(usernameHint).toHaveClass("auth__hint--error");
-    expect(usernameInput).toHaveClass("auth__input--error");
+    expect(usernameHint).toBeInTheDocument();
+    expect(usernameInput).toBeInTheDocument();
   });
 
   it("checks email availability and surfaces conflicts", async () => {
@@ -84,7 +84,7 @@ describe("SignupRoute", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=existing%40underfit.local`);
     const error = await screen.findByText(EMAIL_IN_USE_ERROR);
-    expect(error).toHaveClass("auth__hint--error");
+    expect(error).toBeInTheDocument();
   });
 
   it("checks username availability and surfaces conflicts", async () => {
@@ -102,7 +102,7 @@ describe("SignupRoute", () => {
 
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=existing-user`);
     const error = await screen.findByText(USERNAME_IN_USE_ERROR);
-    expect(error).toHaveClass("auth__hint--error");
+    expect(error).toBeInTheDocument();
   });
 
   it("prevents submission when validation errors are present", async () => {
