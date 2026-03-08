@@ -1,0 +1,119 @@
+import { API_VERSION } from "@underfit/types";
+import type { User } from "@underfit/types";
+import type { ReactElement } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
+
+import SettingsLayout from "components/SettingsLayout";
+import { useAuthStore } from "store/auth";
+
+const apiBase = `http://localhost:4000/api/${API_VERSION}`;
+
+interface ProfileSettingsCardProps {
+  readonly user: User;
+  readonly sessionToken: string;
+  readonly onUserUpdated: (user: User) => void;
+}
+
+function ProfileSettingsCard({ user, sessionToken, onUserUpdated }: ProfileSettingsCardProps): ReactElement {
+  const [name, setName] = useState(() => user.name ?? user.displayName);
+  const [bio, setBio] = useState(() => user.bio ?? "");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveProfile = async () => {
+    if (!sessionToken) { return; }
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveStatus(null);
+    try {
+      const response = await fetch(`${apiBase}/users/me`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name, bio })
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        const message = body?.error ?? `Save failed (${String(response.status)})`;
+        setSaveError(message);
+        setIsSaving(false);
+        return;
+      }
+      const updated = (await response.json()) as User;
+      onUserUpdated(updated);
+      setSaveStatus("Saved");
+      setIsSaving(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Save failed";
+      setSaveError(message);
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <section className="grid gap-4 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+      {saveError ? <div className="rounded-[10px] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{saveError}</div> : null}
+      {saveStatus ? <div className="rounded-[10px] border border-[#bbf7d0] bg-[#dcfce7] px-2.5 py-2 text-xs text-[#166534]">{saveStatus}</div> : null}
+      <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+        Name
+        <input
+          className="rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+          type="text"
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+          }}
+        />
+      </label>
+      <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+        Bio
+        <textarea
+          className="min-h-[96px] resize-none rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+          value={bio}
+          onChange={(event) => {
+            setBio(event.target.value);
+          }}
+        />
+      </label>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-brand-textMuted">Changes apply immediately across Underfit.</p>
+        <button
+          className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+          type="button"
+          onClick={() => {
+            void handleSaveProfile();
+          }}
+          disabled={isSaving}
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+export default function SettingsProfileRoute(): ReactElement {
+  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
+  const user = useAuthStore((state) => state.user);
+  const authFailed = useAuthStore((state) => state.authFailed);
+  const loadUser = useAuthStore((state) => state.loadUser);
+  const setUser = useAuthStore((state) => state.setUser);
+
+  useEffect(() => {
+    void loadUser(sessionToken);
+  }, [loadUser, sessionToken]);
+
+  if (!sessionToken || authFailed) { return <Navigate replace to="/login" />; }
+
+  return (
+    <SettingsLayout
+      user={user}
+      activeTab="profile"
+      title="Profile"
+      description="Update the name and bio shown across your workspace."
+    >
+      {user ? <ProfileSettingsCard key={user.id} user={user} sessionToken={sessionToken} onUserUpdated={setUser} /> : <div />}
+    </SettingsLayout>
+  );
+}

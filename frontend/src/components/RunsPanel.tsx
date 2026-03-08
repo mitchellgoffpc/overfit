@@ -2,6 +2,7 @@ import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
 
 import QuickstartGuide from "components/QuickstartGuide";
+import RunStatusBadge from "components/RunStatusBadge";
 
 interface RunsPanelProps {
   readonly runs: Run[];
@@ -14,15 +15,6 @@ const formatRunTime = (timestamp: string): string => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) { return "Unknown time"; }
   return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-};
-
-const formatStatus = (status: Run["status"]): string => status.replace(/^\w/, (char) => char.toUpperCase());
-const statusClasses: Record<Run["status"], string> = {
-  queued: "bg-[#f7e9d5] text-[#9a5c0b]",
-  running: "bg-[#dff0f0] text-brand-accentStrong",
-  finished: "bg-[#e1f2e7] text-[#1f6b3f]",
-  failed: "bg-[#fee4e2] text-[#b42318]",
-  canceled: "bg-[#eceff1] text-[#4a5560]",
 };
 
 export default function RunsPanel({ runs, projects, isLoading, error }: RunsPanelProps): ReactElement {
@@ -60,9 +52,7 @@ export default function RunsPanel({ runs, projects, isLoading, error }: RunsPane
                     <span>{formatRunTime(run.createdAt)}</span>
                   </div>
                 </div>
-                <div className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClasses[run.status]}`}>
-                  {formatStatus(run.status)}
-                </div>
+                <RunStatusBadge status={run.status} />
               </div>
             ))}
           </div>

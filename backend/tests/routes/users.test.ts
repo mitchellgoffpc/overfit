@@ -21,7 +21,7 @@ describe("users routes", () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
     app = createApp(db);
     await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertOrganizationMember(db, { organizationId: "org-1", userId: "user-1", role: "ADMIN" });
   });
 
@@ -52,7 +52,7 @@ describe("users routes", () => {
   });
 
   it("lists runs for a user by created date", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", type: "USER" });
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
     await delay(5);

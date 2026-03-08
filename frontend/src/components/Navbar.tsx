@@ -1,5 +1,6 @@
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 interface NavbarProps {
@@ -9,6 +10,41 @@ interface NavbarProps {
 
 export default function Navbar({ user, locationLabel }: NavbarProps): ReactElement {
   const ownerLabel = user?.handle ?? "workspace";
+  const displayName = user?.name ?? user?.displayName ?? "";
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!menuRef.current) {
+        return;
+      }
+
+      if (event.target instanceof Node && menuRef.current.contains(event.target)) {
+        return;
+      }
+
+      setIsMenuOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   return (
     <nav className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-border bg-[#f0f6f7] px-6 py-4">
@@ -33,14 +69,47 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
       </div>
 
       {user ? (
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
-            {user.displayName.slice(0, 2).toUpperCase()}
-          </div>
-          <div className="hidden sm:block">
-            <p className="text-sm font-semibold">{user.displayName}</p>
-            <p className="mt-1 text-xs text-brand-textMuted">{user.email}</p>
-          </div>
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            className="flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => {
+              setIsMenuOpen((prev) => !prev);
+            }}
+          >
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold">{displayName}</p>
+              <p className="mt-1 text-xs text-brand-textMuted">{user.email}</p>
+            </div>
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
+              {displayName.slice(0, 2).toUpperCase()}
+            </div>
+          </button>
+          {isMenuOpen ? (
+            <div
+              className="absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2 shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
+              role="menu"
+            >
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/profile">
+                Profile
+              </Link>
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/projects">
+                Projects
+              </Link>
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/runs">
+                Runs
+              </Link>
+                <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/settings/profile">
+                  Settings
+                </Link>
+              <div className="my-2 border-t border-brand-border" />
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/logout">
+                Sign Out
+              </Link>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </nav>

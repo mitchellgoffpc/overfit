@@ -16,6 +16,8 @@ export interface Account {
 
 export interface User extends Account {
   email: string;
+  name: string | null;
+  bio: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -90,6 +92,14 @@ export interface Metric {
   value: number;
   step: number | null;
   timestamp: Timestamp;
+}
+
+export interface ApiKey {
+  id: ID;
+  userId: ID;
+  label: string | null;
+  token: string;
+  createdAt: Timestamp;
 }
 
 export const API_VERSION = "v1";
