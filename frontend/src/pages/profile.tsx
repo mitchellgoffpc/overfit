@@ -33,7 +33,7 @@ export default function ProfileRoute(): ReactElement {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
       <Navbar locationLabel="Profile" />
 
-      <div className="lg:grid lg:grid-cols-[280px_1fr]">
+      <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[280px_1fr]">
         <ProfileSidebar user={user} projects={projects} runs={runs} />
 
         <main className="p-6 lg:p-8">

@@ -13,7 +13,7 @@ interface ProfileSidebarProps {
 export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarProps): ReactElement {
   if (!user) {
     return (
-      <aside className="flex h-full flex-col gap-5 border-b border-brand-border bg-[#f0f6f7] px-5 py-6 lg:border-b-0 lg:border-r">
+      <aside className="flex h-full flex-col gap-5 border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
         <div className="px-1 py-1.5 text-xs text-brand-textMuted">Log in to view profile.</div>
       </aside>
     );
@@ -24,7 +24,7 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
 
   return (
-    <aside className="flex h-full flex-col gap-5 border-b border-brand-border bg-[#f0f6f7] px-5 py-6 lg:border-b-0 lg:border-r">
+    <aside className="flex h-full flex-col gap-5 border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
       <div className="grid gap-4">
         <div className="grid place-items-center">
           <div className="grid h-24 w-24 place-items-center rounded-full bg-[#d9ecec] text-2xl font-semibold text-brand-accentStrong">
