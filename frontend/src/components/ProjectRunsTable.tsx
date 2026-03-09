@@ -1,5 +1,6 @@
 import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
+import { Link } from "react-router-dom";
 
 import RunStatusBadge from "components/RunStatusBadge";
 
@@ -82,9 +83,10 @@ export default function ProjectRunsTable({ runs, project, user, isLoading, error
                 <span>Dropout</span>
               </div>
               {runs.map((run) => (
-                <div
-                  className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 rounded-xl bg-brand-surfaceMuted px-3 py-2"
+                <Link
+                  className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 rounded-xl border border-transparent bg-brand-surfaceMuted px-3 py-2 transition hover:border-brand-border"
                   key={run.id}
+                  to={`/projects/${project.id}/runs/${run.id}`}
                 >
                   <div>
                     <p className="font-semibold">{run.name}</p>
@@ -102,7 +104,7 @@ export default function ProjectRunsTable({ runs, project, user, isLoading, error
                   <span>{formatMetadataValue(run.metadata, "d_model")}</span>
                   <span>{formatMetadataValue(run.metadata, "device")}</span>
                   <span>{formatMetadataValue(run.metadata, "dropout")}</span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
