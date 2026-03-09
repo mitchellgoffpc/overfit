@@ -1,6 +1,7 @@
 import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
+import { Link } from "wouter";
 
 import { formatDate } from "helpers";
 
@@ -50,7 +51,11 @@ export default function ProfileProjectsPanel({ projects, runs, isLoading, error 
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {projectStats.map(({ project, runCount, latestRun }) => (
-              <div className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4" key={project.id}>
+              <Link
+                className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4 text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]"
+                href={`/projects/${project.id}`}
+                key={project.id}
+              >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold">{project.name}</p>
@@ -62,7 +67,7 @@ export default function ProfileProjectsPanel({ projects, runs, isLoading, error 
                   <span>{runCount} runs</span>
                   <span>{latestRun ? `Last run ${formatDate(latestRun.createdAt)}` : "No runs yet"}</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )

@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { useEffect } from "react";
-import { Redirect, Route, Switch } from "wouter";
+import type { AroundNavHandler } from "wouter";
+import { Router, Redirect, Route, Switch, useLocation } from "wouter";
 
 import HomePage from "pages/home";
 import LoginPage from "pages/login";
@@ -26,21 +27,28 @@ function AuthLayout({ children }: { readonly children: ReactNode }): ReactElemen
 }
 
 export function AppRouter(): ReactElement {
+  const [location] = useLocation();
+  const aroundNav: AroundNavHandler = (navigate, to, options) => {
+    if (to !== location) { navigate(to, options); }
+  };
+
   return (
-    <Switch>
-      <Route path="/login" component={LoginPage} />
-      <Route path="/signup" component={SignupPage} />
-      <Route>
-        <AuthLayout>
-          <Switch>
-            <Route path="/" component={HomePage} />
-            <Route path="/profile" component={ProfilePage} />
-            <Route path="/settings/:rest*" component={SettingsPage} />
-            <Route path="/projects/:projectId" component={ProjectDetailPage} />
-            <Route path="/projects/:projectId/runs/:runId" component={RunDetailPage} />
-          </Switch>
-        </AuthLayout>
-      </Route>
-    </Switch>
+    <Router aroundNav={aroundNav}>
+      <Switch>
+        <Route path="/login" component={LoginPage} />
+        <Route path="/signup" component={SignupPage} />
+        <Route>
+          <AuthLayout>
+            <Switch>
+              <Route path="/" component={HomePage} />
+              <Route path="/profile" component={ProfilePage} />
+              <Route path="/settings/*" component={SettingsPage} />
+              <Route path="/projects/:projectId" component={ProjectDetailPage} />
+              <Route path="/projects/:projectId/runs/:runId" component={RunDetailPage} />
+            </Switch>
+          </AuthLayout>
+        </Route>
+      </Switch>
+    </Router>
   );
 }

@@ -1,5 +1,6 @@
 import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
+import { Link } from "wouter";
 
 import { formatDate } from "helpers";
 
@@ -26,7 +27,7 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
     <aside className="flex h-full flex-col gap-5 border-b border-brand-border bg-[#f0f6f7] px-5 py-6 lg:border-b-0 lg:border-r">
       <div className="grid gap-4">
         <div className="grid place-items-center">
-          <div className="grid h-24 w-24 place-items-center rounded-full bg-[radial-gradient(circle_at_top,_#d6f3ee,_#9acdd0)] text-2xl font-semibold text-[#1f4d4f]">
+          <div className="grid h-24 w-24 place-items-center rounded-full bg-[#d9ecec] text-2xl font-semibold text-brand-accentStrong">
             {initials}
           </div>
         </div>
@@ -37,9 +38,12 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
           </div>
           <p className="text-[13px] text-brand-textMuted">{bio}</p>
         </div>
-        <button className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-sm font-semibold text-brand-text" type="button">
+        <Link
+          className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-center text-sm font-semibold text-brand-text no-underline"
+          href="/settings/profile"
+        >
           Edit profile
-        </button>
+        </Link>
       </div>
 
       <div className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surface px-4 py-4 text-sm">
