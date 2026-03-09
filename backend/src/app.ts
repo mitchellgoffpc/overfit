@@ -7,10 +7,10 @@ import type { Database } from "db";
 import { registerAccountRoutes } from "routes/accounts";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
-import { registerScalarRoutes } from "routes/scalars";
 import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
+import { registerScalarRoutes } from "routes/scalars";
 import { registerUserRoutes } from "routes/users";
 import type { StorageBackend } from "storage";
 

@@ -38,7 +38,7 @@ export default function RunsPanel({ runs, projects, isLoading, error }: RunsPane
         ) : (
           <div className="grid gap-2">
             {runs.map((run) => (
-              <div className="flex items-center justify-between gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-4 py-3 hover:border-brand-border" key={run.id}>
+              <a className="flex items-center justify-between gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-4 py-3 hover:border-brand-border" key={run.id} href={`/projects/${run.projectId}/runs/${run.id}`}>
                 <div className="grid gap-1.5">
                   <div className="font-semibold">{run.name}</div>
                   <div className="flex items-center gap-2 text-xs text-brand-textMuted">
@@ -48,7 +48,7 @@ export default function RunsPanel({ runs, projects, isLoading, error }: RunsPane
                   </div>
                 </div>
                 <RunStatusBadge status={run.status} />
-              </div>
+              </a>
             ))}
           </div>
         )
