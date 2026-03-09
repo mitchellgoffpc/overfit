@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import LineChart from "components/charts/LineChart";
@@ -25,6 +25,7 @@ export default function RunDetailRoute(): ReactElement {
   const scalarError = useScalarStore((state) => state.error);
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
   const fetchScalars = useScalarStore((state) => state.fetchScalars);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     void fetchProjects();
@@ -48,25 +49,18 @@ export default function RunDetailRoute(): ReactElement {
       });
     });
 
-    const palette = ["#1a7b7d", "#316bff", "#d35f3f", "#7b5bd6", "#2f855a", "#dd6b20", "#805ad5", "#2b6cb0"];
-    return Array.from(keys).sort().map((key, index) => {
+    const runColor = "#1a7b7d";
+    return Array.from(keys).sort().map((key) => {
       const points = scalars.flatMap((scalar, scalarIndex) => {
         const value = scalar.values[key];
         if (typeof value !== "number") { return []; }
         return [{ x: scalar.step ?? scalarIndex, y: value }];
       });
-      return { id: key, points, color: palette[index % palette.length], lineWidth: 2 };
+      return { id: key, points, color: runColor, lineWidth: 2 };
     });
   }, [scalars]);
 
   const hasPoints = chartSeries.some((series) => series.points.length > 0);
-  const latestValues = useMemo(() => {
-    const latest: Record<string, number | undefined> = {};
-    chartSeries.forEach((series) => {
-      latest[series.id] = series.points.at(-1)?.y;
-    });
-    return latest;
-  }, [chartSeries]);
 
   const sections = useMemo(() => {
     const buckets = new Map<string, typeof chartSeries>();
@@ -116,36 +110,50 @@ export default function RunDetailRoute(): ReactElement {
 
           {sections.map((section) => (
             <section key={section.prefix} className="mb-6 last:mb-0">
-              <header className="mb-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted">
-                  <span>{section.prefix}</span>
-                  <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] font-semibold text-brand-textMuted">
-                    {section.series.length}
-                  </span>
-                </div>
-              </header>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {section.series.map((series) => {
-                  const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
-                  return (
-                    <div key={series.id} className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <div>
-                          <h2 className="text-xl">{label}</h2>
-                          <p className="mt-1 text-[13px] text-brand-textMuted">Step vs. value</p>
-                        </div>
-                        {latestValues[series.id] !== undefined ? (
-                          <div className="rounded-full bg-[#edf7f6] px-3 py-1 text-xs font-semibold text-brand-accentStrong">
-                            latest {latestValues[series.id]?.toFixed(2)}
-                          </div>
-                        ) : null}
+              {(() => {
+                const isCollapsed = collapsedSections[section.prefix] ?? false;
+                return (
+                  <>
+                    <header className="mb-3 flex items-center justify-between gap-2">
+                      <button
+                        className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
+                        type="button"
+                        onClick={() => {
+                          setCollapsedSections((prev) => ({ ...prev, [section.prefix]: !isCollapsed }));
+                        }}
+                      >
+                        <span className={`transition-transform ${isCollapsed ? "-rotate-90" : "rotate-0"}`}>
+                          <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
+                            <path d="M4 6.25 8 10l4-3.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" />
+                          </svg>
+                        </span>
+                        <span>{section.prefix}</span>
+                        <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] font-semibold text-brand-textMuted">
+                          {section.series.length}
+                        </span>
+                      </button>
+                    </header>
+                    {isCollapsed ? null : (
+                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {section.series.map((series) => {
+                          const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
+                          return (
+                            <div key={series.id} className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+                              <div className="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                  <h2 className="text-xl">{label}</h2>
+                                </div>
+                              </div>
+                              {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
+                              <LineChart className="h-[240px] w-full" series={series.points.length > 0 ? [series] : []} height={240} xLabelFormatter={(value) => value.toFixed(0)} yLabelFormatter={(value) => value.toFixed(2)} />
+                            </div>
+                          );
+                        })}
                       </div>
-                      {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
-                      <LineChart className="h-[240px] w-full" series={series.points.length > 0 ? [series] : []} height={240} xLabelFormatter={(value) => value.toFixed(0)} yLabelFormatter={(value) => value.toFixed(2)} />
-                    </div>
-                  );
-                })}
-              </div>
+                    )}
+                  </>
+                );
+              })()}
             </section>
           ))}
         </main>
