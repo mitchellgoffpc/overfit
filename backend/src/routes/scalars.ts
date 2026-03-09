@@ -3,8 +3,8 @@ import type { Scalar } from "@underfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getScalar, listScalars, upsertScalar } from "repositories/scalars";
 import { hasRun } from "repositories/runs";
+import { getScalar, listScalars, upsertScalar } from "repositories/scalars";
 import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
 
 type UpsertScalarPayload = Partial<Omit<Scalar, "id">>;

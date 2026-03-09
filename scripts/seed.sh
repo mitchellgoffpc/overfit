@@ -72,3 +72,28 @@ json_request "PUT" "/projects/$project_two_id" '{"accountId":"org_acme_labs","na
 json_request "PUT" "/runs/run_solaris_001" "{\"projectId\":\"$project_one_id\",\"userId\":\"$user_id\",\"name\":\"baseline-resnet\",\"status\":\"finished\",\"metadata\":{\"accuracy\":0.91,\"epochs\":40,\"dataset\":\"sat-imagery-v2\"}}" >/dev/null
 json_request "PUT" "/runs/run_orbit_001" "{\"projectId\":\"$project_two_id\",\"userId\":\"$user_id\",\"name\":\"distilbert-finetune\",\"status\":\"running\",\"metadata\":{\"f1\":0.84,\"dataset\":\"support-tickets\",\"batchSize\":32}}" >/dev/null
 json_request "PUT" "/runs/run_orbit_002" "{\"projectId\":\"$project_two_id\",\"userId\":\"$user_id\",\"name\":\"llama3-eval\",\"status\":\"failed\",\"metadata\":{\"reason\":\"oom\",\"maxTokens\":2048,\"samples\":1200}}" >/dev/null
+
+scalar_rows="$(
+  node <<'NODE'
+const start = new Date("2025-01-10T12:00:00.000Z").getTime();
+for (let index = 0; index < 140; index += 1) {
+  const step = index * 30;
+  const decay = Math.exp(-index / 70);
+  const wobble = Math.sin(index / 6) * 0.06;
+  const trainLoss = Math.max(0.08, 2.4 * decay + 0.15 + wobble);
+  const trainAcc = Math.min(0.98, 0.42 + (1 - decay) * 0.58 + Math.sin(index / 9) * 0.01);
+  const valLoss = Math.max(0.1, 2.55 * decay + 0.22 + Math.sin(index / 7) * 0.08);
+  const valAcc = Math.min(0.96, 0.38 + (1 - decay) * 0.56 + Math.cos(index / 10) * 0.012);
+  const timestamp = new Date(start + index * 60000).toISOString();
+  const idSuffix = String(index).padStart(3, "0");
+  process.stdout.write(`${idSuffix}\t${step}\t${trainLoss.toFixed(6)}\t${trainAcc.toFixed(6)}\t${valLoss.toFixed(6)}\t${valAcc.toFixed(6)}\t${timestamp}\n`);
+}
+NODE
+)"
+
+for run_id in run_solaris_001 run_orbit_001 run_orbit_002; do
+  while IFS=$'\t' read -r scalar_suffix scalar_step scalar_train_loss scalar_train_acc scalar_val_loss scalar_val_acc scalar_timestamp; do
+    scalar_id="scalar_${run_id}_${scalar_suffix}"
+    json_request "PUT" "/scalars/$scalar_id" "{\"runId\":\"$run_id\",\"step\":$scalar_step,\"values\":{\"train/loss\":$scalar_train_loss,\"train/acc\":$scalar_train_acc,\"val/loss\":$scalar_val_loss,\"val/acc\":$scalar_val_acc},\"timestamp\":\"$scalar_timestamp\"}" >/dev/null
+  done <<<"$scalar_rows"
+done
