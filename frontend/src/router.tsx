@@ -43,8 +43,8 @@ export function AppRouter(): ReactElement {
               <Route path="/" component={HomePage} />
               <Route path="/profile" component={ProfilePage} />
               <Route path="/settings/*" component={SettingsPage} />
-              <Route path="/projects/:projectId" component={ProjectDetailPage} />
-              <Route path="/projects/:projectId/runs/:runId" component={RunDetailPage} />
+              <Route path="/:handle/projects/:projectName" component={ProjectDetailPage} />
+              <Route path="/:handle/projects/:projectName/runs/:runName" component={RunDetailPage} />
             </Switch>
           </AuthLayout>
         </Route>

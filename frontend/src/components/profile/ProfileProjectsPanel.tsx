@@ -8,11 +8,12 @@ import { formatDate } from "helpers";
 interface ProfileProjectsPanelProps {
   readonly projects: Project[];
   readonly runs: Run[];
+  readonly userHandle: string;
   readonly isLoading: boolean;
   readonly error: string | null;
 }
 
-export default function ProfileProjectsPanel({ projects, runs, isLoading, error }: ProfileProjectsPanelProps): ReactElement {
+export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoading, error }: ProfileProjectsPanelProps): ReactElement {
   const projectStats = useMemo(() => {
     const runsByProject = new Map<string, Run[]>();
     runs.forEach((run) => {
@@ -51,11 +52,11 @@ export default function ProfileProjectsPanel({ projects, runs, isLoading, error 
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {projectStats.map(({ project, runCount, latestRun }) => (
-              <Link
-                className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4 text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]"
-                href={`/projects/${project.id}`}
-                key={project.id}
-              >
+                <Link
+                  className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4 text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]"
+                  href={`/${userHandle}/projects/${project.name}`}
+                  key={project.id}
+                >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold">{project.name}</p>

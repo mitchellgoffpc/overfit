@@ -12,40 +12,51 @@ import { useRunStore } from "store/runs";
 import { useScalarStore } from "store/scalars";
 
 export default function RunDetailRoute(): ReactElement {
-  const { projectId, runId } = useParams();
+  const { handle, projectName, runName } = useParams();
   const user = useAuthStore((state) => state.user);
-  const projects = useProjectStore((state) => state.projects);
+  const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const runs = useRunStore((state) => state.runs);
+  const runsByKey = useRunStore((state) => state.runsByKey);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
   const fetchRuns = useRunStore((state) => state.fetchRuns);
+  const fetchRunByHandle = useRunStore((state) => state.fetchRunByHandle);
   const scalars = useScalarStore((state) => state.scalars);
   const scalarError = useScalarStore((state) => state.error);
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
   const fetchScalars = useScalarStore((state) => state.fetchScalars);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
+  const runKey = handle && projectName && runName ? `${handle}/${projectName}/${runName}` : null;
 
   const xFormatter = useMemo(() => (value: number) => value.toFixed(0), []);
   const yFormatter = useMemo(() => (value: number) => value.toFixed(2), []);
 
   useEffect(() => {
-    void fetchProjects();
-  }, [fetchProjects]);
+    if (user) { void fetchProjects(); }
+  }, [fetchProjects, user]);
 
   useEffect(() => {
-    if (user) { void fetchRuns(user.id); }
-  }, [fetchRuns, user]);
+    if (user && !isProjectsLoading) { void fetchRuns(user.id); }
+  }, [fetchRuns, isProjectsLoading, user]);
+
+  const projectList = Object.values(projectsByKey);
+  const runList = Object.values(runsByKey);
+  const projectFromList = projectList.find((item) => item.name === projectName);
+  const runFromList = runList.find((item) => (projectFromList ? item.projectId === projectFromList.id : true) && item.name === runName);
+  const run = runKey ? runsByKey[runKey] : runFromList;
+  useEffect(() => {
+    if (handle && projectName && runName && !run) { void fetchRunByHandle(handle, projectName, runName); }
+  }, [fetchRunByHandle, handle, projectName, run, runName]);
+  const project = projectFromList ?? projectList.find((item) => item.id === run?.projectId);
+  const runId = run?.id;
+  const runErrorMessage = runError;
 
   useEffect(() => {
     if (runId) { void fetchScalars(runId); }
   }, [fetchScalars, runId]);
-
-  const run = runs.find((item) => item.id === runId);
-  const project = projects.find((item) => item.id === (projectId ?? run?.projectId));
   const chartSeries = useMemo(() => {
     const keys = new Set<string>();
     scalars.forEach((scalar) => {
@@ -101,25 +112,25 @@ export default function RunDetailRoute(): ReactElement {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
       <Navbar
-        locationLabel={runId ?? "Run"}
-        parentLabel={projectId}
-        parentHref={projectId ? `/projects/${projectId}` : undefined}
+        locationLabel={run?.name ?? runName ?? "Run"}
+        parentLabel={project?.name ?? projectName}
+        parentHref={(handle ?? user?.handle) && projectName ? `/${handle ?? user?.handle ?? "workspace"}/projects/${projectName}` : undefined}
       />
 
       <div className="lg:grid lg:grid-cols-[280px_1fr]">
-        <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />
+        <Sidebar user={user} projects={projectList} isLoading={isProjectsLoading} error={projectError} />
 
         <main className="p-6 lg:p-8">
           <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{project?.name ?? "Project"}</p>
-              <h1 className="mt-1 font-display text-3xl">{run?.name ?? "Run details"}</h1>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{projectName ?? project?.name ?? "Project"}</p>
+              <h1 className="mt-1 font-display text-3xl">{runName ?? run?.name ?? "Run details"}</h1>
               <p className="mt-1 text-sm text-brand-textMuted">Live metrics and training history.</p>
             </div>
           </header>
 
-          {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">Run not found.</div> : null}
-          {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
+          {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runErrorMessage ?? "Run not found."}</div> : null}
+          {run && runErrorMessage ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runErrorMessage}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
 
           {sections.map((section) => (

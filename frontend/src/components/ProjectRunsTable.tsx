@@ -9,11 +9,12 @@ interface ProjectRunsTableProps {
   readonly runs: Run[];
   readonly project: Project;
   readonly user: User | null;
+  readonly ownerHandle: string;
   readonly isLoading: boolean;
   readonly error: string | null;
 }
 
-export default function ProjectRunsTable({ runs, project, user, isLoading, error }: ProjectRunsTableProps): ReactElement {
+export default function ProjectRunsTable({ runs, project, user, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
   return (
     <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -54,7 +55,7 @@ export default function ProjectRunsTable({ runs, project, user, isLoading, error
                 <Link
                   className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 rounded-xl border border-transparent bg-brand-surfaceMuted px-3 py-2 transition hover:border-brand-border"
                   key={run.id}
-                  href={`/projects/${project.id}/runs/${run.id}`}
+                  href={`/${ownerHandle}/projects/${project.name}/runs/${run.name}`}
                 >
                   <div>
                     <p className="font-semibold">{run.name}</p>

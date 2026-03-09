@@ -41,7 +41,7 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
             {runs.map((run) => (
               <Link
                 className="grid gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-4 py-3 text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2] md:grid-cols-[2fr_1.2fr_1fr_0.6fr]"
-                href={`/projects/${run.projectId}/runs/${run.id}`}
+                href={`/${userHandle}/projects/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
                 key={run.id}
               >
                 <div className="grid gap-1">

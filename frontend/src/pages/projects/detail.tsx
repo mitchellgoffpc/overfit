@@ -10,40 +10,48 @@ import { useProjectStore } from "store/projects";
 import { useRunStore } from "store/runs";
 
 export default function ProjectDetailRoute(): ReactElement {
-  const { projectId } = useParams();
+  const { handle, projectName } = useParams();
   const user = useAuthStore((state) => state.user);
-  const projects = useProjectStore((state) => state.projects);
+  const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const runs = useRunStore((state) => state.runs);
+  const fetchProjectByHandle = useProjectStore((state) => state.fetchProjectByHandle);
+  const runsByKey = useRunStore((state) => state.runsByKey);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void fetchProjects();
-  }, [fetchProjects]);
+    if (user) { void fetchProjects(); }
+  }, [fetchProjects, user]);
 
   useEffect(() => {
-    if (user) { void fetchRuns(user.id); }
-  }, [fetchRuns, user]);
+    if (user && !isProjectsLoading) { void fetchRuns(user.id); }
+  }, [fetchRuns, isProjectsLoading, user]);
 
-  const project = projects.find((item) => item.id === projectId);
-  const projectRuns = runs.filter((run) => run.projectId === projectId);
+  const projectKey = handle && projectName ? `${handle}/${projectName}` : null;
+  const projectList = Object.values(projectsByKey);
+  const runList = Object.values(runsByKey);
+  const project = projectKey ? projectsByKey[projectKey] : projectList.find((item) => item.name === projectName);
+  useEffect(() => {
+    if (handle && projectName && !project) { void fetchProjectByHandle(handle, projectName); }
+  }, [fetchProjectByHandle, handle, project, projectName]);
+  const projectRuns = project ? runList.filter((run) => run.projectId === project.id) : [];
+  const showProjectNotFound = !project && !isProjectsLoading;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar locationLabel={project?.name ?? "Project"} />
+      <Navbar locationLabel={project?.name ?? projectName ?? "Project"} />
 
       <div className="lg:grid lg:grid-cols-[280px_1fr]">
-        <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />
+        <Sidebar user={user} projects={projectList} isLoading={isProjectsLoading} error={projectError} />
 
         <main className="p-6 lg:p-8">
           <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{user?.handle}</p>
-              <h1 className="mt-1 font-display text-3xl">{project?.name ?? "Project"}</h1>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle ?? user?.handle}</p>
+              <h1 className="mt-1 font-display text-3xl">{projectName ?? project?.name ?? "Project"}</h1>
               {project?.description ? <p className="mt-1 text-sm text-brand-textMuted">{project.description}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -56,12 +64,13 @@ export default function ProjectDetailRoute(): ReactElement {
             </div>
           </header>
 
-          {!project && !isProjectsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">Project not found.</div> : null}
+          {showProjectNotFound ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {project ? (
             <ProjectRunsTable
               runs={projectRuns}
               project={project}
               user={user}
+              ownerHandle={handle ?? user?.handle ?? "workspace"}
               isLoading={isRunsLoading || isProjectsLoading}
               error={runError ?? projectError}
             />

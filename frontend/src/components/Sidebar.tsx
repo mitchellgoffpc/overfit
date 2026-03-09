@@ -33,7 +33,7 @@ export default function Sidebar({ user, projects, isLoading, error }: SidebarPro
                 {projects.map((project) => (
                   <Link
                     className="grid grid-cols-[32px_1fr] items-center gap-2.5 rounded-xl border border-transparent px-2 py-2 text-left text-inherit hover:border-brand-border hover:bg-brand-surface"
-                    href={`/projects/${project.id}`}
+                    href={`/${user.handle}/projects/${project.name}`}
                     key={project.id}
                   >
                     <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[#d9ecec] text-[13px] font-semibold text-brand-accentStrong">

@@ -10,29 +10,29 @@ import { useRunStore } from "store/runs";
 
 export default function IndexRoute(): ReactElement {
   const user = useAuthStore((state) => state.user);
-  const projects = useProjectStore((state) => state.projects);
+  const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const runs = useRunStore((state) => state.runs);
+  const runsByKey = useRunStore((state) => state.runsByKey);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void fetchProjects();
-  }, [fetchProjects]);
+    if (user) { void fetchProjects(); }
+  }, [fetchProjects, user]);
 
   useEffect(() => {
-    if (user) { void fetchRuns(user.id); }
-  }, [fetchRuns, user]);
+    if (user && !isProjectsLoading) { void fetchRuns(user.id); }
+  }, [fetchRuns, isProjectsLoading, user]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
       <Navbar locationLabel="Home" />
 
       <div className="lg:grid lg:grid-cols-[280px_1fr]">
-        <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />
+        <Sidebar user={user} projects={Object.values(projectsByKey)} isLoading={isProjectsLoading} error={projectError} />
 
         <main className="p-6 lg:p-8">
           <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -50,7 +50,13 @@ export default function IndexRoute(): ReactElement {
             </div>
           </header>
 
-          <RunsPanel runs={runs} projects={projects} isLoading={isRunsLoading} error={runError} />
+          <RunsPanel
+            runs={Object.values(runsByKey)}
+            projects={Object.values(projectsByKey)}
+            userHandle={user?.handle ?? "workspace"}
+            isLoading={isRunsLoading}
+            error={runError}
+          />
         </main>
       </div>
     </div>
