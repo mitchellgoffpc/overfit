@@ -6,7 +6,7 @@ interface ProfileActivityHeatmapProps {
   readonly runs: Run[];
 }
 
-const WEEK_COUNT = 20;
+const WEEK_COUNT = 52;
 
 const levelClasses = [
   "bg-[#e7ecef]",
@@ -33,7 +33,7 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
 
     const today = new Date();
     const start = new Date(today);
-    const dayOffset = (start.getDay() + 6) % 7;
+    const dayOffset = start.getDay();
     start.setDate(start.getDate() - dayOffset - (WEEK_COUNT - 1) * 7);
 
     const weekMatrix = Array.from({ length: WEEK_COUNT }, (unusedWeek, weekIndex) => {
@@ -79,20 +79,20 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
 
       <div className="grid gap-3">
         <div className="grid grid-cols-[32px_1fr] items-start gap-3">
-          <div className="grid gap-4 text-[11px] text-brand-textMuted">
-            <span>Mon</span>
-            <span>Wed</span>
-            <span>Fri</span>
+          <div className="grid grid-rows-[repeat(7,_1fr)] gap-1 pt-[24px] text-[11px] text-brand-textMuted">
+            {["", "Mon", "", "Wed", "", "Fri", ""].map((label, index) => (
+              <span className="h-3 leading-3" key={`day-label-${String(index)}`}>{label}</span>
+            ))}
           </div>
           <div className="grid gap-2">
-            <div className="grid grid-cols-[repeat(20,_1fr)] gap-1 text-[11px] text-brand-textMuted">
+            <div className="inline-grid auto-cols-[12px] grid-flow-col gap-1 text-[11px] text-brand-textMuted">
               {monthHeaders.map((label, index) => (
-                <span className="text-center" key={`month-${String(index)}`}>{label}</span>
+                <span className="h-4 text-left leading-4" key={`month-${String(index)}`}>{label}</span>
               ))}
             </div>
-            <div className="grid grid-cols-[repeat(20,_1fr)] gap-1">
+            <div className="inline-grid auto-cols-[12px] grid-flow-col gap-1">
               {weekColumns.map((week, weekIndex) => (
-                <div className="grid gap-1" key={week[0]?.key ?? String(weekIndex)}>
+                <div className="grid grid-rows-[repeat(7,_1fr)] gap-1" key={week[0]?.key ?? String(weekIndex)}>
                   {week.map((day) => {
                     const levelClass = levelClasses[day.level] ?? "bg-[#e7ecef]";
                     const label = String(day.count) + " runs on " + day.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });

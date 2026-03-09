@@ -52,7 +52,7 @@ export default function SettingsPage(): ReactElement {
           <Switch>
             <Route path="/settings/profile" component={SettingsProfileContent} />
             <Route path="/settings/keys" component={SettingsKeysContent} />
-            <Route><Redirect to="/settings/profile" /></Route>
+            <Route path="/settings/*"><Redirect to="/settings/profile" /></Route>
           </Switch>
         </main>
       </div>

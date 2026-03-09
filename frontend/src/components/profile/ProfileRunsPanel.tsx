@@ -1,5 +1,6 @@
 import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
+import { Link } from "wouter";
 
 import RunStatusBadge from "components/RunStatusBadge";
 import { buildProjectNameMap, formatRunTime } from "helpers";
@@ -38,7 +39,11 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
         ) : (
           <div className="grid gap-2">
             {runs.map((run) => (
-              <div className="grid gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-4 py-3 md:grid-cols-[2fr_1.2fr_1fr_0.6fr]" key={run.id}>
+              <Link
+                className="grid gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-4 py-3 text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2] md:grid-cols-[2fr_1.2fr_1fr_0.6fr]"
+                href={`/projects/${run.projectId}/runs/${run.id}`}
+                key={run.id}
+              >
                 <div className="grid gap-1">
                   <span className="font-semibold">{run.name}</span>
                   <span className="text-xs text-brand-textMuted">{projectNames.get(run.projectId) ?? "Unknown project"}</span>
@@ -48,7 +53,7 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
                 <div className="flex justify-start md:justify-end">
                   <RunStatusBadge status={run.status} />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )
