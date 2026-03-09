@@ -2,10 +2,10 @@ import type { ReactElement } from "react";
 import { useEffect } from "react";
 
 import Navbar from "components/Navbar";
-import ProfileActivityHeatmap from "components/ProfileActivityHeatmap";
-import ProfileProjectsPanel from "components/ProfileProjectsPanel";
-import ProfileRunsPanel from "components/ProfileRunsPanel";
-import ProfileSidebar from "components/ProfileSidebar";
+import ProfileActivityHeatmap from "components/profile/ProfileActivityHeatmap";
+import ProfileProjectsPanel from "components/profile/ProfileProjectsPanel";
+import ProfileRunsPanel from "components/profile/ProfileRunsPanel";
+import ProfileSidebar from "components/profile/ProfileSidebar";
 import { useAuthStore } from "store/auth";
 import { useProjectStore } from "store/projects";
 import { useRunStore } from "store/runs";
