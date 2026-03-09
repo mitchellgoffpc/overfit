@@ -100,7 +100,11 @@ export default function RunDetailRoute(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar locationLabel={run?.name ?? "Run"} />
+      <Navbar
+        locationLabel={runId ?? "Run"}
+        parentLabel={projectId}
+        parentHref={projectId ? `/projects/${projectId}` : undefined}
+      />
 
       <div className="lg:grid lg:grid-cols-[280px_1fr]">
         <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />
@@ -111,14 +115,6 @@ export default function RunDetailRoute(): ReactElement {
               <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{project?.name ?? "Project"}</p>
               <h1 className="mt-1 font-display text-3xl">{run?.name ?? "Run details"}</h1>
               <p className="mt-1 text-sm text-brand-textMuted">Live metrics and training history.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 font-semibold text-brand-text shadow-none" type="button">
-                View logs
-              </button>
-              <button className="rounded-xl bg-brand-accent px-4 py-2.5 font-semibold text-white shadow-soft" type="button">
-                Share run
-              </button>
             </div>
           </header>
 

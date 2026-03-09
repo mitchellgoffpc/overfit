@@ -7,9 +7,11 @@ import { useAuthStore } from "store/auth";
 
 interface NavbarProps {
   readonly locationLabel: string;
+  readonly parentLabel?: string;
+  readonly parentHref?: string;
 }
 
-export default function Navbar({ locationLabel }: NavbarProps): ReactElement {
+export default function Navbar({ locationLabel, parentLabel, parentHref }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
   const user = useAuthStore((state) => state.user);
   const sessionToken = useAuthStore((state) => state.sessionToken);
@@ -82,8 +84,18 @@ export default function Navbar({ locationLabel }: NavbarProps): ReactElement {
         <div className="hidden h-8 w-px bg-brand-border sm:block" />
 
         <div className="flex items-center gap-1 text-sm">
-          <span className="text-brand-textMuted">{ownerLabel}</span>
+          <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href="/profile">
+            {ownerLabel}
+          </Link>
           <span className="text-brand-textMuted">/</span>
+          {parentLabel && parentHref ? (
+            <>
+              <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={parentHref}>
+                {parentLabel}
+              </Link>
+              <span className="text-brand-textMuted">/</span>
+            </>
+          ) : null}
           <span className="font-semibold">{locationLabel}</span>
         </div>
       </div>
