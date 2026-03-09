@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 
 import QuickstartGuide from "components/QuickstartGuide";
 import RunStatusBadge from "components/RunStatusBadge";
+import { buildProjectNameMap, formatRunTime } from "helpers";
 
 interface RunsPanelProps {
   readonly runs: Run[];
@@ -11,14 +12,8 @@ interface RunsPanelProps {
   readonly error: string | null;
 }
 
-const formatRunTime = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) { return "Unknown time"; }
-  return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-};
-
 export default function RunsPanel({ runs, projects, isLoading, error }: RunsPanelProps): ReactElement {
-  const projectNames = new Map(projects.map((project) => [project.id, project.name]));
+  const projectNames = buildProjectNameMap(projects);
 
   return (
     <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">

@@ -2,6 +2,7 @@ import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
 
 import RunStatusBadge from "components/RunStatusBadge";
+import { buildProjectNameMap, formatRunTime } from "helpers";
 
 interface ProfileRunsPanelProps {
   readonly runs: Run[];
@@ -11,14 +12,8 @@ interface ProfileRunsPanelProps {
   readonly error: string | null;
 }
 
-const formatRunTime = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) { return "Unknown time"; }
-  return date.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-};
-
 export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading, error }: ProfileRunsPanelProps): ReactElement {
-  const projectNames = new Map(projects.map((project) => [project.id, project.name]));
+  const projectNames = buildProjectNameMap(projects);
 
   return (
     <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
