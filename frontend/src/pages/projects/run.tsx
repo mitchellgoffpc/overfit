@@ -41,21 +41,21 @@ export default function RunDetailRoute(): ReactElement {
   const run = runs.find((item) => item.id === runId);
   const project = projects.find((item) => item.id === (projectId ?? run?.projectId));
   const chartSeries = useMemo(() => {
-    const metricKeys = ["train/loss", "train/acc", "val/loss", "val/acc"] as const;
-    const colorMap: Record<(typeof metricKeys)[number], string> = {
-      "train/loss": "#1a7b7d",
-      "train/acc": "#316bff",
-      "val/loss": "#d35f3f",
-      "val/acc": "#7b5bd6"
-    };
+    const keys = new Set<string>();
+    scalars.forEach((scalar) => {
+      Object.keys(scalar.values).forEach((key) => {
+        keys.add(key);
+      });
+    });
 
-    return metricKeys.map((key) => {
-      const points = scalars.flatMap((scalar, index) => {
+    const palette = ["#1a7b7d", "#316bff", "#d35f3f", "#7b5bd6", "#2f855a", "#dd6b20", "#805ad5", "#2b6cb0"];
+    return Array.from(keys).sort().map((key, index) => {
+      const points = scalars.flatMap((scalar, scalarIndex) => {
         const value = scalar.values[key];
         if (typeof value !== "number") { return []; }
-        return [{ x: scalar.step ?? index, y: value }];
+        return [{ x: scalar.step ?? scalarIndex, y: value }];
       });
-      return { id: key, points, color: colorMap[key], lineWidth: 2 };
+      return { id: key, points, color: palette[index % palette.length], lineWidth: 2 };
     });
   }, [scalars]);
 
@@ -66,6 +66,24 @@ export default function RunDetailRoute(): ReactElement {
       latest[series.id] = series.points.at(-1)?.y;
     });
     return latest;
+  }, [chartSeries]);
+
+  const sections = useMemo(() => {
+    const buckets = new Map<string, typeof chartSeries>();
+    chartSeries.forEach((series) => {
+      const prefix = series.id.includes("/") ? series.id.split("/")[0] : "other";
+      const list = buckets.get(prefix) ?? [];
+      list.push(series);
+      buckets.set(prefix, list);
+    });
+
+    const orderedPrefixes = ["train", "val"];
+    const remaining = Array.from(buckets.keys()).filter((key) => !orderedPrefixes.includes(key)).sort();
+    return [...orderedPrefixes, ...remaining].flatMap((prefix) => {
+      const list = buckets.get(prefix);
+      if (!list || list.length === 0) { return []; }
+      return [{ prefix, series: list }];
+    });
   }, [chartSeries]);
 
   return (
@@ -96,21 +114,38 @@ export default function RunDetailRoute(): ReactElement {
           {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
 
-          {chartSeries.map((series) => (
-            <section key={series.id} className="mb-5 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft last:mb-0">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-xl">{series.id}</h2>
-                  <p className="mt-1 text-[13px] text-brand-textMuted">Step vs. value</p>
+          {sections.map((section) => (
+            <section key={section.prefix} className="mb-6 last:mb-0">
+              <header className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted">
+                  <span>{section.prefix}</span>
+                  <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] font-semibold text-brand-textMuted">
+                    {section.series.length}
+                  </span>
                 </div>
-                {latestValues[series.id] !== undefined ? (
-                  <div className="rounded-full bg-[#edf7f6] px-3 py-1 text-xs font-semibold text-brand-accentStrong">
-                    latest {latestValues[series.id]?.toFixed(2)}
-                  </div>
-                ) : null}
+              </header>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {section.series.map((series) => {
+                  const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
+                  return (
+                    <div key={series.id} className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <h2 className="text-xl">{label}</h2>
+                          <p className="mt-1 text-[13px] text-brand-textMuted">Step vs. value</p>
+                        </div>
+                        {latestValues[series.id] !== undefined ? (
+                          <div className="rounded-full bg-[#edf7f6] px-3 py-1 text-xs font-semibold text-brand-accentStrong">
+                            latest {latestValues[series.id]?.toFixed(2)}
+                          </div>
+                        ) : null}
+                      </div>
+                      {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
+                      <LineChart className="h-[240px] w-full" series={series.points.length > 0 ? [series] : []} height={240} xLabelFormatter={(value) => value.toFixed(0)} yLabelFormatter={(value) => value.toFixed(2)} />
+                    </div>
+                  );
+                })}
               </div>
-              {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
-              <LineChart className="h-[260px] w-full" series={series.points.length > 0 ? [series] : []} height={260} xLabelFormatter={(value) => value.toFixed(0)} yLabelFormatter={(value) => value.toFixed(2)} />
             </section>
           ))}
         </main>
