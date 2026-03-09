@@ -1,18 +1,26 @@
+import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { useAuthStore } from "store/auth";
 
 interface NavbarProps {
   readonly user: User | null;
   readonly locationLabel: string;
 }
 
+const apiBase = `http://localhost:4000/api/${API_VERSION}`;
+
 export default function Navbar({ user, locationLabel }: NavbarProps): ReactElement {
+  const navigate = useNavigate();
   const ownerLabel = user?.handle ?? "workspace";
   const displayName = user?.name ?? user?.displayName ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const sessionToken = useAuthStore((state) => state.sessionToken);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -45,6 +53,21 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
+
+  const handleLogout = async () => {
+    setIsMenuOpen(false);
+
+    if (sessionToken) {
+      try {
+        await fetch(`${apiBase}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${sessionToken}` } });
+      } catch {
+        void 0;
+      }
+    }
+
+    clearAuth();
+    void navigate("/login");
+  };
 
   return (
     <nav className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-border bg-[#f0f6f7] px-6 py-4">
@@ -105,9 +128,16 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
                 Settings
               </Link>
               <div className="my-2 border-t border-brand-border" />
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/login">
+              <button
+                type="button"
+                className="block w-full px-4 py-2 text-left text-sm text-brand-text hover:bg-[#f3f7f7]"
+                role="menuitem"
+                onClick={() => {
+                  void handleLogout();
+                }}
+              >
                 Sign Out
-              </Link>
+              </button>
             </div>
           ) : null}
         </div>
