@@ -1,7 +1,7 @@
 import type { User } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, Redirect, useLocation } from "wouter";
 
 import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
@@ -21,9 +21,20 @@ export default function LoginRoute(): ReactElement {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
   const setSessionToken = useAuthStore((state) => state.setSessionToken);
   const setUser = useAuthStore((state) => state.setUser);
+
+  useEffect(() => {
+    if (status === "idle") {
+      void loadUser();
+    }
+  }, [loadUser, status]);
+
+  if (status === "authenticated") {
+    return <Redirect to="/" />;
+  }
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
