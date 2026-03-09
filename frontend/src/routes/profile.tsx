@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 
 import Navbar from "components/Navbar";
@@ -12,10 +12,8 @@ import { useProjectStore } from "store/projects";
 import { useRunStore } from "store/runs";
 
 export default function ProfileRoute(): ReactElement {
-  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
   const user = useAuthStore((state) => state.user);
-  const userError = useAuthStore((state) => state.error);
-  const authFailed = useAuthStore((state) => state.authFailed);
+  const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
   const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
@@ -27,18 +25,18 @@ export default function ProfileRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void loadUser(sessionToken);
-  }, [loadUser, sessionToken]);
+    void loadUser();
+  }, [loadUser]);
 
   useEffect(() => {
-    if (sessionToken) { void fetchProjects(sessionToken); }
-  }, [fetchProjects, sessionToken]);
+    if (status === "authenticated") { void fetchProjects(); }
+  }, [fetchProjects, status]);
 
   useEffect(() => {
-    if (sessionToken && user) { void fetchRuns(user.id, sessionToken); }
-  }, [fetchRuns, sessionToken, user]);
+    if (status === "authenticated" && user) { void fetchRuns(user.id); }
+  }, [fetchRuns, status, user]);
 
-  if (!sessionToken || authFailed) { return <Navigate replace to="/login" />; }
+  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
@@ -63,8 +61,6 @@ export default function ProfileRoute(): ReactElement {
               </button>
             </div>
           </header>
-
-          {userError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{userError}</div> : null}
 
           <div className="grid gap-5">
             <ProfileProjectsPanel projects={projects} runs={runs} isLoading={isProjectsLoading} error={projectError} />

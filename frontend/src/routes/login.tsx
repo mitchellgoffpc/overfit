@@ -23,8 +23,8 @@ export default function LoginRoute(): ReactElement {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
   const loadUser = useAuthStore((state) => state.loadUser);
+  const setSessionToken = useAuthStore((state) => state.setSessionToken);
   const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -51,12 +51,11 @@ export default function LoginRoute(): ReactElement {
       const token = body.session?.token;
       const user = body.user ?? null;
       if (token) {
-        localStorage.setItem("underfitSessionToken", token);
-        clearAuth();
+        setSessionToken(token);
         if (user) {
           setUser(user);
         } else {
-          void loadUser(token);
+          void loadUser();
         }
       }
       setIsLoading(false);

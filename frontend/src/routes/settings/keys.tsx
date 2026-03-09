@@ -1,7 +1,7 @@
 import { API_VERSION } from "@underfit/types";
 import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 
 import SettingsLayout from "components/SettingsLayout";
@@ -10,9 +10,9 @@ import { useAuthStore } from "store/auth";
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function SettingsKeysRoute(): ReactElement {
-  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
+  const sessionToken = useAuthStore((state) => state.sessionToken);
   const user = useAuthStore((state) => state.user);
-  const authFailed = useAuthStore((state) => state.authFailed);
+  const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeysLoaded, setApiKeysLoaded] = useState(false);
@@ -23,8 +23,8 @@ export default function SettingsKeysRoute(): ReactElement {
   const [isDeletingKey, setIsDeletingKey] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadUser(sessionToken);
-  }, [loadUser, sessionToken]);
+    void loadUser();
+  }, [loadUser]);
 
   useEffect(() => {
     if (apiKeysLoaded || !sessionToken) { return; }
@@ -52,7 +52,7 @@ export default function SettingsKeysRoute(): ReactElement {
     void loadApiKeys();
   }, [apiKeysLoaded, sessionToken]);
 
-  if (!sessionToken || authFailed) { return <Navigate replace to="/login" />; }
+  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
 
   const handleCreateKey = async () => {
     if (!sessionToken) { return; }

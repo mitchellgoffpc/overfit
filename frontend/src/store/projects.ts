@@ -2,11 +2,13 @@ import { API_VERSION } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import { create } from "zustand";
 
+import { useAuthStore } from "store/auth";
+
 interface ProjectState {
   projects: Project[];
   isLoading: boolean;
   error: string | null;
-  fetchProjects: (token?: string) => Promise<void>;
+  fetchProjects: () => Promise<void>;
 }
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -15,9 +17,9 @@ export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],
   isLoading: false,
   error: null,
-  fetchProjects: async (token?: string) => {
+  fetchProjects: async () => {
     set({ isLoading: true, error: null });
-    const sessionToken = token ?? localStorage.getItem("underfitSessionToken") ?? "";
+    const sessionToken = useAuthStore.getState().sessionToken;
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
     const endpoint = sessionToken ? "projects/me" : "projects";
 

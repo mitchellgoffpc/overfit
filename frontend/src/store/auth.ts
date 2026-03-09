@@ -2,48 +2,53 @@ import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import { create } from "zustand";
 
+type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
+
 interface AuthState {
   user: User | null;
-  isLoading: boolean;
-  error: string | null;
-  authFailed: boolean;
-  loadUser: (token?: string) => Promise<void>;
+  sessionToken: string | null;
+  status: AuthStatus;
+  setSessionToken: (token: string) => void;
+  loadUser: () => Promise<void>;
   setUser: (user: User | null) => void;
   clearAuth: () => void;
 }
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  isLoading: false,
-  error: null,
-  authFailed: false,
-  loadUser: async (token?: string) => {
-    const sessionToken = token ?? localStorage.getItem("underfitSessionToken") ?? "";
+  sessionToken: localStorage.getItem("underfitSessionToken"),
+  status: "idle",
+  setSessionToken: (token: string) => {
+    localStorage.setItem("underfitSessionToken", token);
+    set({ sessionToken: token });
+  },
+  loadUser: async () => {
+    const { sessionToken } = get();
     if (!sessionToken) {
-      set({ user: null, isLoading: false, error: null, authFailed: true });
+      set({ user: null, status: "unauthenticated" });
       return;
     }
 
-    set({ isLoading: true, error: null, authFailed: false });
+    set({ status: "loading" });
     try {
       const response = await fetch(`${apiBase}/users/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
       if (!response.ok) {
-        set({ user: null, isLoading: false, error: `Failed to load user (${String(response.status)})`, authFailed: true });
+        set({ user: null, status: "unauthenticated" });
       } else {
         const user = (await response.json()) as User;
-        set({ user, isLoading: false, error: null, authFailed: false });
+        set({ user, status: "authenticated" });
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load user";
-      set({ user: null, isLoading: false, error: message, authFailed: true });
+    } catch {
+      set({ user: null, status: "unauthenticated" });
     }
   },
   setUser: (user: User | null) => {
-    set({ user });
+    set({ user, status: user ? "authenticated" : "unauthenticated" });
   },
   clearAuth: () => {
-    set({ user: null, isLoading: false, error: null, authFailed: false });
+    localStorage.removeItem("underfitSessionToken");
+    set({ user: null, sessionToken: null, status: "idle" });
   }
 }));

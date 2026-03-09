@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
 
 import Navbar from "components/Navbar";
@@ -10,11 +10,9 @@ import { useProjectStore } from "store/projects";
 import { useRunStore } from "store/runs";
 
 export default function ProjectDetailRoute(): ReactElement {
-  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
   const { projectId } = useParams();
   const user = useAuthStore((state) => state.user);
-  const userError = useAuthStore((state) => state.error);
-  const authFailed = useAuthStore((state) => state.authFailed);
+  const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
   const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
@@ -26,18 +24,18 @@ export default function ProjectDetailRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void loadUser(sessionToken);
-  }, [loadUser, sessionToken]);
+    void loadUser();
+  }, [loadUser]);
 
   useEffect(() => {
-    if (sessionToken) { void fetchProjects(sessionToken); }
-  }, [fetchProjects, sessionToken]);
+    if (status === "authenticated") { void fetchProjects(); }
+  }, [fetchProjects, status]);
 
   useEffect(() => {
-    if (sessionToken && user) { void fetchRuns(user.id, sessionToken); }
-  }, [fetchRuns, sessionToken, user]);
+    if (status === "authenticated" && user) { void fetchRuns(user.id); }
+  }, [fetchRuns, status, user]);
 
-  if (!sessionToken || authFailed) { return <Navigate replace to="/login" />; }
+  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
 
   const project = projects.find((item) => item.id === projectId);
   const projectRuns = runs.filter((run) => run.projectId === projectId);
@@ -66,7 +64,6 @@ export default function ProjectDetailRoute(): ReactElement {
             </div>
           </header>
 
-          {userError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{userError}</div> : null}
           {!project && !isProjectsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">Project not found.</div> : null}
           {project ? (
             <ProjectRunsTable

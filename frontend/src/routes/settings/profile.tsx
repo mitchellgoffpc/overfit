@@ -1,7 +1,7 @@
 import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 
 import SettingsLayout from "components/SettingsLayout";
@@ -11,11 +11,11 @@ const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 interface ProfileSettingsCardProps {
   readonly user: User;
-  readonly sessionToken: string;
   readonly onUserUpdated: (user: User) => void;
 }
 
-function ProfileSettingsCard({ user, sessionToken, onUserUpdated }: ProfileSettingsCardProps): ReactElement {
+function ProfileSettingsCard({ user, onUserUpdated }: ProfileSettingsCardProps): ReactElement {
+  const sessionToken = useAuthStore((state) => state.sessionToken);
   const [name, setName] = useState(() => user.name ?? user.displayName);
   const [bio, setBio] = useState(() => user.bio ?? "");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -94,17 +94,16 @@ function ProfileSettingsCard({ user, sessionToken, onUserUpdated }: ProfileSetti
 }
 
 export default function SettingsProfileRoute(): ReactElement {
-  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
   const user = useAuthStore((state) => state.user);
-  const authFailed = useAuthStore((state) => state.authFailed);
+  const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
   const setUser = useAuthStore((state) => state.setUser);
 
   useEffect(() => {
-    void loadUser(sessionToken);
-  }, [loadUser, sessionToken]);
+    void loadUser();
+  }, [loadUser]);
 
-  if (!sessionToken || authFailed) { return <Navigate replace to="/login" />; }
+  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
 
   return (
     <SettingsLayout
@@ -113,7 +112,7 @@ export default function SettingsProfileRoute(): ReactElement {
       title="Profile"
       description="Update the name and bio shown across your workspace."
     >
-      {user ? <ProfileSettingsCard key={user.id} user={user} sessionToken={sessionToken} onUserUpdated={setUser} /> : <div />}
+      {user ? <ProfileSettingsCard key={user.id} user={user} onUserUpdated={setUser} /> : <div />}
     </SettingsLayout>
   );
 }
