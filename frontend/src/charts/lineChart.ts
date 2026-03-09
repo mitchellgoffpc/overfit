@@ -29,6 +29,27 @@ export interface LineChartOptions {
   yLabelFormatter?: (value: number) => string;
 }
 
+export interface LineChartHoverOverlay {
+  point: LinePoint;
+  color?: string;
+}
+
+export interface LineChartGeometry {
+  width: number;
+  height: number;
+  padding: LineChartPadding;
+  plotWidth: number;
+  plotHeight: number;
+  xMin: number;
+  xMax: number;
+  yMinAdjusted: number;
+  yMaxAdjusted: number;
+  xScale: (value: number) => number;
+  yScale: (value: number) => number;
+  xUnscale: (value: number) => number;
+  yUnscale: (value: number) => number;
+}
+
 const defaultPadding: LineChartPadding = {
   top: 18,
   right: 18,
@@ -76,20 +97,9 @@ const formatTick = (value: number): string => {
   return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 };
 
-export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], options: LineChartOptions): void => {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) { return; }
-
-  const dpr = window.devicePixelRatio || 1;
+export const getLineChartGeometry = (series: LineSeries[], options: LineChartOptions): LineChartGeometry => {
   const width = clamp(options.width, 1, 4096);
   const height = clamp(options.height, 1, 4096);
-  canvas.width = Math.floor(width * dpr);
-  canvas.height = Math.floor(height * dpr);
-  canvas.style.width = `${String(width)}px`;
-  canvas.style.height = `${String(height)}px`;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-
   const padding = { ...defaultPadding, ...options.padding };
   const plotWidth = Math.max(1, width - padding.left - padding.right);
   const plotHeight = Math.max(1, height - padding.top - padding.bottom);
@@ -101,6 +111,25 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
 
   const xScale = (value: number): number => padding.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
   const yScale = (value: number): number => padding.top + plotHeight - ((value - yMinAdjusted) / (yMaxAdjusted - yMinAdjusted)) * plotHeight;
+  const xUnscale = (value: number): number => xMin + ((value - padding.left) / plotWidth) * (xMax - xMin);
+  const yUnscale = (value: number): number => yMinAdjusted + ((padding.top + plotHeight - value) / plotHeight) * (yMaxAdjusted - yMinAdjusted);
+
+  return { width, height, padding, plotWidth, plotHeight, xMin, xMax, yMinAdjusted, yMaxAdjusted, xScale, yScale, xUnscale, yUnscale };
+};
+
+export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], options: LineChartOptions, hoverOverlay?: LineChartHoverOverlay | null): void => {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) { return; }
+
+  const dpr = window.devicePixelRatio || 1;
+  const geometry = getLineChartGeometry(series, options);
+  const { width, height, padding, plotWidth, plotHeight, xMin, xMax, yMinAdjusted, yMaxAdjusted, xScale, yScale } = geometry;
+  canvas.width = Math.floor(width * dpr);
+  canvas.height = Math.floor(height * dpr);
+  canvas.style.width = `${String(width)}px`;
+  canvas.style.height = `${String(height)}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
 
   const background = options.background ?? "#ffffff";
   const gridColor = options.gridColor ?? "#e5eeee";
@@ -180,6 +209,27 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
       }
     });
 
+    ctx.stroke();
+  }
+
+  if (hoverOverlay) {
+    const x = xScale(hoverOverlay.point.x);
+    const y = yScale(hoverOverlay.point.y);
+    const hoverColor = hoverOverlay.color ?? "#8fd0d1";
+
+    ctx.strokeStyle = hoverColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, padding.top + plotHeight);
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = hoverColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
   }
 };

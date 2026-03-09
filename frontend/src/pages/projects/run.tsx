@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
+import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import Navbar from "components/Navbar";
 import Sidebar from "components/Sidebar";
@@ -26,6 +27,10 @@ export default function RunDetailRoute(): ReactElement {
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
   const fetchScalars = useScalarStore((state) => state.fetchScalars);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
+
+  const xFormatter = useMemo(() => (value: number) => value.toFixed(0), []);
+  const yFormatter = useMemo(() => (value: number) => value.toFixed(2), []);
 
   useEffect(() => {
     void fetchProjects();
@@ -61,6 +66,19 @@ export default function RunDetailRoute(): ReactElement {
   }, [scalars]);
 
   const hasPoints = chartSeries.some((series) => series.points.length > 0);
+
+  const getClosestPoint = (series: (typeof chartSeries)[number], targetX: number): { x: number; y: number } | null => {
+    let closest: { x: number; y: number } | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (const point of series.points) {
+      const distance = Math.abs(point.x - targetX);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        closest = point;
+      }
+    }
+    return closest;
+  };
 
   const sections = useMemo(() => {
     const buckets = new Map<string, typeof chartSeries>();
@@ -112,6 +130,7 @@ export default function RunDetailRoute(): ReactElement {
             <section key={section.prefix} className="mb-6 last:mb-0">
               {(() => {
                 const isCollapsed = collapsedSections[section.prefix] ?? false;
+                const hovered = hoveredSections[section.prefix] ?? null;
                 return (
                   <>
                     <header className="mb-3 flex items-center justify-between gap-2">
@@ -135,20 +154,61 @@ export default function RunDetailRoute(): ReactElement {
                     </header>
                     {isCollapsed ? null : (
                       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {section.series.map((series) => {
-                          const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
-                          return (
-                            <div key={series.id} className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
-                              <div className="mb-4 flex items-center justify-between gap-3">
-                                <div>
-                                  <h2 className="text-xl">{label}</h2>
+                          {section.series.map((series) => {
+                            const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
+                            const closest = hovered ? getClosestPoint(series, hovered.step) : null;
+                            const isLeft = (hovered?.xRatio ?? 0) < 0.5;
+                            const tooltipStyle = hovered
+                              ? {
+                                left: `${String(hovered.cursorX)}px`,
+                                top: "8px",
+                                transform: isLeft ? "translateX(12px)" : "translateX(calc(-100% - 12px))",
+                              }
+                              : undefined;
+                            return (
+                              <div key={series.id} className="relative rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                  <div>
+                                    <h2 className="text-xl">{label}</h2>
+                                  </div>
+                                </div>
+                                {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
+                                <div className="relative">
+                                  {hovered && closest ? (
+                                    <div className="pointer-events-none absolute z-10 w-[220px] rounded-[18px] border border-brand-border bg-brand-surface/95 p-3 shadow-soft backdrop-blur" style={tooltipStyle}>
+                                      <div className="mb-2 flex items-baseline justify-between text-[11px] uppercase tracking-[0.14em] text-brand-textMuted">
+                                        <span>Step</span>
+                                        <span className="font-semibold text-brand-text">{xFormatter(hovered.step)}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-3 text-[13px] text-brand-text">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
+                                          <span className="truncate">{label}</span>
+                                        </div>
+                                        <span className="font-semibold">{yFormatter(closest.y)}</span>
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                  <LineChart
+                                    className="h-[240px] w-full"
+                                    series={series.points.length > 0 ? [series] : []}
+                                    height={240}
+                                    xLabelFormatter={xFormatter}
+                                    yLabelFormatter={yFormatter}
+                                    hoverStep={hovered?.step}
+                                    onHover={(hover) => {
+                                      setHoveredSections((prev) => {
+                                        const current = prev[section.prefix] ?? null;
+                                        if (!hover && !current) { return prev; }
+                                        if (hover?.step === current?.step) { return prev; }
+                                        return { ...prev, [section.prefix]: hover };
+                                      });
+                                    }}
+                                  />
                                 </div>
                               </div>
-                              {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
-                              <LineChart className="h-[240px] w-full" series={series.points.length > 0 ? [series] : []} height={240} xLabelFormatter={(value) => value.toFixed(0)} yLabelFormatter={(value) => value.toFixed(2)} />
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </div>
                     )}
                   </>
