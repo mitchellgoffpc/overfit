@@ -3,7 +3,7 @@ import { API_VERSION, CREDENTIALS_INVALID_ERROR } from "@underfit/types";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import LoginRoute from "routes/login";
+import LoginPage from "pages/login";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
@@ -39,7 +39,7 @@ describe("LoginRoute", () => {
 
     render(
       <MemoryRouter>
-        <LoginRoute />
+        <LoginPage />
       </MemoryRouter>
     );
 
@@ -63,7 +63,7 @@ describe("LoginRoute", () => {
 
     render(
       <MemoryRouter>
-        <LoginRoute />
+        <LoginPage />
       </MemoryRouter>
     );
 

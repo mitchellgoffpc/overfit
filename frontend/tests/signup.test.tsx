@@ -9,7 +9,7 @@ import {
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SignupRoute from "routes/signup";
+import SignupPage from "pages/signup";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
@@ -43,7 +43,7 @@ describe("SignupRoute", () => {
   it("shows validation errors for email, password, and username", async () => {
     render(
       <MemoryRouter>
-        <SignupRoute />
+        <SignupPage />
       </MemoryRouter>
     );
 
@@ -74,7 +74,7 @@ describe("SignupRoute", () => {
 
     render(
       <MemoryRouter>
-        <SignupRoute />
+        <SignupPage />
       </MemoryRouter>
     );
 
@@ -92,7 +92,7 @@ describe("SignupRoute", () => {
 
     render(
       <MemoryRouter>
-        <SignupRoute />
+        <SignupPage />
       </MemoryRouter>
     );
 
@@ -108,7 +108,7 @@ describe("SignupRoute", () => {
   it("prevents submission when validation errors are present", async () => {
     render(
       <MemoryRouter>
-        <SignupRoute />
+        <SignupPage />
       </MemoryRouter>
     );
 
@@ -128,7 +128,7 @@ describe("SignupRoute", () => {
 
     render(
       <MemoryRouter>
-        <SignupRoute />
+        <SignupPage />
       </MemoryRouter>
     );
 
@@ -152,7 +152,7 @@ describe("SignupRoute", () => {
 
     render(
       <MemoryRouter>
-        <SignupRoute />
+        <SignupPage />
       </MemoryRouter>
     );
 

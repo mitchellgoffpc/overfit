@@ -1,8 +1,7 @@
 import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState } from "react";
 
 import SettingsLayout from "components/SettingsLayout";
 import { useAuthStore } from "store/auth";
@@ -95,15 +94,7 @@ function ProfileSettingsCard({ user, onUserUpdated }: ProfileSettingsCardProps):
 
 export default function SettingsProfileRoute(): ReactElement {
   const user = useAuthStore((state) => state.user);
-  const status = useAuthStore((state) => state.status);
-  const loadUser = useAuthStore((state) => state.loadUser);
   const setUser = useAuthStore((state) => state.setUser);
-
-  useEffect(() => {
-    void loadUser();
-  }, [loadUser]);
-
-  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
 
   return (
     <SettingsLayout

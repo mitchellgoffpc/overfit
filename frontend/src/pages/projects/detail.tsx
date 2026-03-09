@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";
@@ -12,8 +12,6 @@ import { useRunStore } from "store/runs";
 export default function ProjectDetailRoute(): ReactElement {
   const { projectId } = useParams();
   const user = useAuthStore((state) => state.user);
-  const status = useAuthStore((state) => state.status);
-  const loadUser = useAuthStore((state) => state.loadUser);
   const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
@@ -24,18 +22,12 @@ export default function ProjectDetailRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void loadUser();
-  }, [loadUser]);
+    void fetchProjects();
+  }, [fetchProjects]);
 
   useEffect(() => {
-    if (status === "authenticated") { void fetchProjects(); }
-  }, [fetchProjects, status]);
-
-  useEffect(() => {
-    if (status === "authenticated" && user) { void fetchRuns(user.id); }
-  }, [fetchRuns, status, user]);
-
-  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
+    if (user) { void fetchRuns(user.id); }
+  }, [fetchRuns, user]);
 
   const project = projects.find((item) => item.id === projectId);
   const projectRuns = runs.filter((run) => run.projectId === projectId);

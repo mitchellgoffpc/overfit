@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { useEffect, useMemo } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
 
 import LineChart from "components/charts/LineChart";
 import Navbar from "components/Navbar";
@@ -22,12 +22,8 @@ const buildDummySeries = () => {
 };
 
 export default function RunDetailRoute(): ReactElement {
-  const sessionToken = useMemo(() => localStorage.getItem("underfitSessionToken") ?? "", []);
   const { projectId, runId } = useParams();
   const user = useAuthStore((state) => state.user);
-  const userError = useAuthStore((state) => state.error);
-  const authFailed = useAuthStore((state) => state.authFailed);
-  const loadUser = useAuthStore((state) => state.loadUser);
   const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
@@ -38,18 +34,12 @@ export default function RunDetailRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void loadUser(sessionToken);
-  }, [loadUser, sessionToken]);
+    void fetchProjects();
+  }, [fetchProjects]);
 
   useEffect(() => {
-    if (sessionToken) { void fetchProjects(sessionToken); }
-  }, [fetchProjects, sessionToken]);
-
-  useEffect(() => {
-    if (sessionToken && user) { void fetchRuns(user.id, sessionToken); }
-  }, [fetchRuns, sessionToken, user]);
-
-  if (!sessionToken || authFailed) { return <Navigate replace to="/login" />; }
+    if (user) { void fetchRuns(user.id); }
+  }, [fetchRuns, user]);
 
   const run = runs.find((item) => item.id === runId);
   const project = projects.find((item) => item.id === (projectId ?? run?.projectId));
@@ -79,7 +69,6 @@ export default function RunDetailRoute(): ReactElement {
             </div>
           </header>
 
-          {userError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{userError}</div> : null}
           {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">Run not found.</div> : null}
           {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
 

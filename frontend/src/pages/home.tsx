@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
 
 import Navbar from "components/Navbar";
 import RunsPanel from "components/RunsPanel";
@@ -11,8 +10,6 @@ import { useRunStore } from "store/runs";
 
 export default function IndexRoute(): ReactElement {
   const user = useAuthStore((state) => state.user);
-  const status = useAuthStore((state) => state.status);
-  const loadUser = useAuthStore((state) => state.loadUser);
   const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
@@ -23,18 +20,12 @@ export default function IndexRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    void loadUser();
-  }, [loadUser]);
+    void fetchProjects();
+  }, [fetchProjects]);
 
   useEffect(() => {
-    if (status === "authenticated") { void fetchProjects(); }
-  }, [fetchProjects, status]);
-
-  useEffect(() => {
-    if (status === "authenticated" && user) { void fetchRuns(user.id); }
-  }, [fetchRuns, status, user]);
-
-  if (status === "unauthenticated") { return <Navigate replace to="/login" />; }
+    if (user) { void fetchRuns(user.id); }
+  }, [fetchRuns, user]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
