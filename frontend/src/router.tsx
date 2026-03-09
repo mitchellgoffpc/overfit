@@ -7,9 +7,7 @@ import LoginPage from "pages/login";
 import ProfilePage from "pages/profile";
 import ProjectDetailPage from "pages/projects/detail";
 import RunDetailPage from "pages/projects/run";
-import SettingsIndexPage from "pages/settings/index";
-import SettingsKeysPage from "pages/settings/keys";
-import SettingsProfilePage from "pages/settings/profile";
+import SettingsPage from "pages/settings/index";
 import SignupPage from "pages/signup";
 import { useAuthStore } from "store/auth";
 
@@ -37,9 +35,7 @@ export function AppRouter(): ReactElement {
           <Switch>
             <Route path="/" component={HomePage} />
             <Route path="/profile" component={ProfilePage} />
-            <Route path="/settings" component={SettingsIndexPage} />
-            <Route path="/settings/profile" component={SettingsProfilePage} />
-            <Route path="/settings/keys" component={SettingsKeysPage} />
+            <Route path="/settings/:rest*" component={SettingsPage} />
             <Route path="/projects/:projectId" component={ProjectDetailPage} />
             <Route path="/projects/:projectId/runs/:runId" component={RunDetailPage} />
           </Switch>

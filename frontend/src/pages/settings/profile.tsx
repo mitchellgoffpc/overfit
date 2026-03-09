@@ -3,7 +3,6 @@ import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useState } from "react";
 
-import SettingsLayout from "components/SettingsLayout";
 import { useAuthStore } from "store/auth";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -92,18 +91,9 @@ function ProfileSettingsCard({ user, onUserUpdated }: ProfileSettingsCardProps):
   );
 }
 
-export default function SettingsProfileRoute(): ReactElement {
+export default function SettingsProfileContent(): ReactElement {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  return (
-    <SettingsLayout
-      user={user}
-      activeTab="profile"
-      title="Profile"
-      description="Update the name and bio shown across your workspace."
-    >
-      {user ? <ProfileSettingsCard key={user.id} user={user} onUserUpdated={setUser} /> : <div />}
-    </SettingsLayout>
-  );
+  return user ? <ProfileSettingsCard key={user.id} user={user} onUserUpdated={setUser} /> : <div />;
 }
