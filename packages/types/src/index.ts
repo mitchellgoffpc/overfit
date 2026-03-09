@@ -106,8 +106,10 @@ export const API_BASE = `/api/${API_VERSION}`;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HANDLE_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
+const SLUG_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export const USERNAME_HINT = "Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.";
+export const SLUG_HINT = "Name may only contain alphanumeric characters, hyphens, underscores, or periods, and must start with an alphanumeric character.";
 export const PASSWORD_HINT = "Password should be at least 8 characters and include a number and a letter.";
 export const EMAIL_INVALID_ERROR = "Invalid email address";
 export const EMAIL_IN_USE_ERROR = "Email address is already associated with an account";
@@ -122,6 +124,10 @@ export const testEmail = (value: string): string | null => (
 
 export const testHandle = (value: string): string | null => (
   HANDLE_PATTERN.test(value) ? null : USERNAME_HINT
+);
+
+export const testSlug = (value: string): string | null => (
+  SLUG_PATTERN.test(value) ? null : SLUG_HINT
 );
 
 export const testPassword = (value: string): string | null => {

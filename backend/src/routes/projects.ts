@@ -1,4 +1,4 @@
-import { API_BASE } from "@underfit/types";
+import { API_BASE, testSlug } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import type { RequestHandler } from "express";
 
@@ -36,8 +36,11 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
     const accountId = req.body?.accountId ?? existing?.accountId;
     const missingFields = Object.entries({ name, accountId }).filter(([, value]) => !value).map(([label]) => label);
 
+    const nameError = testSlug(name ?? "");
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Project fields are required: ${missingFields.join(", ")}` });
+    } else if (nameError) {
+      res.status(400).json({ error: nameError });
     } else {
       const project = await upsertProject(db, {
         id,

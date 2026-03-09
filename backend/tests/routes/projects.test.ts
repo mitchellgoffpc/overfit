@@ -1,4 +1,4 @@
-import { API_BASE } from "@underfit/types";
+import { API_BASE, SLUG_HINT } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -35,6 +35,11 @@ describe("projects routes", () => {
   it("rejects missing required fields", async () => {
     const response = await request(app).put(`${API_BASE}/projects/project-2`).send({ description: "Missing name" }).expect(400);
     expect(response.body).toMatchObject({ error: "Project fields are required: name, accountId" });
+  });
+
+  it("rejects invalid project names", async () => {
+    const response = await request(app).put(`${API_BASE}/projects/project-2`).send({ accountId: "user-1", name: "Underfit Labs" }).expect(400);
+    expect(response.body).toMatchObject({ error: SLUG_HINT });
   });
 
   it("lists most active projects for the current user", async () => {

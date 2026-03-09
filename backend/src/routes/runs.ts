@@ -1,4 +1,4 @@
-import { API_BASE } from "@underfit/types";
+import { API_BASE, testSlug } from "@underfit/types";
 import type { Run } from "@underfit/types";
 import type { RequestHandler } from "express";
 
@@ -33,8 +33,11 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     const status = req.body?.status ?? existing?.status;
     const missingFields = Object.entries({ projectId, userId, name, status }).filter(([, value]) => !value).map(([label]) => label);
 
+    const nameError = testSlug(name ?? "");
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Run fields are required: ${missingFields.join(", ")}` });
+    } else if (nameError) {
+      res.status(400).json({ error: nameError });
     } else {
       const run = await upsertRun(db, {
         id,
