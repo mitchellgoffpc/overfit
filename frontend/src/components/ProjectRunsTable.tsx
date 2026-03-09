@@ -1,6 +1,8 @@
 import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
 
+import RunStatusBadge from "components/RunStatusBadge";
+
 interface ProjectRunsTableProps {
   readonly runs: Run[];
   readonly project: Project;
@@ -40,15 +42,6 @@ const formatMetadataValue = (metadata: Run["metadata"], key: string): string => 
   }
   if (typeof value === "string" || typeof value === "boolean") { return String(value); }
   return "—";
-};
-
-const formatStatus = (status: Run["status"]): string => status.replace(/^[a-z]/, (char) => char.toUpperCase());
-const statusClasses: Record<Run["status"], string> = {
-  queued: "bg-[#f7e9d5] text-[#9a5c0b]",
-  running: "bg-[#dff0f0] text-brand-accentStrong",
-  finished: "bg-[#e1f2e7] text-[#1f6b3f]",
-  failed: "bg-[#fee4e2] text-[#b42318]",
-  canceled: "bg-[#eceff1] text-[#4a5560]",
 };
 
 export default function ProjectRunsTable({ runs, project, user, isLoading, error }: ProjectRunsTableProps): ReactElement {
@@ -97,9 +90,7 @@ export default function ProjectRunsTable({ runs, project, user, isLoading, error
                     <p className="font-semibold">{run.name}</p>
                     <p className="mt-1 text-xs text-brand-textMuted">{project.name}</p>
                   </div>
-                  <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClasses[run.status]}`}>
-                    {formatStatus(run.status)}
-                  </span>
+                  <RunStatusBadge status={run.status} />
                   <span className="text-[13px] text-brand-textMuted">—</span>
                   <span>{user?.handle ?? run.userId}</span>
                   <span className="text-[13px] text-brand-textMuted">—</span>

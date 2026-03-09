@@ -95,17 +95,17 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
               <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/profile">
                 Profile
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/projects">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/">
                 Projects
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/runs">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/profile">
                 Runs
               </Link>
-                <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/settings/profile">
-                  Settings
-                </Link>
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/settings/profile">
+                Settings
+              </Link>
               <div className="my-2 border-t border-brand-border" />
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/logout">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/login">
                 Sign Out
               </Link>
             </div>
