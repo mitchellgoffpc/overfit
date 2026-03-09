@@ -85,11 +85,11 @@ export interface Artifact {
   metadata: Record<string, unknown> | null;
 }
 
-export interface Datapoint {
+export interface Scalar {
   id: ID;
   runId: ID;
   step: number | null;
-  scalars: Record<string, number>;
+  values: Record<string, number>;
   timestamp: Timestamp;
 }
 

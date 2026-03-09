@@ -6,8 +6,8 @@ import { createAccountsTable } from "repositories/accounts.js";
 import { createApiKeysTable } from "repositories/api-keys.js";
 import type { ArtifactRow } from "repositories/artifacts.js";
 import { createArtifactsTable } from "repositories/artifacts.js";
-import type { DatapointRow } from "repositories/datapoints.js";
-import { createDatapointsTable } from "repositories/datapoints.js";
+import type { ScalarRow } from "repositories/scalars.js";
+import { createScalarsTable } from "repositories/scalars.js";
 import { createOrganizationMembersTable } from "repositories/organization-members.js";
 import type { OrganizationRow } from "repositories/organizations.js";
 import { createOrganizationsTable } from "repositories/organizations.js";
@@ -41,7 +41,7 @@ export interface DatabaseSchema {
   projects: Project;
   runs: RunRow;
   artifacts: ArtifactRow;
-  datapoints: DatapointRow;
+  scalars: ScalarRow;
 }
 
 export type Database = Kysely<DatabaseSchema>;
@@ -57,7 +57,7 @@ const initDatabase = async (db: Database): Promise<void> => {
   await createProjectsTable(db);
   await createRunsTable(db);
   await createArtifactsTable(db);
-  await createDatapointsTable(db);
+  await createScalarsTable(db);
 };
 
 export const createDatabase = async (config: DatabaseConfig = {}): Promise<Database> => {

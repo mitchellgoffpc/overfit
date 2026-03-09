@@ -7,7 +7,7 @@ import type { Database } from "db";
 import { registerAccountRoutes } from "routes/accounts";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
-import { registerDatapointRoutes } from "routes/datapoints";
+import { registerScalarRoutes } from "routes/scalars";
 import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
@@ -31,7 +31,7 @@ export function createApp(db: Database, storage: StorageBackend | null = null): 
   registerProjectRoutes(app, db);
   registerRunRoutes(app, db);
   registerArtifactRoutes(app, db, storage);
-  registerDatapointRoutes(app, db);
+  registerScalarRoutes(app, db);
 
   return app;
 }
