@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "wouter";
 
 import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";

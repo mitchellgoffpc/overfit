@@ -1,15 +1,16 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { API_VERSION, CREDENTIALS_INVALID_ERROR } from "@underfit/types";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Router } from "wouter";
+import { memoryLocation } from "wouter/memory-location";
 
 import LoginPage from "pages/login";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => navigateMock };
+vi.mock("wouter", async () => {
+  const actual = await vi.importActual("wouter");
+  return { ...actual, useLocation: () => ["/login", navigateMock] };
 });
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -36,11 +37,12 @@ describe("LoginRoute", () => {
 
   it("shows the backend error when login fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: CREDENTIALS_INVALID_ERROR }, { ok: false, status: 401 }));
+    const { hook } = memoryLocation({ path: "/login" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <LoginPage />
-      </MemoryRouter>
+      </Router>
     );
 
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });
@@ -60,11 +62,12 @@ describe("LoginRoute", () => {
   it("stores the session token and navigates on successful login", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" } }));
     const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
+    const { hook } = memoryLocation({ path: "/login" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <LoginPage />
-      </MemoryRouter>
+      </Router>
     );
 
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });

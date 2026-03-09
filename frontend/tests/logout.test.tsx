@@ -1,17 +1,18 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Router } from "wouter";
+import { memoryLocation } from "wouter/memory-location";
 
 import Navbar from "components/Navbar";
 import { useAuthStore } from "store/auth";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => navigateMock };
+vi.mock("wouter", async () => {
+  const actual = await vi.importActual("wouter");
+  return { ...actual, useLocation: () => ["/", navigateMock] };
 });
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -47,11 +48,12 @@ describe("Navbar logout", () => {
     fetchMock.mockResolvedValueOnce({ ok: true });
     localStorage.setItem("underfitSessionToken", "token-123");
     useAuthStore.setState({ user, sessionToken: "token-123", status: "authenticated" });
+    const { hook } = memoryLocation({ path: "/" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <Navbar user={user} locationLabel="Projects" />
-      </MemoryRouter>
+      </Router>
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Ada Lovelace/ }));
@@ -72,11 +74,12 @@ describe("Navbar logout", () => {
 
   it("logs out without calling the API when no token exists", async () => {
     useAuthStore.setState({ user, sessionToken: null, status: "authenticated" });
+    const { hook } = memoryLocation({ path: "/" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <Navbar user={user} locationLabel="Projects" />
-      </MemoryRouter>
+      </Router>
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Ada Lovelace/ }));

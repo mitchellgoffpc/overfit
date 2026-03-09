@@ -1,6 +1,6 @@
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "wouter";
 
 import Navbar from "components/Navbar";
 
@@ -30,13 +30,13 @@ export default function SettingsLayout({ user, activeTab, title, description, ch
           <div className="grid gap-2">
             <Link
               className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${activeTab === "profile" ? "border-brand-accent bg-white text-brand-text" : "border-transparent text-brand-textMuted hover:border-brand-border hover:bg-white"}`}
-              to="/settings/profile"
+              href="/settings/profile"
             >
               Profile
             </Link>
             <Link
               className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${activeTab === "api-keys" ? "border-brand-accent bg-white text-brand-text" : "border-transparent text-brand-textMuted hover:border-brand-border hover:bg-white"}`}
-              to="/settings/keys"
+              href="/settings/keys"
             >
               API Keys
             </Link>

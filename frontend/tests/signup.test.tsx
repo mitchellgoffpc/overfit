@@ -6,16 +6,17 @@ import {
   USERNAME_HINT,
   USERNAME_IN_USE_ERROR
 } from "@underfit/types";
-import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Router } from "wouter";
+import { memoryLocation } from "wouter/memory-location";
 
 import SignupPage from "pages/signup";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => navigateMock };
+vi.mock("wouter", async () => {
+  const actual = await vi.importActual("wouter");
+  return { ...actual, useLocation: () => ["/signup", navigateMock] };
 });
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -41,10 +42,12 @@ describe("SignupRoute", () => {
   });
 
   it("shows validation errors for email, password, and username", async () => {
+    const { hook } = memoryLocation({ path: "/signup" });
+
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <SignupPage />
-      </MemoryRouter>
+      </Router>
     );
 
     const emailInput = screen.getByLabelText("Email address");
@@ -71,11 +74,12 @@ describe("SignupRoute", () => {
 
   it("checks email availability and surfaces conflicts", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ exists: true }));
+    const { hook } = memoryLocation({ path: "/signup" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <SignupPage />
-      </MemoryRouter>
+      </Router>
     );
 
     const emailInput = screen.getByLabelText("Email address");
@@ -89,11 +93,12 @@ describe("SignupRoute", () => {
 
   it("checks username availability and surfaces conflicts", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ exists: true }));
+    const { hook } = memoryLocation({ path: "/signup" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <SignupPage />
-      </MemoryRouter>
+      </Router>
     );
 
     const usernameInput = screen.getByLabelText(/Username/);
@@ -106,10 +111,12 @@ describe("SignupRoute", () => {
   });
 
   it("prevents submission when validation errors are present", async () => {
+    const { hook } = memoryLocation({ path: "/signup" });
+
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <SignupPage />
-      </MemoryRouter>
+      </Router>
     );
 
     const emailInput = screen.getByLabelText("Email address");
@@ -125,11 +132,12 @@ describe("SignupRoute", () => {
 
   it("shows submission errors inside the form", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Sign up failed" }, { ok: false, status: 400 }));
+    const { hook } = memoryLocation({ path: "/signup" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <SignupPage />
-      </MemoryRouter>
+      </Router>
     );
 
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });
@@ -149,11 +157,12 @@ describe("SignupRoute", () => {
   it("stores the session token and navigates on successful signup", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-456" } }));
     const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
+    const { hook } = memoryLocation({ path: "/signup" });
 
     render(
-      <MemoryRouter>
+      <Router hook={hook}>
         <SignupPage />
-      </MemoryRouter>
+      </Router>
     );
 
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "user@underfit.local" } });

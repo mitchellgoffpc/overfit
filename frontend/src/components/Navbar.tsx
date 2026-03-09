@@ -2,7 +2,7 @@ import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "wouter";
 
 import { useAuthStore } from "store/auth";
 
@@ -14,7 +14,7 @@ interface NavbarProps {
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function Navbar({ user, locationLabel }: NavbarProps): ReactElement {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const ownerLabel = user?.handle ?? "workspace";
   const displayName = user?.name ?? user?.displayName ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -66,13 +66,13 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
     }
 
     clearAuth();
-    void navigate("/login");
+    navigate("/login");
   };
 
   return (
     <nav className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-border bg-[#f0f6f7] px-6 py-4">
       <div className="flex flex-wrap items-center gap-4">
-        <Link className="flex items-center gap-3 text-inherit no-underline" to="/">
+        <Link className="flex items-center gap-3 text-inherit no-underline" href="/">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-accent text-[20px] font-semibold text-white">
             <span className="font-display">U</span>
           </div>
@@ -115,16 +115,16 @@ export default function Navbar({ user, locationLabel }: NavbarProps): ReactEleme
               className="absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2 shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
               role="menu"
             >
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/profile">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/profile">
                 Profile
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/">
                 Projects
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/profile">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/profile">
                 Runs
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" to="/settings/profile">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/settings/profile">
                 Settings
               </Link>
               <div className="my-2 border-t border-brand-border" />

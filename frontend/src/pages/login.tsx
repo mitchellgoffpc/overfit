@@ -2,7 +2,7 @@ import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "wouter";
 
 import { useAuthStore } from "store/auth";
 
@@ -18,7 +18,7 @@ interface AuthError {
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function LoginRoute(): ReactElement {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function LoginRoute(): ReactElement {
         }
       }
       setIsLoading(false);
-      void navigate("/");
+      navigate("/");
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Login failed";
       setError(message);
@@ -124,7 +124,7 @@ export default function LoginRoute(): ReactElement {
         </form>
 
         <div className="text-center text-[13px] text-brand-textMuted">
-          New to Underfit? <Link className="font-semibold text-brand-accentStrong no-underline" to="/signup">Create an account</Link>
+          New to Underfit? <Link className="font-semibold text-brand-accentStrong no-underline" href="/signup">Create an account</Link>
         </div>
       </div>
     </div>

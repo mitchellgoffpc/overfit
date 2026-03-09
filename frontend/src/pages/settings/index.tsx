@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { Navigate } from "react-router-dom";
+import { Redirect } from "wouter";
 
 export default function SettingsIndexRoute(): ReactElement {
-  return <Navigate replace to="/settings/profile" />;
+  return <Redirect to="/settings/profile" />;
 }

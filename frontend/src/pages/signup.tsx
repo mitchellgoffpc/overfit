@@ -11,7 +11,7 @@ import {
 import type { User } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "wouter";
 
 import { useAuthStore } from "store/auth";
 
@@ -31,7 +31,7 @@ interface ExistsResponse {
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function SignupRoute(): ReactElement {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -115,7 +115,7 @@ export default function SignupRoute(): ReactElement {
         }
       }
       setIsLoading(false);
-      void navigate("/");
+      navigate("/");
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Sign up failed";
       setError(message);
@@ -248,7 +248,7 @@ export default function SignupRoute(): ReactElement {
         </form>
 
         <div className="text-center text-[13px] text-brand-textMuted">
-          Already have an account? <Link className="font-semibold text-brand-accentStrong no-underline" to="/login">Sign in</Link>
+          Already have an account? <Link className="font-semibold text-brand-accentStrong no-underline" href="/login">Sign in</Link>
         </div>
       </div>
     </div>

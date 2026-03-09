@@ -1,6 +1,6 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useEffect } from "react";
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Redirect, Route, Switch } from "wouter";
 
 import HomePage from "pages/home";
 import LoginPage from "pages/login";
@@ -13,7 +13,7 @@ import SettingsProfilePage from "pages/settings/profile";
 import SignupPage from "pages/signup";
 import { useAuthStore } from "store/auth";
 
-function AuthLayout(): ReactElement {
+function AuthLayout({ children }: { readonly children: ReactNode }): ReactElement {
   const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
 
@@ -22,32 +22,29 @@ function AuthLayout(): ReactElement {
   }, [loadUser]);
 
   if (status === "loading" || status === "idle") { return <div />; }
-  if (status === "unauthenticated") { return <Navigate to="/login" replace />; }
+  if (status === "unauthenticated") { return <Redirect to="/login" />; }
 
-  return <Outlet />;
+  return children as ReactElement;
 }
 
 export function AppRouter(): ReactElement {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-
-        <Route element={<AuthLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="settings">
-            <Route index element={<SettingsIndexPage />} />
-            <Route path="profile" element={<SettingsProfilePage />} />
-            <Route path="keys" element={<SettingsKeysPage />} />
-          </Route>
-          <Route path="projects/:projectId">
-            <Route index element={<ProjectDetailPage />} />
-            <Route path="runs/:runId" element={<RunDetailPage />} />
-          </Route>
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <Switch>
+      <Route path="/login" component={LoginPage} />
+      <Route path="/signup" component={SignupPage} />
+      <Route>
+        <AuthLayout>
+          <Switch>
+            <Route path="/" component={HomePage} />
+            <Route path="/profile" component={ProfilePage} />
+            <Route path="/settings" component={SettingsIndexPage} />
+            <Route path="/settings/profile" component={SettingsProfilePage} />
+            <Route path="/settings/keys" component={SettingsKeysPage} />
+            <Route path="/projects/:projectId" component={ProjectDetailPage} />
+            <Route path="/projects/:projectId/runs/:runId" component={RunDetailPage} />
+          </Switch>
+        </AuthLayout>
+      </Route>
+    </Switch>
   );
 }
