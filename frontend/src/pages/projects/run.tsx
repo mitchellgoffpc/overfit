@@ -47,7 +47,7 @@ export default function RunDetailRoute(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar user={user} locationLabel={run?.name ?? "Run"} />
+      <Navbar locationLabel={run?.name ?? "Run"} />
 
       <div className="lg:grid lg:grid-cols-[280px_1fr]">
         <Sidebar user={user} projects={projects} isLoading={isProjectsLoading} error={projectError} />

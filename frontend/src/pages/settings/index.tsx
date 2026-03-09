@@ -20,7 +20,7 @@ export default function SettingsPage(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar user={user} locationLabel="Settings" />
+      <Navbar locationLabel="Settings" />
 
       <div className="lg:grid lg:grid-cols-[260px_1fr]">
         <aside className="flex flex-col gap-6 border-b border-brand-border bg-[#f0f6f7] px-5 py-6 lg:border-b-0 lg:border-r">

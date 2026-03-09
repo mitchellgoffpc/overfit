@@ -2,18 +2,14 @@ import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
 
+import { formatDate } from "helpers";
+
 interface ProfileProjectsPanelProps {
   readonly projects: Project[];
   readonly runs: Run[];
   readonly isLoading: boolean;
   readonly error: string | null;
 }
-
-const formatDate = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) { return "Unknown"; }
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-};
 
 export default function ProfileProjectsPanel({ projects, runs, isLoading, error }: ProfileProjectsPanelProps): ReactElement {
   const projectStats = useMemo(() => {

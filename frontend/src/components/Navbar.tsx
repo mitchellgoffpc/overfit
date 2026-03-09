@@ -1,26 +1,23 @@
-import { API_VERSION } from "@underfit/types";
-import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface NavbarProps {
-  readonly user: User | null;
   readonly locationLabel: string;
 }
 
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
-
-export default function Navbar({ user, locationLabel }: NavbarProps): ReactElement {
+export default function Navbar({ locationLabel }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
+  const user = useAuthStore((state) => state.user);
+  const sessionToken = useAuthStore((state) => state.sessionToken);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const ownerLabel = user?.handle ?? "workspace";
   const displayName = user?.name ?? user?.displayName ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const sessionToken = useAuthStore((state) => state.sessionToken);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   useEffect(() => {
     if (!isMenuOpen) {

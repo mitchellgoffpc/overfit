@@ -1,7 +1,7 @@
-import { API_VERSION } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import { create } from "zustand";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface ProjectState {
@@ -10,8 +10,6 @@ interface ProjectState {
   error: string | null;
   fetchProjects: () => Promise<void>;
 }
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],

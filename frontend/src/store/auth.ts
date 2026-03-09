@@ -1,6 +1,7 @@
-import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import { create } from "zustand";
+
+import { apiBase } from "helpers";
 
 type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 
@@ -13,8 +14,6 @@ interface AuthState {
   setUser: (user: User | null) => void;
   clearAuth: () => void;
 }
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,

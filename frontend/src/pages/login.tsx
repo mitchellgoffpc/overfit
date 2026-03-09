@@ -1,9 +1,9 @@
-import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface AuthResponse {
@@ -14,8 +14,6 @@ interface AuthResponse {
 interface AuthError {
   error?: string;
 }
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function LoginRoute(): ReactElement {
   const [, navigate] = useLocation();

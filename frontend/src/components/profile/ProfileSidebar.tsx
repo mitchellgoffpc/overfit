@@ -1,17 +1,13 @@
 import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
 
+import { formatDate } from "helpers";
+
 interface ProfileSidebarProps {
   readonly user: User | null;
   readonly projects: Project[];
   readonly runs: Run[];
 }
-
-const formatDate = (timestamp: string): string => {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) { return "Unknown"; }
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-};
 
 export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarProps): ReactElement {
   if (!user) {
@@ -57,7 +53,7 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
         </div>
         <div className="flex items-center justify-between">
           <span className="text-brand-textMuted">Member since</span>
-          <span className="font-semibold">{formatDate(user.createdAt)}</span>
+          <span className="font-semibold">{formatDate(user.createdAt, { month: "short", year: "numeric" })}</span>
         </div>
       </div>
 

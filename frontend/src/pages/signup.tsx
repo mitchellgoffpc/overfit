@@ -1,5 +1,4 @@
 import {
-  API_VERSION,
   EMAIL_IN_USE_ERROR,
   PASSWORD_HINT,
   USERNAME_HINT,
@@ -13,6 +12,7 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface AuthResponse {
@@ -27,8 +27,6 @@ interface AuthError {
 interface ExistsResponse {
   exists?: boolean;
 }
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function SignupRoute(): ReactElement {
   const [, navigate] = useLocation();

@@ -1,11 +1,9 @@
-import { API_VERSION } from "@underfit/types";
 import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export default function SettingsKeysContent(): ReactElement {
   const sessionToken = useAuthStore((state) => state.sessionToken);

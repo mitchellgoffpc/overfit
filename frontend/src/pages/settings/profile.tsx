@@ -1,11 +1,9 @@
-import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useState } from "react";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 interface ProfileSettingsCardProps {
   readonly user: User;

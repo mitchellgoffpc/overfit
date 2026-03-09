@@ -1,7 +1,7 @@
-import { API_VERSION } from "@underfit/types";
 import type { Run } from "@underfit/types";
 import { create } from "zustand";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface RunState {
@@ -10,8 +10,6 @@ interface RunState {
   error: string | null;
   fetchRuns: (userId: string) => Promise<void>;
 }
-
-const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 export const useRunStore = create<RunState>((set) => ({
   runs: [],

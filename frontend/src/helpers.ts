@@ -1,4 +1,13 @@
+import { API_VERSION } from "@underfit/types";
 import type { Project, Run } from "@underfit/types";
+
+export const apiBase = `http://localhost:4000/api/${API_VERSION}`;
+
+export const formatDate = (timestamp: string, options?: Intl.DateTimeFormatOptions): string => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) { return "Unknown"; }
+  return date.toLocaleDateString("en-US", options ?? { month: "short", day: "numeric" });
+};
 
 export const formatRunTime = (timestamp: string): string => {
   const date = new Date(timestamp);
