@@ -2,6 +2,7 @@ import type { ID, Project } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
+import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 import { table as runsTable } from "repositories/runs";
 
@@ -17,6 +18,7 @@ export const createProjectsTable = async (db: Database): Promise<void> => {
     .addColumn("description", "text")
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
+    .addUniqueConstraint("projects_account_id_name_unique", ["accountId", "name"])
     .execute();
 };
 
@@ -26,6 +28,16 @@ export const listProjects = async (db: Database): Promise<Project[]> => {
 
 export const getProject = async (db: Database, id: ID): Promise<Project | undefined> => {
   return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
+};
+
+export const getProjectByHandleAndName = async (db: Database, handle: string, name: string): Promise<Project | undefined> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
+    .selectAll(table)
+    .where(sql`lower(${sql.ref(`${accountsTable}.handle`)})`, "=", handle.toLowerCase())
+    .where(`${table}.name`, "=", name)
+    .executeTakeFirst();
 };
 
 export const upsertProject = async (db: Database, project: Omit<Project, "createdAt" | "updatedAt">): Promise<Project> => {

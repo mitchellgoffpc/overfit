@@ -1,11 +1,14 @@
 import type { ID, Run } from "@underfit/types";
+import { sql } from "kysely";
 
 import type { Database } from "db";
+import { table as accountsTable } from "repositories/accounts";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 
 export type RunRow = Omit<Run, "metadata"> & { metadata: string | null };
 
 export const table = "runs";
+const projectsTable = "projects";
 
 const toRow = (run: Run): RunRow => ({ ...run, metadata: encodeJson(run.metadata) });
 const fromRow = (row: RunRow): Run => ({ ...row, metadata: decodeJson(row.metadata) });
@@ -22,6 +25,7 @@ export const createRunsTable = async (db: Database): Promise<void> => {
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
     .addColumn("metadata", "text")
+    .addUniqueConstraint("runs_project_id_name_unique", ["projectId", "name"])
     .execute();
 };
 
@@ -37,6 +41,19 @@ export const listRunsByUser = async (db: Database, userId: ID): Promise<Run[]> =
 
 export const getRun = async (db: Database, id: ID): Promise<Run | undefined> => {
   const row = await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
+  return row ? fromRow(row) : undefined;
+};
+
+export const getRunByHandleProjectNameAndName = async (db: Database, handle: string, projectName: string, runName: string): Promise<Run | undefined> => {
+  const row = await db
+    .selectFrom(table)
+    .innerJoin(projectsTable, `${projectsTable}.id`, `${table}.projectId`)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${projectsTable}.accountId`)
+    .selectAll(table)
+    .where(sql`lower(${sql.ref(`${accountsTable}.handle`)})`, "=", handle.toLowerCase())
+    .where(`${projectsTable}.name`, "=", projectName)
+    .where(`${table}.name`, "=", runName)
+    .executeTakeFirst();
   return row ? fromRow(row) : undefined;
 };
 
