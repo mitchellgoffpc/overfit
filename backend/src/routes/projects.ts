@@ -1,24 +1,23 @@
 import { API_BASE, testSlug } from "@underfit/types";
 import type { Project } from "@underfit/types";
-import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getProject, listProjects, listProjectsByUserActivity, upsertProject } from "repositories/projects";
+import { getProject, getProjectByHandleAndName, listProjects, listProjectsByUserActivity, upsertProject } from "repositories/projects";
 import { requireAuth } from "routes/auth";
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 
 type UpsertProjectPayload = Partial<Omit<Project, "id" | "createdAt" | "updatedAt">>;
 
 export function registerProjectRoutes(app: RouteApp, db: Database): void {
-  const listProjectsHandler: RequestHandler<Record<string, string>, Project[]> = async (_req, res) => {
+  const listProjectsHandler: RouteHandler<Record<string, string>, Project[]> = async (_req, res) => {
     res.json(await listProjects(db));
   };
 
-  const listMyProjectsHandler: RequestHandler<Record<string, string>, Project[] | ErrorResponse> = async (req, res) => {
+  const listMyProjectsHandler: RouteHandler<Record<string, string>, Project[]> = async (req, res) => {
     res.json(await listProjectsByUserActivity(db, req.user.id));
   };
 
-  const getProjectHandler: RequestHandler<RouteParams, Project | ErrorResponse> = async (req, res) => {
+  const getProjectHandler: RouteHandler<RouteParams, Project> = async (req, res) => {
     const project = await getProject(db, req.params.id);
 
     if (!project) {
@@ -28,12 +27,12 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const upsertProjectHandler: RequestHandler<RouteParams, Project | ErrorResponse, UpsertProjectPayload | undefined> = async (req, res) => {
+  const upsertProjectHandler: RouteHandler<RouteParams, Project, UpsertProjectPayload> = async (req, res) => {
     const id = req.params.id;
     const existing = await getProject(db, id);
 
-    const name = (req.body?.name ?? existing?.name ?? "").trim().toLowerCase();
-    const accountId = req.body?.accountId ?? existing?.accountId;
+    const name = (req.body.name ?? existing?.name ?? "").trim().toLowerCase();
+    const accountId = req.body.accountId ?? existing?.accountId;
     const missingFields = Object.entries({ name, accountId }).filter(([, value]) => !value).map(([label]) => label);
 
     const nameError = testSlug(name);
@@ -46,8 +45,19 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
         id,
         accountId,
         name,
-        description: req.body?.description ?? existing?.description ?? null
+        description: req.body.description ?? existing?.description ?? null
       });
+      res.json(project);
+    }
+  };
+
+  const getProjectByHandleHandler: RouteHandler<{ handle: string; projectName: string }, Project> = async (req, res) => {
+    const handle = req.params.handle.trim().toLowerCase();
+    const projectName = req.params.projectName.trim().toLowerCase();
+    const project = await getProjectByHandleAndName(db, handle, projectName);
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+    } else {
       res.json(project);
     }
   };
@@ -56,4 +66,5 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
   app.get(`${API_BASE}/projects/me`, requireAuth(db), listMyProjectsHandler);
   app.get(`${API_BASE}/projects/:id`, getProjectHandler);
   app.put(`${API_BASE}/projects/:id`, upsertProjectHandler);
+  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName`, getProjectByHandleHandler);
 }

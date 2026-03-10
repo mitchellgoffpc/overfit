@@ -52,14 +52,8 @@ export const listScalarsByHandleProjectNameAndRunName = async (db: Database, han
   return rows.map(toScalar);
 };
 
-export const getScalar = async (db: Database, id: ID): Promise<Scalar | undefined> => {
-  const row = await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-  return row ? toScalar(row) : undefined;
-};
-
-export const upsertScalar = async (db: Database, scalar: Scalar): Promise<Scalar> => {
+export const insertScalar = async (db: Database, scalar: Scalar): Promise<Scalar> => {
   const row: ScalarRow = { ...scalar, values: JSON.stringify(scalar.values) };
-  const { id: _, ...updates } = row;
-  await db.insertInto(table).values(row).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
+  await db.insertInto(table).values(row).execute();
   return scalar;
 };

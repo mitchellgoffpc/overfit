@@ -1,23 +1,22 @@
 import { API_BASE } from "@underfit/types";
 import type { Artifact } from "@underfit/types";
 import express from "express";
-import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import { getArtifact, listArtifacts, upsertArtifact } from "repositories/artifacts";
 import { hasRun } from "repositories/runs";
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 import type { StorageBackend } from "storage";
 
 type UpsertArtifactPayload = Partial<Omit<Artifact, "id" | "createdAt" | "updatedAt">>;
 type UploadArtifactPayload = Buffer;
 
 export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend | null): void {
-  const listArtifactsHandler: RequestHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
+  const listArtifactsHandler: RouteHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
 
-  const getArtifactHandler: RequestHandler<RouteParams, Artifact | ErrorResponse> = async (req, res) => {
+  const getArtifactHandler: RouteHandler<RouteParams, Artifact> = async (req, res) => {
     const artifact = await getArtifact(db, req.params.id);
 
     if (!artifact) {
@@ -27,14 +26,14 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     }
   };
 
-  const upsertArtifactHandler: RequestHandler<RouteParams, Artifact | ErrorResponse, UpsertArtifactPayload | undefined> = async (req, res) => {
+  const upsertArtifactHandler: RouteHandler<RouteParams, Artifact, UpsertArtifactPayload> = async (req, res) => {
     const id = req.params.id;
     const existing = await getArtifact(db, id);
 
-    const runId = req.body?.runId ?? existing?.runId;
-    const name = req.body?.name ?? existing?.name;
-    const type = req.body?.type ?? existing?.type;
-    const version = req.body?.version ?? existing?.version;
+    const runId = req.body.runId ?? existing?.runId;
+    const name = req.body.name ?? existing?.name;
+    const type = req.body.type ?? existing?.type;
+    const version = req.body.version ?? existing?.version;
     const missingFields = Object.entries({ runId, name, type, version }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
@@ -48,14 +47,14 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
         name,
         type,
         version,
-        uri: req.body?.uri ?? existing?.uri ?? null,
-        metadata: req.body?.metadata ?? existing?.metadata ?? null
+        uri: req.body.uri ?? existing?.uri ?? null,
+        metadata: req.body.metadata ?? existing?.metadata ?? null
       });
       res.json(artifact);
     }
   };
 
-  const uploadArtifactHandler: RequestHandler<RouteParams, Artifact | ErrorResponse, UploadArtifactPayload> = async (req, res) => {
+  const uploadArtifactHandler: RouteHandler<RouteParams, Artifact, UploadArtifactPayload> = async (req, res) => {
     if (!storage) {
       res.status(404).json({ error: "Artifact uploads are disabled" });
       return;
@@ -81,7 +80,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     res.json(updated);
   };
 
-  const downloadArtifactHandler: RequestHandler<RouteParams, Buffer | ErrorResponse> = async (req, res) => {
+  const downloadArtifactHandler: RouteHandler<RouteParams, Buffer> = async (req, res) => {
     if (!storage) {
       res.status(404).json({ error: "Artifact downloads are disabled" });
       return;

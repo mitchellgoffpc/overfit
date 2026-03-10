@@ -1,19 +1,12 @@
 import { API_BASE } from "@underfit/types";
-import type { Organization, Project, Run, Scalar, User } from "@underfit/types";
-import type { RequestHandler } from "express";
+import type { Organization, User } from "@underfit/types";
 
 import type { Database } from "db";
 import { getAccount, getAccountByHandle } from "repositories/accounts";
-import { getProjectByHandleAndName } from "repositories/projects";
-import { getRunByHandleProjectNameAndName } from "repositories/runs";
-import { listScalarsByHandleProjectNameAndRunName } from "repositories/scalars";
-import type { ErrorResponse, RouteApp } from "routes/helpers";
-
-interface HandleExistsQuery { handle?: string }
-interface ExistsResponse { exists: boolean }
+import type { RouteApp, RouteHandler } from "routes/helpers";
 
 export function registerAccountRoutes(app: RouteApp, db: Database): void {
-  const handleExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, HandleExistsQuery> = async (req, res) => {
+  const handleExistsHandler: RouteHandler<Record<string, string>, { exists: boolean }, undefined, { handle?: string }> = async (req, res) => {
     const handle = req.query.handle?.trim().toLowerCase() ?? "";
     if (!handle) {
       res.status(400).json({ error: "Handle is required" });
@@ -22,13 +15,8 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getAccountHandler: RequestHandler<{ id?: string }, User | Organization | ErrorResponse> = async (req, res) => {
-    const id = req.params.id?.trim() ?? "";
-    if (!id) {
-      res.status(400).json({ error: "Account ID is required" });
-      return;
-    }
-
+  const getAccountHandler: RouteHandler<{ id: string }, User | Organization> = async (req, res) => {
+    const id = req.params.id.trim();
     const account = await getAccount(db, id);
     if (!account) {
       res.status(404).json({ error: "Account not found" });
@@ -37,13 +25,8 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getAccountByHandleHandler: RequestHandler<{ handle?: string }, User | Organization | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim().toLowerCase() ?? "";
-    if (!handle) {
-      res.status(400).json({ error: "Handle is required" });
-      return;
-    }
-
+  const getAccountByHandleHandler: RouteHandler<{ handle: string }, User | Organization> = async (req, res) => {
+    const handle = req.params.handle.trim().toLowerCase();
     const account = await getAccountByHandle(db, handle);
     if (!account) {
       res.status(404).json({ error: "Account not found" });
@@ -52,70 +35,7 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getProjectByHandleHandler: RequestHandler<{ handle?: string; projectName?: string }, Project | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim().toLowerCase() ?? "";
-    const projectName = req.params.projectName?.trim().toLowerCase() ?? "";
-    if (!handle) {
-      res.status(400).json({ error: "Handle is required" });
-    } else if (!projectName) {
-      res.status(400).json({ error: "Project name is required" });
-    } else {
-      const project = await getProjectByHandleAndName(db, handle, projectName);
-      if (!project) {
-        res.status(404).json({ error: "Project not found" });
-      } else {
-        res.json(project);
-      }
-    }
-  };
-
-  const getRunByHandleHandler: RequestHandler<{ handle?: string; projectName?: string; runName?: string }, Run | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim().toLowerCase() ?? "";
-    const projectName = req.params.projectName?.trim().toLowerCase() ?? "";
-    const runName = req.params.runName?.trim().toLowerCase() ?? "";
-    if (!handle) {
-      res.status(400).json({ error: "Handle is required" });
-    } else if (!projectName) {
-      res.status(400).json({ error: "Project name is required" });
-    } else if (!runName) {
-      res.status(400).json({ error: "Run name is required" });
-    } else {
-      const run = await getRunByHandleProjectNameAndName(db, handle, projectName, runName);
-      if (!run) {
-        res.status(404).json({ error: "Run not found" });
-      } else {
-        res.json(run);
-      }
-    }
-  };
-
-  const getScalarsByHandleHandler: RequestHandler<{ handle?: string; projectName?: string; runName?: string }, Scalar[] | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim().toLowerCase() ?? "";
-    const projectName = req.params.projectName?.trim().toLowerCase() ?? "";
-    const runName = req.params.runName?.trim().toLowerCase() ?? "";
-    if (!handle) {
-      res.status(400).json({ error: "Handle is required" });
-    } else if (!projectName) {
-      res.status(400).json({ error: "Project name is required" });
-    } else if (!runName) {
-      res.status(400).json({ error: "Run name is required" });
-    } else {
-      const scalars = await listScalarsByHandleProjectNameAndRunName(db, handle, projectName, runName);
-      if (scalars.length === 0) {
-        const run = await getRunByHandleProjectNameAndName(db, handle, projectName, runName);
-        if (!run) {
-          res.status(404).json({ error: "Run not found" });
-          return;
-        }
-      }
-      res.json(scalars);
-    }
-  };
-
   app.get(`${API_BASE}/accounts/handle-exists`, handleExistsHandler);
   app.get(`${API_BASE}/accounts/by-handle/:handle`, getAccountByHandleHandler);
-  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName`, getProjectByHandleHandler);
-  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName/runs/:runName`, getRunByHandleHandler);
-  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName/runs/:runName/scalars`, getScalarsByHandleHandler);
   app.get(`${API_BASE}/accounts/:id`, getAccountHandler);
 }

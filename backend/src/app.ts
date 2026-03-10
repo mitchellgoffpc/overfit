@@ -18,7 +18,12 @@ export function createApp(db: Database, storage: StorageBackend | null = null): 
   const app = express();
 
   app.use(cors());
-  app.use(express.json());
+  app.use((req, res, next) => {
+    express.json()(req, res, (err) => {
+      req.body ??= {};
+      next(err);
+    });
+  });
 
   app.get(`${API_BASE}/health`, (_req: Request, res: Response) => {
     res.json({ status: "ok", version: API_VERSION });

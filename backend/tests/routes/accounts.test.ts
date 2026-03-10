@@ -8,7 +8,7 @@ import type { Database } from "db";
 import { upsertOrganization } from "repositories/organizations";
 import { upsertProject } from "repositories/projects";
 import { upsertRun } from "repositories/runs";
-import { upsertScalar } from "repositories/scalars";
+import { insertScalar } from "repositories/scalars";
 import { upsertUser } from "repositories/users";
 
 const testTimestamp = "2025-01-01T00:00:00.000Z";
@@ -90,8 +90,8 @@ describe("accounts routes", () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
-    await upsertScalar(db, { id: "scalar-1", runId: "run-1", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
-    await upsertScalar(db, { id: "scalar-2", runId: "run-1", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
+    await insertScalar(db, { id: "scalar-1", runId: "run-1", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
+    await insertScalar(db, { id: "scalar-2", runId: "run-1", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
 
     const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit/runs/baseline/scalars`).expect(200);
     expect(response.body as unknown[]).toHaveLength(2);

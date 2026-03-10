@@ -1,19 +1,18 @@
 import { API_BASE, testSlug } from "@underfit/types";
 import type { Run } from "@underfit/types";
-import type { RequestHandler } from "express";
 
 import type { Database } from "db";
-import { getRun, listRuns, upsertRun } from "repositories/runs";
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import { getRun, getRunByHandleProjectNameAndName, listRuns, upsertRun } from "repositories/runs";
+import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 
 type UpsertRunPayload = Partial<Omit<Run, "id" | "createdAt" | "updatedAt">>;
 
 export function registerRunRoutes(app: RouteApp, db: Database): void {
-  const listRunsHandler: RequestHandler<Record<string, string>, Run[]> = async (_req, res) => {
+  const listRunsHandler: RouteHandler<Record<string, string>, Run[]> = async (_req, res) => {
     res.json(await listRuns(db));
   };
 
-  const getRunHandler: RequestHandler<RouteParams, Run | ErrorResponse> = async (req, res) => {
+  const getRunHandler: RouteHandler<RouteParams, Run> = async (req, res) => {
     const run = await getRun(db, req.params.id);
 
     if (!run) {
@@ -23,14 +22,14 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const upsertRunHandler: RequestHandler<RouteParams, Run | ErrorResponse, UpsertRunPayload | undefined> = async (req, res) => {
+  const upsertRunHandler: RouteHandler<RouteParams, Run, UpsertRunPayload> = async (req, res) => {
     const id = req.params.id;
     const existing = await getRun(db, id);
 
-    const projectId = req.body?.projectId ?? existing?.projectId;
-    const userId = req.body?.userId ?? existing?.userId;
-    const name = (req.body?.name ?? existing?.name ?? "").trim().toLowerCase();
-    const status = req.body?.status ?? existing?.status;
+    const projectId = req.body.projectId ?? existing?.projectId;
+    const userId = req.body.userId ?? existing?.userId;
+    const name = (req.body.name ?? existing?.name ?? "").trim().toLowerCase();
+    const status = req.body.status ?? existing?.status;
     const missingFields = Object.entries({ projectId, userId, name, status }).filter(([, value]) => !value).map(([label]) => label);
 
     const nameError = testSlug(name);
@@ -45,8 +44,20 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
         userId,
         name,
         status,
-        metadata: req.body?.metadata ?? existing?.metadata ?? null
+        metadata: req.body.metadata ?? existing?.metadata ?? null
       });
+      res.json(run);
+    }
+  };
+
+  const getRunByHandleHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Run> = async (req, res) => {
+    const handle = req.params.handle.trim().toLowerCase();
+    const projectName = req.params.projectName.trim().toLowerCase();
+    const runName = req.params.runName.trim().toLowerCase();
+    const run = await getRunByHandleProjectNameAndName(db, handle, projectName, runName);
+    if (!run) {
+      res.status(404).json({ error: "Run not found" });
+    } else {
       res.json(run);
     }
   };
@@ -54,4 +65,5 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
   app.get(`${API_BASE}/runs`, listRunsHandler);
   app.get(`${API_BASE}/runs/:id`, getRunHandler);
   app.put(`${API_BASE}/runs/:id`, upsertRunHandler);
+  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName/runs/:runName`, getRunByHandleHandler);
 }

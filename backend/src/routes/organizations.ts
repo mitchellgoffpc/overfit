@@ -1,6 +1,5 @@
 import { API_BASE, organizationRoles } from "@underfit/types";
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@underfit/types";
-import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import {
@@ -12,7 +11,7 @@ import {
 } from "repositories/organization-members";
 import { getOrganization, listOrganizations, upsertOrganization } from "repositories/organizations";
 import { getUser } from "repositories/users";
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 
 interface MemberRouteParams {
   id: string;
@@ -28,11 +27,11 @@ type OrganizationMembersResponse = (User & { role: OrganizationRole })[];
 type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "createdAt" | "updatedAt">>;
 
 export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
-  const listOrganizationsHandler: RequestHandler<Record<string, string>, Organization[]> = async (_req, res) => {
+  const listOrganizationsHandler: RouteHandler<Record<string, string>, Organization[]> = async (_req, res) => {
     res.json(await listOrganizations(db));
   };
 
-  const getOrganizationHandler: RequestHandler<RouteParams, Organization | ErrorResponse> = async (req, res) => {
+  const getOrganizationHandler: RouteHandler<RouteParams, Organization> = async (req, res) => {
     const organization = await getOrganization(db, req.params.id);
 
     if (!organization) {
@@ -42,7 +41,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const listOrganizationMembersHandler: RequestHandler<RouteParams, OrganizationMembersResponse | ErrorResponse> = async (req, res) => {
+  const listOrganizationMembersHandler: RouteHandler<RouteParams, OrganizationMembersResponse> = async (req, res) => {
     const organization = await getOrganization(db, req.params.id);
 
     if (!organization) {
@@ -53,12 +52,12 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const upsertOrganizationHandler: RequestHandler<RouteParams, Organization | ErrorResponse, UpsertOrganizationPayload | undefined> = async (req, res) => {
+  const upsertOrganizationHandler: RouteHandler<RouteParams, Organization, UpsertOrganizationPayload> = async (req, res) => {
     const id = req.params.id;
     const existing = await getOrganization(db, id);
 
-    const handle = (req.body?.handle ?? existing?.handle ?? "").trim().toLowerCase();
-    const displayName = req.body?.displayName ?? existing?.displayName ?? handle;
+    const handle = (req.body.handle ?? existing?.handle ?? "").trim().toLowerCase();
+    const displayName = req.body.displayName ?? existing?.displayName ?? handle;
     const missingFields = Object.entries({ handle }).filter(([, value]) => !value).map(([label]) => label);
 
     if (missingFields.length > 0) {
@@ -74,14 +73,14 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const upsertOrganizationMemberHandler: RequestHandler<MemberRouteParams, OrganizationMember | ErrorResponse, OrganizationMemberPayload | undefined> = async (req, res) => {
+  const upsertOrganizationMemberHandler: RouteHandler<MemberRouteParams, OrganizationMember, OrganizationMemberPayload> = async (req, res) => {
     const organizationId = req.params.id;
     const userId = req.params.userId;
     const membershipId = `${organizationId}:${userId}`;
     const organization = await getOrganization(db, organizationId);
     const user = await getUser(db, userId);
     const existing = await getOrganizationMember(db, membershipId);
-    const role = req.body?.role ?? existing?.role ?? "MEMBER";
+    const role = req.body.role ?? existing?.role ?? "MEMBER";
 
     if (!organization) {
       res.status(404).json({ error: "Organization not found" });
@@ -100,7 +99,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const deleteOrganizationMemberHandler: RequestHandler<MemberRouteParams, { ok: true } | ErrorResponse> = async (req, res) => {
+  const deleteOrganizationMemberHandler: RouteHandler<MemberRouteParams, { ok: true }> = async (req, res) => {
     const organizationId = req.params.id;
     const userId = req.params.userId;
     const membershipId = `${organizationId}:${userId}`;
@@ -121,8 +120,8 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
 
   app.get(`${API_BASE}/organizations`, listOrganizationsHandler);
   app.get(`${API_BASE}/organizations/:id`, getOrganizationHandler);
-  app.get(`${API_BASE}/organizations/:id/members`, listOrganizationMembersHandler);
   app.put(`${API_BASE}/organizations/:id`, upsertOrganizationHandler);
+  app.get(`${API_BASE}/organizations/:id/members`, listOrganizationMembersHandler);
   app.put(`${API_BASE}/organizations/:id/members/:userId`, upsertOrganizationMemberHandler);
   app.delete(`${API_BASE}/organizations/:id/members/:userId`, deleteOrganizationMemberHandler);
 }

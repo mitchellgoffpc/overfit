@@ -19,7 +19,7 @@ import { getAccountByHandle } from "repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
 import { getUserByEmail, getUser, upsertUser } from "repositories/users";
-import type { ErrorResponse, RouteApp } from "routes/helpers";
+import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const PASSWORD_ITERATIONS = 310000;
 const PASSWORD_DIGEST = "sha256";
@@ -100,10 +100,10 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
 };
 
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
-  const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload | undefined> = async (req, res) => {
-    const email = normalizeEmail(req.body?.email ?? "");
-    const handle = (req.body?.handle ?? "").trim().toLowerCase();
-    const password = req.body?.password ?? "";
+  const register: RouteHandler<Record<string, string>, AuthResponse, RegisterPayload> = async (req, res) => {
+    const email = normalizeEmail(req.body.email ?? "");
+    const handle = (req.body.handle ?? "").trim().toLowerCase();
+    const password = req.body.password ?? "";
 
     const missingFields = Object.entries({ email, handle, password }).filter(([, value]) => !value).map(([label]) => label);
     if (missingFields.length > 0) {
@@ -154,9 +154,9 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const login: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, LoginPayload | undefined> = async (req, res) => {
-    const email = normalizeEmail(req.body?.email ?? "");
-    const password = req.body?.password ?? "";
+  const login: RouteHandler<Record<string, string>, AuthResponse, LoginPayload> = async (req, res) => {
+    const email = normalizeEmail(req.body.email ?? "");
+    const password = req.body.password ?? "";
 
     if (!email || !password) {
       res.status(400).json({ error: "Email and password are required" });
@@ -181,7 +181,7 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
   };
 
-  const logout: RequestHandler<Record<string, string>, { status: "ok" } | ErrorResponse> = async (req, res) => {
+  const logout: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
     const token = getSessionToken(req.headers);
     if (!token) {
       res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });

@@ -2,7 +2,6 @@ import { randomBytes } from "crypto";
 
 import { API_BASE } from "@underfit/types";
 import type { ApiKey, Organization, OrganizationRole, Run, User } from "@underfit/types";
-import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import { createApiKey, deleteApiKey, listApiKeysByUser } from "repositories/api-keys.js";
@@ -10,7 +9,7 @@ import { listOrganizationMembershipsByUserId } from "repositories/organization-m
 import { listRunsByUser } from "repositories/runs";
 import { getUser, getUserByEmail, updateUserProfile } from "repositories/users";
 import { requireAuth } from "routes/auth";
-import type { ErrorResponse, RouteApp, RouteParams } from "routes/helpers";
+import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 
 interface EmailExistsQuery { email?: string }
 interface ExistsResponse { exists: boolean }
@@ -20,7 +19,7 @@ interface ApiKeyPayload { label?: string }
 interface StatusResponse { status: "ok" }
 
 export function registerUserRoutes(app: RouteApp, db: Database): void {
-  const emailExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, EmailExistsQuery> = async (req, res) => {
+  const emailExistsHandler: RouteHandler<Record<string, string>, ExistsResponse, undefined, EmailExistsQuery> = async (req, res) => {
     const email = req.query.email?.trim() ?? "";
     if (!email) {
       res.status(400).json({ error: "Email is required" });
@@ -29,7 +28,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getUserHandler: RequestHandler<RouteParams, User | ErrorResponse> = async (req, res) => {
+  const getUserHandler: RouteHandler<RouteParams, User> = async (req, res) => {
     const user = await getUser(db, req.params.id);
 
     if (!user) {
@@ -39,7 +38,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const listUserMembershipsHandler: RequestHandler<RouteParams, UserMembershipsResponse | ErrorResponse> = async (req, res) => {
+  const listUserMembershipsHandler: RouteHandler<RouteParams, UserMembershipsResponse> = async (req, res) => {
     const user = await getUser(db, req.params.id);
 
     if (!user) {
@@ -49,7 +48,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const listUserRunsHandler: RequestHandler<RouteParams, Run[] | ErrorResponse> = async (req, res) => {
+  const listUserRunsHandler: RouteHandler<RouteParams, Run[]> = async (req, res) => {
     const user = await getUser(db, req.params.id);
 
     if (!user) {
@@ -59,13 +58,13 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const redirectUserMembershipHandler: RequestHandler<{ id: string; organizationId: string }> = (req, res) => {
+  const redirectUserMembershipHandler: RouteHandler<{ id: string; organizationId: string }, unknown> = (req, res) => {
     res.redirect(307, `${API_BASE}/organizations/${req.params.organizationId}/members/${req.params.id}`);
   };
 
-  const updateProfileHandler: RequestHandler<Record<string, string>, User | ErrorResponse, UpdateProfilePayload | undefined> = async (req, res) => {
-    const nameInput = typeof req.body?.name === "string" ? req.body.name.trim() : undefined;
-    const bioInput = typeof req.body?.bio === "string" ? req.body.bio.trim() : undefined;
+  const updateProfileHandler: RouteHandler<Record<string, string>, User, UpdateProfilePayload> = async (req, res) => {
+    const nameInput = typeof req.body.name === "string" ? req.body.name.trim() : undefined;
+    const bioInput = typeof req.body.bio === "string" ? req.body.bio.trim() : undefined;
     const updates: { name?: string | null; bio?: string | null; displayName?: string } = {};
 
     if (nameInput !== undefined) {
@@ -87,16 +86,16 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getCurrentUserHandler: RequestHandler<Record<string, string>, User | ErrorResponse> = (req, res) => {
+  const getCurrentUserHandler: RouteHandler<Record<string, string>, User> = (req, res) => {
     res.json(req.user);
   };
 
-  const listApiKeysHandler: RequestHandler<Record<string, string>, ApiKey[] | ErrorResponse> = async (req, res) => {
+  const listApiKeysHandler: RouteHandler<Record<string, string>, ApiKey[]> = async (req, res) => {
     res.json(await listApiKeysByUser(db, req.user.id));
   };
 
-  const createApiKeyHandler: RequestHandler<Record<string, string>, ApiKey | ErrorResponse, ApiKeyPayload | undefined> = async (req, res) => {
-    const rawLabel = typeof req.body?.label === "string" ? req.body.label.trim() : "";
+  const createApiKeyHandler: RouteHandler<Record<string, string>, ApiKey, ApiKeyPayload> = async (req, res) => {
+    const rawLabel = typeof req.body.label === "string" ? req.body.label.trim() : "";
     const key = await createApiKey(db, {
       id: randomBytes(12).toString("hex"),
       userId: req.user.id,
@@ -106,7 +105,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     res.json(key);
   };
 
-  const deleteApiKeyHandler: RequestHandler<{ id: string }, StatusResponse | ErrorResponse> = async (req, res) => {
+  const deleteApiKeyHandler: RouteHandler<{ id: string }, StatusResponse> = async (req, res) => {
     await deleteApiKey(db, req.params.id, req.user.id);
     res.json({ status: "ok" });
   };

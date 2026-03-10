@@ -23,16 +23,16 @@ describe("scalar routes", () => {
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
   });
 
-  it("upserts and fetches a scalar", async () => {
+  it("inserts a scalar", async () => {
     const payload = { runId: "run-1", step: 10, values: { accuracy: 0.98, loss: 0.12 }, timestamp: testTimestamp };
-    await request(app).put(`${API_BASE}/scalars/s-1`).send(payload).expect(200);
-    const response = await request(app).get(`${API_BASE}/scalars/s-1`).expect(200);
-    expect(response.body).toMatchObject({ id: "s-1", ...payload });
+    const response = await request(app).post(`${API_BASE}/runs/run-1/scalars`).send(payload).expect(200);
+    expect(response.body).toMatchObject({ runId: "run-1", step: 10, values: { accuracy: 0.98, loss: 0.12 }, timestamp: testTimestamp });
+    expect(typeof (response.body as { id: string }).id).toBe("string");
   });
 
   it("lists scalars for a run", async () => {
-    await request(app).put(`${API_BASE}/scalars/s-1`).send({ runId: "run-1", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
-    await request(app).put(`${API_BASE}/scalars/s-2`).send({ runId: "run-1", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
+    await request(app).post(`${API_BASE}/runs/run-1/scalars`).send({ step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
+    await request(app).post(`${API_BASE}/runs/run-1/scalars`).send({ step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
     const response = await request(app).get(`${API_BASE}/runs/run-1/scalars`).expect(200);
     expect(response.body as unknown[]).toHaveLength(2);
     expect(response.body).toMatchObject([{ step: 1 }, { step: 2 }]);
@@ -40,34 +40,25 @@ describe("scalar routes", () => {
 
   it("supports scalars without a step", async () => {
     const payload = { runId: "run-1", values: { "sys/cpu": 45.2, "sys/mem": 72.1 }, timestamp: testTimestamp };
-    await request(app).put(`${API_BASE}/scalars/s-1`).send(payload).expect(200);
-    const response = await request(app).get(`${API_BASE}/scalars/s-1`).expect(200);
+    const response = await request(app).post(`${API_BASE}/runs/run-1/scalars`).send(payload).expect(200);
     expect(response.body).toMatchObject({ step: null, values: { "sys/cpu": 45.2, "sys/mem": 72.1 } });
   });
 
-  it("rejects unknown scalars", async () => {
-    const response = await request(app).get(`${API_BASE}/scalars/missing`).expect(404);
-    expect(response.body).toMatchObject({ error: "Scalar not found" });
-  });
-
   it("rejects missing required fields", async () => {
-    const missingRun = await request(app).put(`${API_BASE}/scalars/reject-0`).send({ values: { loss: 0.1 }, timestamp: testTimestamp }).expect(400);
-    expect(missingRun.body).toMatchObject({ error: "Scalar fields are required: runId" });
-
-    const missingTimestamp = await request(app).put(`${API_BASE}/scalars/reject-1`).send({ runId: "run-1", values: { loss: 0.1 } }).expect(400);
+    const missingTimestamp = await request(app).post(`${API_BASE}/runs/run-1/scalars`).send({ values: { loss: 0.1 } }).expect(400);
     expect(missingTimestamp.body).toMatchObject({ error: "Scalar fields are required: timestamp" });
   });
 
   it("rejects invalid run references", async () => {
-    const response = await request(app).put(`${API_BASE}/scalars/s-3`).send({ runId: "missing-run", values: { loss: 0.12 }, timestamp: testTimestamp }).expect(400);
+    const response = await request(app).post(`${API_BASE}/runs/missing-run/scalars`).send({ values: { loss: 0.12 }, timestamp: testTimestamp }).expect(400);
     expect(response.body).toMatchObject({ error: "Scalar runId does not reference an existing run" });
   });
 
   it("rejects invalid values", async () => {
-    const notObject = await request(app).put(`${API_BASE}/scalars/s-4`).send({ runId: "run-1", values: "bad", timestamp: testTimestamp }).expect(400);
+    const notObject = await request(app).post(`${API_BASE}/runs/run-1/scalars`).send({ values: "bad", timestamp: testTimestamp }).expect(400);
     expect(notObject.body).toMatchObject({ error: "Scalar values must be an object mapping names to numbers" });
 
-    const nonNumeric = await request(app).put(`${API_BASE}/scalars/s-5`).send({ runId: "run-1", values: { loss: "bad" }, timestamp: testTimestamp }).expect(400);
+    const nonNumeric = await request(app).post(`${API_BASE}/runs/run-1/scalars`).send({ values: { loss: "bad" }, timestamp: testTimestamp }).expect(400);
     expect(nonNumeric.body).toMatchObject({ error: "Scalar values must be an object mapping names to numbers" });
   });
 });
