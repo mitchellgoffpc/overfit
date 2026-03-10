@@ -4,9 +4,9 @@ import { sql } from "kysely";
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
-import { table as runsTable } from "repositories/runs";
 
-const table = "projects";
+export const table = "projects";
+const runsTable = "runs";
 
 export const createProjectsTable = async (db: Database): Promise<void> => {
   await db.schema

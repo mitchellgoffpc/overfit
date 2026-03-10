@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
-const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
+export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
 const getErrorMessage = (body: unknown): string | null => {
   if (!body || typeof body !== "object") { return null; }
   if (!("error" in body)) { return null; }

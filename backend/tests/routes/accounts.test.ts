@@ -8,7 +8,10 @@ import type { Database } from "db";
 import { upsertOrganization } from "repositories/organizations";
 import { upsertProject } from "repositories/projects";
 import { upsertRun } from "repositories/runs";
+import { upsertScalar } from "repositories/scalars";
 import { upsertUser } from "repositories/users";
+
+const testTimestamp = "2025-01-01T00:00:00.000Z";
 
 describe("accounts routes", () => {
   let db: Database;
@@ -80,6 +83,21 @@ describe("accounts routes", () => {
     expect(response.body).toMatchObject({ id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit/runs/missing`).expect(404);
+    expect(missing.body).toMatchObject({ error: "Run not found" });
+  });
+
+  it("fetches scalars by account handle, project name, and run name", async () => {
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
+    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
+    await upsertScalar(db, { id: "scalar-1", runId: "run-1", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
+    await upsertScalar(db, { id: "scalar-2", runId: "run-1", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
+
+    const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit/runs/baseline/scalars`).expect(200);
+    expect(response.body as unknown[]).toHaveLength(2);
+    expect(response.body).toMatchObject([{ step: 1 }, { step: 2 }]);
+
+    const missing = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit/runs/missing/scalars`).expect(404);
     expect(missing.body).toMatchObject({ error: "Run not found" });
   });
 });

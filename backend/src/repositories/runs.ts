@@ -4,11 +4,11 @@ import { sql } from "kysely";
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
+import { table as projectsTable } from "repositories/projects";
 
 export type RunRow = Omit<Run, "metadata"> & { metadata: string | null };
 
 export const table = "runs";
-const projectsTable = "projects";
 
 const toRow = (run: Run): RunRow => ({ ...run, metadata: encodeJson(run.metadata) });
 const fromRow = (row: RunRow): Run => ({ ...row, metadata: decodeJson(row.metadata) });

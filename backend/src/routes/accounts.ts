@@ -1,11 +1,12 @@
 import { API_BASE } from "@underfit/types";
-import type { Organization, Project, Run, User } from "@underfit/types";
+import type { Organization, Project, Run, Scalar, User } from "@underfit/types";
 import type { RequestHandler } from "express";
 
 import type { Database } from "db";
 import { getAccount, getAccountByHandle } from "repositories/accounts";
 import { getProjectByHandleAndName } from "repositories/projects";
 import { getRunByHandleProjectNameAndName } from "repositories/runs";
+import { listScalarsByHandleProjectNameAndRunName } from "repositories/scalars";
 import type { ErrorResponse, RouteApp } from "routes/helpers";
 
 interface HandleExistsQuery { handle?: string }
@@ -88,9 +89,33 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
     }
   };
 
+  const getScalarsByHandleHandler: RequestHandler<{ handle?: string; projectName?: string; runName?: string }, Scalar[] | ErrorResponse> = async (req, res) => {
+    const handle = req.params.handle?.trim() ?? "";
+    const projectName = req.params.projectName?.trim() ?? "";
+    const runName = req.params.runName?.trim() ?? "";
+    if (!handle) {
+      res.status(400).json({ error: "Handle is required" });
+    } else if (!projectName) {
+      res.status(400).json({ error: "Project name is required" });
+    } else if (!runName) {
+      res.status(400).json({ error: "Run name is required" });
+    } else {
+      const scalars = await listScalarsByHandleProjectNameAndRunName(db, handle, projectName, runName);
+      if (scalars.length === 0) {
+        const run = await getRunByHandleProjectNameAndName(db, handle, projectName, runName);
+        if (!run) {
+          res.status(404).json({ error: "Run not found" });
+          return;
+        }
+      }
+      res.json(scalars);
+    }
+  };
+
   app.get(`${API_BASE}/accounts/handle-exists`, handleExistsHandler);
   app.get(`${API_BASE}/accounts/by-handle/:handle`, getAccountByHandleHandler);
   app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName`, getProjectByHandleHandler);
   app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName/runs/:runName`, getRunByHandleHandler);
+  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName/runs/:runName/scalars`, getScalarsByHandleHandler);
   app.get(`${API_BASE}/accounts/:id`, getAccountHandler);
 }

@@ -5,7 +5,7 @@ import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 import { useProjectStore } from "store/projects";
 
-const buildRunKey = (handle: string, projectName: string, runName: string): string => `${handle}/${projectName}/${runName}`;
+export const buildRunKey = (handle: string, projectName: string, runName: string): string => `${handle}/${projectName}/${runName}`;
 const getErrorMessage = (body: unknown): string | null => {
   if (!body || typeof body !== "object") { return null; }
   if (!("error" in body)) { return null; }

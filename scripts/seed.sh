@@ -66,8 +66,8 @@ project_two_id="project_orbit"
 json_request "PUT" "/organizations/$organization_id" '{"handle":"acme-labs","displayName":"Acme Labs"}' >/dev/null
 json_request "PUT" "/organizations/$organization_id/members/$user_id" '{"role":"ADMIN"}' >/dev/null
 
-json_request "PUT" "/projects/$project_one_id" '{"accountId":"org_acme_labs","name":"Solaris","description":"Computer vision experiments for aerial imagery classification."}' >/dev/null
-json_request "PUT" "/projects/$project_two_id" '{"accountId":"org_acme_labs","name":"Orbit","description":"Language model evaluation runs for support ticket triage."}' >/dev/null
+json_request "PUT" "/projects/$project_one_id" "{\"accountId\":\"$user_id\",\"name\":\"Solaris\",\"description\":\"Computer vision experiments for aerial imagery classification.\"}" >/dev/null
+json_request "PUT" "/projects/$project_two_id" "{\"accountId\":\"$user_id\",\"name\":\"Orbit\",\"description\":\"Language model evaluation runs for support ticket triage.\"}" >/dev/null
 
 json_request "PUT" "/runs/run_solaris_001" "{\"projectId\":\"$project_one_id\",\"userId\":\"$user_id\",\"name\":\"baseline-resnet\",\"status\":\"finished\",\"metadata\":{\"accuracy\":0.91,\"epochs\":40,\"dataset\":\"sat-imagery-v2\"}}" >/dev/null
 json_request "PUT" "/runs/run_orbit_001" "{\"projectId\":\"$project_two_id\",\"userId\":\"$user_id\",\"name\":\"distilbert-finetune\",\"status\":\"running\",\"metadata\":{\"f1\":0.84,\"dataset\":\"support-tickets\",\"batchSize\":32}}" >/dev/null

@@ -5,58 +5,34 @@ import { useParams } from "wouter";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import Navbar from "components/Navbar";
-import Sidebar from "components/Sidebar";
-import { useAuthStore } from "store/auth";
-import { useProjectStore } from "store/projects";
-import { useRunStore } from "store/runs";
+import { buildRunKey, useRunStore } from "store/runs";
 import { useScalarStore } from "store/scalars";
 
 export default function RunDetailRoute(): ReactElement {
-  const { handle, projectName, runName } = useParams();
-  const user = useAuthStore((state) => state.user);
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
-  const projectError = useProjectStore((state) => state.error);
-  const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const runsByKey = useRunStore((state) => state.runsByKey);
+  const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
+  const runKey = buildRunKey(handle, projectName, runName);
+  const run = useRunStore((state) => state.runsByKey[runKey]);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
-  const fetchRuns = useRunStore((state) => state.fetchRuns);
   const fetchRunByHandle = useRunStore((state) => state.fetchRunByHandle);
   const scalars = useScalarStore((state) => state.scalars);
   const scalarError = useScalarStore((state) => state.error);
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
-  const fetchScalars = useScalarStore((state) => state.fetchScalars);
+  const fetchScalarsByHandle = useScalarStore((state) => state.fetchScalarsByHandle);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
-  const runKey = handle && projectName && runName ? `${handle}/${projectName}/${runName}` : null;
 
   const xFormatter = useMemo(() => (value: number) => value.toFixed(0), []);
   const yFormatter = useMemo(() => (value: number) => value.toFixed(2), []);
 
   useEffect(() => {
-    if (user) { void fetchProjects(); }
-  }, [fetchProjects, user]);
-
-  useEffect(() => {
-    if (user && !isProjectsLoading) { void fetchRuns(user.id); }
-  }, [fetchRuns, isProjectsLoading, user]);
-
-  const projectList = Object.values(projectsByKey);
-  const runList = Object.values(runsByKey);
-  const projectFromList = projectList.find((item) => item.name === projectName);
-  const runFromList = runList.find((item) => (projectFromList ? item.projectId === projectFromList.id : true) && item.name === runName);
-  const run = runKey ? runsByKey[runKey] : runFromList;
-  useEffect(() => {
-    if (handle && projectName && runName && !run) { void fetchRunByHandle(handle, projectName, runName); }
+    if (!run) { void fetchRunByHandle(handle, projectName, runName); }
   }, [fetchRunByHandle, handle, projectName, run, runName]);
-  const project = projectFromList ?? projectList.find((item) => item.id === run?.projectId);
-  const runId = run?.id;
-  const runErrorMessage = runError;
 
   useEffect(() => {
-    if (runId) { void fetchScalars(runId); }
-  }, [fetchScalars, runId]);
+    void fetchScalarsByHandle(handle, projectName, runName);
+  }, [fetchScalarsByHandle, handle, projectName, runName]);
+
   const chartSeries = useMemo(() => {
     const keys = new Set<string>();
     scalars.forEach((scalar) => {
@@ -100,9 +76,7 @@ export default function RunDetailRoute(): ReactElement {
       buckets.set(prefix, list);
     });
 
-    const orderedPrefixes = ["train", "val"];
-    const remaining = Array.from(buckets.keys()).filter((key) => !orderedPrefixes.includes(key)).sort();
-    return [...orderedPrefixes, ...remaining].flatMap((prefix) => {
+    return Array.from(buckets.keys()).sort().flatMap((prefix) => {
       const list = buckets.get(prefix);
       if (!list || list.length === 0) { return []; }
       return [{ prefix, series: list }];
@@ -111,26 +85,20 @@ export default function RunDetailRoute(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar
-        locationLabel={run?.name ?? runName ?? "Run"}
-        parentLabel={project?.name ?? projectName}
-        parentHref={(handle ?? user?.handle) && projectName ? `/${handle ?? user?.handle ?? "workspace"}/projects/${projectName}` : undefined}
-      />
+      <Navbar locationLabel={runName} parentLabel={projectName} parentHref={`/${handle}/projects/${projectName}`} />
 
-      <div className="lg:grid lg:grid-cols-[280px_1fr]">
-        <Sidebar user={user} projects={projectList} isLoading={isProjectsLoading} error={projectError} />
-
+      <div>
         <main className="p-6 lg:p-8">
           <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{projectName ?? project?.name ?? "Project"}</p>
-              <h1 className="mt-1 font-display text-3xl">{runName ?? run?.name ?? "Run details"}</h1>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{projectName}</p>
+              <h1 className="mt-1 font-display text-3xl">{runName}</h1>
               <p className="mt-1 text-sm text-brand-textMuted">Live metrics and training history.</p>
             </div>
           </header>
 
-          {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runErrorMessage ?? "Run not found."}</div> : null}
-          {run && runErrorMessage ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runErrorMessage}</div> : null}
+          {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
+          {run && runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
 
           {sections.map((section) => (
@@ -163,7 +131,6 @@ export default function RunDetailRoute(): ReactElement {
                       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                           {section.series.map((series) => {
                             const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
-                            const runLabel = run?.name ?? runName ?? "Run";
                             const closest = hovered ? getClosestPoint(series, hovered.step) : null;
                             const isLeft = (hovered?.xRatio ?? 0) < 0.5;
                             const tooltipStyle = hovered
@@ -179,7 +146,7 @@ export default function RunDetailRoute(): ReactElement {
                                   <h2 className="text-[13px] font-semibold text-brand-text">{label}</h2>
                                   <div className="flex items-center gap-2 text-[11px] text-brand-textMuted">
                                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
-                                    <span className="max-w-[160px] truncate">{runLabel}</span>
+                                    <span className="max-w-[160px] truncate">{runName}</span>
                                   </div>
                                 </div>
                                 {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}

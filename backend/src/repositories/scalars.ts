@@ -1,6 +1,10 @@
 import type { ID, Scalar } from "@underfit/types";
+import { sql } from "kysely";
 
 import type { Database } from "db";
+import { table as accountsTable } from "repositories/accounts";
+import { table as projectsTable } from "repositories/projects";
+import { table as runsTable } from "repositories/runs";
 
 const table = "scalars";
 
@@ -31,6 +35,21 @@ export const createScalarsTable = async (db: Database): Promise<void> => {
 
 export const listScalars = async (db: Database, runId: ID): Promise<Scalar[]> => {
   const rows = await db.selectFrom(table).selectAll().where("runId", "=", runId).orderBy("step", "asc").execute();
+  return rows.map(toScalar);
+};
+
+export const listScalarsByHandleProjectNameAndRunName = async (db: Database, handle: string, projectName: string, runName: string): Promise<Scalar[]> => {
+  const rows = await db
+    .selectFrom(table)
+    .innerJoin(runsTable, `${runsTable}.id`, `${table}.runId`)
+    .innerJoin(projectsTable, `${projectsTable}.id`, `${runsTable}.projectId`)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${projectsTable}.accountId`)
+    .selectAll(table)
+    .where(sql`lower(${sql.ref(`${accountsTable}.handle`)})`, "=", handle.toLowerCase())
+    .where(`${projectsTable}.name`, "=", projectName)
+    .where(`${runsTable}.name`, "=", runName)
+    .orderBy(`${table}.step`, "asc")
+    .execute();
   return rows.map(toScalar);
 };
 

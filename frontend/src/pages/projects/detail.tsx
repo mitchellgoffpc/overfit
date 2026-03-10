@@ -6,11 +6,11 @@ import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";
 import Sidebar from "components/Sidebar";
 import { useAuthStore } from "store/auth";
-import { useProjectStore } from "store/projects";
+import { buildProjectKey, useProjectStore } from "store/projects";
 import { useRunStore } from "store/runs";
 
 export default function ProjectDetailRoute(): ReactElement {
-  const { handle, projectName } = useParams();
+  const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
   const user = useAuthStore((state) => state.user);
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
@@ -30,19 +30,19 @@ export default function ProjectDetailRoute(): ReactElement {
     if (user && !isProjectsLoading) { void fetchRuns(user.id); }
   }, [fetchRuns, isProjectsLoading, user]);
 
-  const projectKey = handle && projectName ? `${handle}/${projectName}` : null;
   const projectList = Object.values(projectsByKey);
   const runList = Object.values(runsByKey);
-  const project = projectKey ? projectsByKey[projectKey] : projectList.find((item) => item.name === projectName);
+  const projectKey = buildProjectKey(handle, projectName);
+  const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
   useEffect(() => {
-    if (handle && projectName && !project) { void fetchProjectByHandle(handle, projectName); }
+    if (!project) { void fetchProjectByHandle(handle, projectName); }
   }, [fetchProjectByHandle, handle, project, projectName]);
   const projectRuns = project ? runList.filter((run) => run.projectId === project.id) : [];
   const showProjectNotFound = !project && !isProjectsLoading;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar locationLabel={project?.name ?? projectName ?? "Project"} />
+      <Navbar locationLabel={projectName} />
 
       <div className="lg:grid lg:grid-cols-[280px_1fr]">
         <Sidebar user={user} projects={projectList} isLoading={isProjectsLoading} error={projectError} />
@@ -50,8 +50,8 @@ export default function ProjectDetailRoute(): ReactElement {
         <main className="p-6 lg:p-8">
           <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle ?? user?.handle}</p>
-              <h1 className="mt-1 font-display text-3xl">{projectName ?? project?.name ?? "Project"}</h1>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle}</p>
+              <h1 className="mt-1 font-display text-3xl">{projectName}</h1>
               {project?.description ? <p className="mt-1 text-sm text-brand-textMuted">{project.description}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export default function ProjectDetailRoute(): ReactElement {
               runs={projectRuns}
               project={project}
               user={user}
-              ownerHandle={handle ?? user?.handle ?? "workspace"}
+              ownerHandle={handle}
               isLoading={isRunsLoading || isProjectsLoading}
               error={runError ?? projectError}
             />
