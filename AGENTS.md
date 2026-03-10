@@ -17,5 +17,7 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 ## Committing changes
 
 - Always run the linter and tests before committing.
+- Run tests with `npm test`.
+- Run the linter with `npm run lint`.
 - Use single-line commit messages in plain English.
 - Do not use conventional commit prefixes or add signatures (e.g. Co-Authored By)

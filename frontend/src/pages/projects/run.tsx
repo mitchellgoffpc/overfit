@@ -163,6 +163,7 @@ export default function RunDetailRoute(): ReactElement {
                       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                           {section.series.map((series) => {
                             const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
+                            const runLabel = run?.name ?? runName ?? "Run";
                             const closest = hovered ? getClosestPoint(series, hovered.step) : null;
                             const isLeft = (hovered?.xRatio ?? 0) < 0.5;
                             const tooltipStyle = hovered
@@ -173,33 +174,32 @@ export default function RunDetailRoute(): ReactElement {
                               }
                               : undefined;
                             return (
-                              <div key={series.id} className="relative rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                  <div>
-                                    <h2 className="text-xl">{label}</h2>
+                              <div key={series.id} className="relative rounded-[12px] border border-brand-border bg-brand-surface px-2 pb-[6px] pt-2 shadow-soft">
+                                <div className="mb-1 flex flex-col items-center gap-0">
+                                  <h2 className="text-[13px] font-semibold text-brand-text">{label}</h2>
+                                  <div className="flex items-center gap-2 text-[11px] text-brand-textMuted">
+                                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
+                                    <span className="max-w-[160px] truncate">{runLabel}</span>
                                   </div>
                                 </div>
                                 {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
                                 <div className="relative">
                                   {hovered && closest ? (
-                                    <div className="pointer-events-none absolute z-10 w-[220px] rounded-[18px] border border-brand-border bg-brand-surface/95 p-3 shadow-soft backdrop-blur" style={tooltipStyle}>
-                                      <div className="mb-2 flex items-baseline justify-between text-[11px] uppercase tracking-[0.14em] text-brand-textMuted">
-                                        <span>Step</span>
-                                        <span className="font-semibold text-brand-text">{xFormatter(hovered.step)}</span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-3 text-[13px] text-brand-text">
-                                        <div className="flex items-center gap-2 overflow-hidden">
+                                    <div className="pointer-events-none absolute z-10 max-w-[240px] rounded-[10px] border border-brand-border bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur" style={tooltipStyle}>
+                                      <div className="flex items-center justify-between gap-3 text-[12px] text-brand-text">
+                                        <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
                                           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
                                           <span className="truncate">{label}</span>
+                                          <span className="text-brand-textMuted">step {xFormatter(hovered.step)}</span>
                                         </div>
                                         <span className="font-semibold">{yFormatter(closest.y)}</span>
                                       </div>
                                     </div>
                                   ) : null}
                                   <LineChart
-                                    className="h-[240px] w-full"
+                                    className="h-[220px] w-full"
                                     series={series.points.length > 0 ? [series] : []}
-                                    height={240}
+                                    height={220}
                                     xLabelFormatter={xFormatter}
                                     yLabelFormatter={yFormatter}
                                     hoverStep={hovered?.step}

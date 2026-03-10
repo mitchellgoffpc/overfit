@@ -61,7 +61,7 @@ export default function LineChart({ series, height = 220, className, xLabelForma
   const options = useMemo<LineChartOptions>(() => ({
     width,
     height,
-    padding: { left: 44, right: 16, top: 16, bottom: 30 },
+    padding: { left: 36, right: 12, top: 10, bottom: 24 },
     xTicks: 6,
     yTicks: 5,
     background: "#ffffff",
@@ -70,7 +70,7 @@ export default function LineChart({ series, height = 220, className, xLabelForma
     textColor: "#627070",
     xLabelFormatter,
     yLabelFormatter,
-    font: "11px Space Grotesk, system-ui, sans-serif",
+    font: "10px Space Grotesk, system-ui, sans-serif",
   }), [height, width, xLabelFormatter, yLabelFormatter]);
 
   const geometry = useMemo<LineChartGeometry | null>(() => {

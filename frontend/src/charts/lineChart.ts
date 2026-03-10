@@ -1,3 +1,6 @@
+const X_TICK_TARGET = 6;
+const Y_TICK_TARGET = 5;
+
 export interface LinePoint { x: number; y: number }
 
 export interface LineSeries {
@@ -91,10 +94,71 @@ const getExtent = (series: LineSeries[]): { xMin: number; xMax: number; yMin: nu
   return { xMin, xMax, yMin, yMax };
 };
 
+const trimZeros = (value: string): string => value.replace(/\.?0+$/, "").replace(/\.$/, "");
+
 const formatTick = (value: number): string => {
-  if (Math.abs(value) >= 1000) { return value.toFixed(0); }
-  if (Math.abs(value) >= 10) { return value.toFixed(1); }
-  return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+  const abs = Math.abs(value);
+  if (abs === 0) { return "0"; }
+  if (abs < 1e-3) {
+    const exp = value.toExponential(2);
+    const [mantissa, exponent = "0"] = exp.split("e");
+    return `${trimZeros(mantissa)}e${exponent}`;
+  }
+
+  if (abs >= 1000) {
+    const suffixes = ["", "k", "M", "G", "T", "P", "E"];
+    const exponent = Math.min(Math.floor(Math.log10(abs) / 3), suffixes.length - 1);
+    const scale = Math.pow(1000, exponent);
+    const scaled = value / scale;
+    const rawScaled = trimZeros(scaled.toFixed(6));
+    const sigDigits = rawScaled.replace("-", "").replace(".", "").replace(/^0+/, "").length;
+    if (sigDigits <= 4 && exponent > 0) {
+      return `${trimZeros(scaled.toFixed(3))}${suffixes[exponent] ?? ""}`;
+    }
+  }
+
+  if (abs >= 10) { return trimZeros(value.toFixed(1)); }
+  return trimZeros(value.toFixed(2));
+};
+
+const roundTick = (value: number): number => Number(value.toFixed(12));
+
+const getNiceTicks = (min: number, max: number, targetCount: number): number[] => {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) { return []; }
+  if (min === max) { return [min]; }
+  const range = max - min;
+  const safeTarget = Math.max(2, targetCount);
+  const idealStep = range / (safeTarget - 1);
+  const exponent = Math.floor(Math.log10(Math.abs(idealStep)));
+  const bases = [1, 2, 2.5, 5];
+  const exponentRange = [exponent - 2, exponent - 1, exponent, exponent + 1, exponent + 2];
+  let best: { step: number; countDiff: number; coverageDiff: number; ticks: number[] } | null = null;
+
+  for (const exp of exponentRange) {
+    const scale = Math.pow(10, exp);
+    for (const base of bases) {
+      const step = base * scale;
+      if (!Number.isFinite(step) || step <= 0) { continue; }
+      const first = Math.ceil(min / step) * step;
+      const last = Math.floor(max / step) * step;
+      if (first > last) { continue; }
+      const count = Math.floor((last - first) / step) + 1;
+      const ticks: number[] = [];
+      for (let i = 0; i < count; i += 1) {
+        const value = roundTick(first + i * step);
+        if (value < min - 1e-9 || value > max + 1e-9) { continue; }
+        ticks.push(value);
+      }
+      if (ticks.length === 0) { continue; }
+      const countDiff = Math.abs(ticks.length - targetCount);
+      const coverageDiff = Math.abs((ticks[ticks.length - 1] - ticks[0]) - range);
+      if (!best || countDiff < best.countDiff || (countDiff === best.countDiff && (coverageDiff < best.coverageDiff || (coverageDiff === best.coverageDiff && step < best.step)))) {
+        best = { step, countDiff, coverageDiff, ticks };
+      }
+    }
+  }
+
+  return best?.ticks ?? [];
 };
 
 export const getLineChartGeometry = (series: LineSeries[], options: LineChartOptions): LineChartGeometry => {
@@ -123,7 +187,8 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
 
   const dpr = window.devicePixelRatio || 1;
   const geometry = getLineChartGeometry(series, options);
-  const { width, height, padding, plotWidth, plotHeight, xMin, xMax, yMinAdjusted, yMaxAdjusted, xScale, yScale } = geometry;
+  const { width, height, padding, plotWidth, plotHeight, xMin, xMax, xScale, yScale } = geometry;
+  const { yMin, yMax } = getExtent(series);
   canvas.width = Math.floor(width * dpr);
   canvas.height = Math.floor(height * dpr);
   canvas.style.width = `${String(width)}px`;
@@ -140,24 +205,22 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
   ctx.fillStyle = background;
   ctx.fillRect(0, 0, width, height);
 
-  const xTicks = Math.max(2, options.xTicks ?? 6);
-  const yTicks = Math.max(2, options.yTicks ?? 5);
+  const xTickValues = getNiceTicks(xMin, xMax, Math.max(2, options.xTicks ?? X_TICK_TARGET));
+  const yTickValues = getNiceTicks(yMin, yMax, Math.max(2, options.yTicks ?? Y_TICK_TARGET));
 
   ctx.strokeStyle = gridColor;
   ctx.lineWidth = 1;
 
-  for (let i = 0; i < xTicks; i += 1) {
-    const t = i / (xTicks - 1);
-    const x = padding.left + t * plotWidth;
+  for (const value of xTickValues) {
+    const x = xScale(value);
     ctx.beginPath();
     ctx.moveTo(x, padding.top);
     ctx.lineTo(x, padding.top + plotHeight);
     ctx.stroke();
   }
 
-  for (let i = 0; i < yTicks; i += 1) {
-    const t = i / (yTicks - 1);
-    const y = padding.top + t * plotHeight;
+  for (const value of yTickValues) {
+    const y = yScale(value);
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
     ctx.lineTo(padding.left + plotWidth, y);
@@ -166,7 +229,11 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
 
   ctx.strokeStyle = axisColor;
   ctx.lineWidth = 1;
-  ctx.strokeRect(padding.left, padding.top, plotWidth, plotHeight);
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + plotHeight);
+  ctx.lineTo(padding.left + plotWidth, padding.top + plotHeight);
+  ctx.stroke();
 
   ctx.font = font;
   ctx.fillStyle = textColor;
@@ -174,20 +241,18 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
   ctx.textBaseline = "middle";
 
   const yFormatter = options.yLabelFormatter ?? formatTick;
-  for (let i = 0; i < yTicks; i += 1) {
-    const t = i / (yTicks - 1);
-    const value = yMaxAdjusted - t * (yMaxAdjusted - yMinAdjusted);
-    const y = padding.top + t * plotHeight;
+  for (const value of yTickValues) {
+    const y = yScale(value);
     ctx.fillText(yFormatter(value), 8, y);
   }
 
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   const xFormatter = options.xLabelFormatter ?? formatTick;
-  for (let i = 0; i < xTicks; i += 1) {
-    const t = i / (xTicks - 1);
-    const value = xMin + t * (xMax - xMin);
-    const x = padding.left + t * plotWidth;
+  for (let i = 0; i < xTickValues.length; i += 1) {
+    if (i === 0) { continue; }
+    const value = xTickValues[i];
+    const x = xScale(value);
     ctx.fillText(xFormatter(value), x, padding.top + plotHeight + 8);
   }
 
