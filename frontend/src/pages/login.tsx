@@ -1,19 +1,8 @@
-import type { User } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
-import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
-
-interface AuthResponse {
-  session?: { token?: string };
-  user?: User;
-}
-
-interface AuthError {
-  error?: string;
-}
 
 export default function LoginRoute(): ReactElement {
   const [, navigate] = useLocation();
@@ -23,8 +12,7 @@ export default function LoginRoute(): ReactElement {
   const [isLoading, setIsLoading] = useState(false);
   const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
-  const setSessionToken = useAuthStore((state) => state.setSessionToken);
-  const setUser = useAuthStore((state) => state.setUser);
+  const login = useAuthStore((state) => state.login);
 
   useEffect(() => {
     if (status === "idle") {
@@ -41,37 +29,12 @@ export default function LoginRoute(): ReactElement {
     setError(null);
     setIsLoading(true);
 
-    try {
-      const response = await fetch(`${apiBase}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as AuthError | null;
-        const message = body?.error ?? `Login failed (${String(response.status)})`;
-        setError(message);
-        setIsLoading(false);
-        return;
-      }
-
-      const body = (await response.json()) as AuthResponse;
-      const token = body.session?.token;
-      const user = body.user ?? null;
-      if (token) {
-        setSessionToken(token);
-        if (user) {
-          setUser(user);
-        } else {
-          void loadUser();
-        }
-      }
+    const result = await login(email, password);
+    if (result.ok) {
       setIsLoading(false);
       navigate("/");
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "Login failed";
-      setError(message);
+    } else {
+      setError(result.error);
       setIsLoading(false);
     }
   };

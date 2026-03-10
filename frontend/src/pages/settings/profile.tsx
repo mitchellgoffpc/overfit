@@ -2,16 +2,14 @@ import type { User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useState } from "react";
 
-import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface ProfileSettingsCardProps {
   readonly user: User;
-  readonly onUserUpdated: (user: User) => void;
+  readonly updateUserProfile: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
-function ProfileSettingsCard({ user, onUserUpdated }: ProfileSettingsCardProps): ReactElement {
-  const sessionToken = useAuthStore((state) => state.sessionToken);
+function ProfileSettingsCard({ user, updateUserProfile }: ProfileSettingsCardProps): ReactElement {
   const [name, setName] = useState(() => user.name ?? user.displayName);
   const [bio, setBio] = useState(() => user.bio ?? "");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -19,30 +17,15 @@ function ProfileSettingsCard({ user, onUserUpdated }: ProfileSettingsCardProps):
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveProfile = async () => {
-    if (!sessionToken) { return; }
     setIsSaving(true);
     setSaveError(null);
     setSaveStatus(null);
-    try {
-      const response = await fetch(`${apiBase}/users/me`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ name, bio })
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: string } | null;
-        const message = body?.error ?? `Save failed (${String(response.status)})`;
-        setSaveError(message);
-        setIsSaving(false);
-        return;
-      }
-      const updated = (await response.json()) as User;
-      onUserUpdated(updated);
+    const result = await updateUserProfile(name, bio);
+    if (result.ok) {
       setSaveStatus("Saved");
       setIsSaving(false);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Save failed";
-      setSaveError(message);
+    } else {
+      setSaveError(result.error);
       setIsSaving(false);
     }
   };
@@ -91,7 +74,7 @@ function ProfileSettingsCard({ user, onUserUpdated }: ProfileSettingsCardProps):
 
 export default function SettingsProfileContent(): ReactElement {
   const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
+  const updateUserProfile = useAuthStore((state) => state.updateUserProfile);
 
-  return user ? <ProfileSettingsCard key={user.id} user={user} onUserUpdated={setUser} /> : <div />;
+  return user ? <ProfileSettingsCard key={user.id} user={user} updateUserProfile={updateUserProfile} /> : <div />;
 }

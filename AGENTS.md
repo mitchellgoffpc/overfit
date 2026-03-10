@@ -12,6 +12,8 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 - Red diffs are better than green diffs.
 - When practical, prefer `if/else if/else` blocks to multiple `if` blocks with early returns.
 - Avoid short docstrings. Use docstrings only when detailed multi-line documentation is required.
+- Keep flows simple and consistent: store actions should return straightforward `{ ok, error }` results (never throw), and pages should be thin.
+- Minimize defensive bloat. Assume successful responses include expected fields unless there is a clear reason not to.
 - Tests are located in a top-level `tests` folder next to the `src` folder in each subproject.
 
 ## Committing changes

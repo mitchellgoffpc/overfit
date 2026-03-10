@@ -20,6 +20,17 @@ vi.mock("wouter", async () => {
 });
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
+const user = {
+  id: "user-1",
+  handle: "ada",
+  displayName: "Ada Lovelace",
+  type: "USER",
+  email: "ada@underfit.local",
+  name: "Ada Lovelace",
+  bio: null,
+  createdAt: "2025-01-01T00:00:00.000Z",
+  updatedAt: "2025-01-01T00:00:00.000Z"
+};
 
 const createResponse = (body: unknown, init?: { ok?: boolean; status?: number }) => ({
   ok: init?.ok ?? true,
@@ -155,7 +166,7 @@ describe("SignupRoute", () => {
   });
 
   it("stores the session token and navigates on successful signup", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-456" } }));
+    fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-456" }, user }));
     const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
     const { hook } = memoryLocation({ path: "/signup" });
 

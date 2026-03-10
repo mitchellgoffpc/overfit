@@ -1,32 +1,9 @@
-import {
-  EMAIL_IN_USE_ERROR,
-  PASSWORD_HINT,
-  USERNAME_HINT,
-  USERNAME_IN_USE_ERROR,
-  testEmail,
-  testPassword,
-  testHandle
-} from "@underfit/types";
-import type { User } from "@underfit/types";
+import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testHandle } from "@underfit/types";
 import type { SubmitEvent, ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
-import { apiBase } from "helpers";
-import { useAuthStore } from "store/auth";
-
-interface AuthResponse {
-  session?: { token?: string };
-  user?: User;
-}
-
-interface AuthError {
-  error?: string;
-}
-
-interface ExistsResponse {
-  exists?: boolean;
-}
+import { checkEmailValid, checkHandleValid, useAuthStore } from "store/auth";
 
 export default function SignupRoute(): ReactElement {
   const [, navigate] = useLocation();
@@ -40,9 +17,7 @@ export default function SignupRoute(): ReactElement {
   const [isLoading, setIsLoading] = useState(false);
   const status = useAuthStore((state) => state.status);
   const loadUser = useAuthStore((state) => state.loadUser);
-  const setSessionToken = useAuthStore((state) => state.setSessionToken);
-  const setUser = useAuthStore((state) => state.setUser);
-  const hasHintErrors = Boolean(emailHintError ?? usernameHintError ?? passwordHintError);
+  const signup = useAuthStore((state) => state.signup);
 
   useEffect(() => {
     if (status === "idle") {
@@ -54,81 +29,35 @@ export default function SignupRoute(): ReactElement {
     return <Redirect to="/" />;
   }
 
-  const checkAvailability = async (
-    path: string,
-    param: "email" | "handle",
-    value: string,
-    setHintError: (message: string | null) => void,
-    conflictMessage: string
-  ) => {
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setHintError(null);
-    } else {
-      try {
-        const query = new URLSearchParams({ [param]: trimmed });
-        const response = await fetch(`${apiBase}/${path}?${query.toString()}`);
-        if (!response.ok) {
-          setHintError(`Unable to verify ${param}`);
-          return;
-        }
-        const body = (await response.json().catch(() => null)) as ExistsResponse | null;
-        setHintError(body?.exists ? conflictMessage : null);
-      } catch (caught) {
-        const message = caught instanceof Error ? caught.message : `Unable to verify ${param}`;
-        setHintError(message);
-      }
-    }
+  const handleEmailBlur = async () => {
+    setEmailHintError(await checkEmailValid(email));
+  };
+
+  const handleUsernameBlur = async () => {
+    setUsernameHintError(await checkHandleValid(username));
   };
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const trimmedEmail = email.trim();
-    const trimmedUsername = username.trim();
-    const nextEmailError = emailHintError ?? (trimmedEmail ? testEmail(trimmedEmail) : null);
-    const nextPasswordError = passwordHintError ?? (password ? testPassword(password) : null);
-    const nextUsernameError = usernameHintError ?? (trimmedUsername ? testHandle(trimmedUsername) : null);
+    const nextEmailError = emailHintError ?? testEmail(email.trim());
+    const nextPasswordError = passwordHintError ?? testPassword(password);
+    const nextUsernameError = usernameHintError ?? testHandle(username.trim());
     setEmailHintError(nextEmailError);
     setPasswordHintError(nextPasswordError);
     setUsernameHintError(nextUsernameError);
-    if (nextEmailError || nextPasswordError || nextUsernameError) {
-      return;
-    }
-    setError(null);
-    setIsLoading(true);
 
-    try {
-      const response = await fetch(`${apiBase}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, handle: username, password })
-      });
+    if (!nextEmailError && !nextPasswordError && !nextUsernameError) {
+      setError(null);
+      setIsLoading(true);
 
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as AuthError | null;
-        const message = body?.error ?? `Sign up failed (${String(response.status)})`;
-        setError(message);
+      const result = await signup(email, username, password);
+      if (result.ok) {
         setIsLoading(false);
-        return;
+        navigate("/");
+      } else {
+        setError(result.error);
+        setIsLoading(false);
       }
-
-      const body = (await response.json()) as AuthResponse;
-      const token = body.session?.token;
-      const user = body.user ?? null;
-      if (token) {
-        setSessionToken(token);
-        if (user) {
-          setUser(user);
-        } else {
-          void loadUser();
-        }
-      }
-      setIsLoading(false);
-      navigate("/");
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "Sign up failed";
-      setError(message);
-      setIsLoading(false);
     }
   };
 
@@ -169,16 +98,7 @@ export default function SignupRoute(): ReactElement {
                 setEmailHintError(null);
               }}
               onBlur={() => {
-                const trimmed = email.trim();
-                if (!trimmed) {
-                  setEmailHintError(null);
-                } else {
-                  const validationError = testEmail(trimmed);
-                  setEmailHintError(validationError);
-                  if (!validationError) {
-                    void checkAvailability("users/email-exists", "email", email, setEmailHintError, EMAIL_IN_USE_ERROR);
-                  }
-                }
+                void handleEmailBlur();
               }}
             />
             <span className={emailHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
@@ -202,11 +122,7 @@ export default function SignupRoute(): ReactElement {
                 setPasswordHintError(null);
               }}
               onBlur={() => {
-                if (!password) {
-                  setPasswordHintError(null);
-                } else {
-                  setPasswordHintError(testPassword(password));
-                }
+                setPasswordHintError(password ? testPassword(password) : null);
               }}
             />
             <span className={passwordHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
@@ -230,16 +146,7 @@ export default function SignupRoute(): ReactElement {
                 setUsernameHintError(null);
               }}
               onBlur={() => {
-                const trimmed = username.trim();
-                if (!trimmed) {
-                  setUsernameHintError(null);
-                } else {
-                  const validationError = testHandle(trimmed);
-                  setUsernameHintError(validationError);
-                  if (!validationError) {
-                    void checkAvailability("accounts/handle-exists", "handle", username, setUsernameHintError, USERNAME_IN_USE_ERROR);
-                  }
-                }
+                void handleUsernameBlur();
               }}
             />
             <span className={usernameHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
@@ -250,7 +157,7 @@ export default function SignupRoute(): ReactElement {
           <button
             className="rounded-[10px] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
             type="submit"
-            disabled={isLoading || hasHintErrors}
+            disabled={isLoading || Boolean(emailHintError ?? usernameHintError ?? passwordHintError)}
           >
             {isLoading ? "Creating account..." : "Create account"}
           </button>

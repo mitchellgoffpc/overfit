@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { apiBase } from "helpers";
 import { useAuthStore } from "store/auth";
 
 interface NavbarProps {
@@ -14,8 +13,7 @@ interface NavbarProps {
 export default function Navbar({ locationLabel, parentLabel, parentHref }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
   const user = useAuthStore((state) => state.user);
-  const sessionToken = useAuthStore((state) => state.sessionToken);
-  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const logout = useAuthStore((state) => state.logout);
   const ownerLabel = user?.handle ?? "workspace";
   const displayName = user?.name ?? user?.displayName ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -55,16 +53,7 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
 
   const handleLogout = async () => {
     setIsMenuOpen(false);
-
-    if (sessionToken) {
-      try {
-        await fetch(`${apiBase}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${sessionToken}` } });
-      } catch {
-        void 0;
-      }
-    }
-
-    clearAuth();
+    await logout();
     navigate("/login");
   };
 
