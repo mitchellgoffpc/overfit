@@ -57,7 +57,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     const id = req.params.id;
     const existing = await getOrganization(db, id);
 
-    const handle = req.body?.handle ?? existing?.handle;
+    const handle = (req.body?.handle ?? existing?.handle ?? "").trim().toLowerCase();
     const displayName = req.body?.displayName ?? existing?.displayName ?? handle;
     const missingFields = Object.entries({ handle }).filter(([, value]) => !value).map(([label]) => label);
 

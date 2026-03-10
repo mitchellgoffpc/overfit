@@ -102,7 +102,7 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
   const register: RequestHandler<Record<string, string>, AuthResponse | ErrorResponse, RegisterPayload | undefined> = async (req, res) => {
     const email = normalizeEmail(req.body?.email ?? "");
-    const handle = req.body?.handle?.trim() ?? "";
+    const handle = (req.body?.handle ?? "").trim().toLowerCase();
     const password = req.body?.password ?? "";
 
     const missingFields = Object.entries({ email, handle, password }).filter(([, value]) => !value).map(([label]) => label);

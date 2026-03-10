@@ -1,5 +1,4 @@
 import type { ID, Run } from "@underfit/types";
-import { sql } from "kysely";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
@@ -50,7 +49,7 @@ export const getRunByHandleProjectNameAndName = async (db: Database, handle: str
     .innerJoin(projectsTable, `${projectsTable}.id`, `${table}.projectId`)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${projectsTable}.accountId`)
     .selectAll(table)
-    .where(sql`lower(${sql.ref(`${accountsTable}.handle`)})`, "=", handle.toLowerCase())
+    .where(`${accountsTable}.handle`, "=", handle)
     .where(`${projectsTable}.name`, "=", projectName)
     .where(`${table}.name`, "=", runName)
     .executeTakeFirst();

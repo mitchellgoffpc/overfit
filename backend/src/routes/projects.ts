@@ -32,11 +32,11 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
     const id = req.params.id;
     const existing = await getProject(db, id);
 
-    const name = req.body?.name ?? existing?.name;
+    const name = (req.body?.name ?? existing?.name ?? "").trim().toLowerCase();
     const accountId = req.body?.accountId ?? existing?.accountId;
     const missingFields = Object.entries({ name, accountId }).filter(([, value]) => !value).map(([label]) => label);
 
-    const nameError = testSlug(name ?? "");
+    const nameError = testSlug(name);
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Project fields are required: ${missingFields.join(", ")}` });
     } else if (nameError) {
@@ -44,8 +44,8 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
     } else {
       const project = await upsertProject(db, {
         id,
-        accountId: accountId,
-        name: name,
+        accountId,
+        name,
         description: req.body?.description ?? existing?.description ?? null
       });
       res.json(project);

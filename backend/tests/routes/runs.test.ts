@@ -16,7 +16,7 @@ describe("runs routes", () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
     app = createApp(db);
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
   });
 
   it("upserts and fetches a run", async () => {

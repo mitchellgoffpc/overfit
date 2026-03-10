@@ -14,7 +14,7 @@ interface ExistsResponse { exists: boolean }
 
 export function registerAccountRoutes(app: RouteApp, db: Database): void {
   const handleExistsHandler: RequestHandler<Record<string, string>, ExistsResponse | ErrorResponse, undefined, HandleExistsQuery> = async (req, res) => {
-    const handle = req.query.handle?.trim() ?? "";
+    const handle = req.query.handle?.trim().toLowerCase() ?? "";
     if (!handle) {
       res.status(400).json({ error: "Handle is required" });
     } else {
@@ -38,7 +38,7 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
   };
 
   const getAccountByHandleHandler: RequestHandler<{ handle?: string }, User | Organization | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim() ?? "";
+    const handle = req.params.handle?.trim().toLowerCase() ?? "";
     if (!handle) {
       res.status(400).json({ error: "Handle is required" });
       return;
@@ -53,8 +53,8 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
   };
 
   const getProjectByHandleHandler: RequestHandler<{ handle?: string; projectName?: string }, Project | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim() ?? "";
-    const projectName = req.params.projectName?.trim() ?? "";
+    const handle = req.params.handle?.trim().toLowerCase() ?? "";
+    const projectName = req.params.projectName?.trim().toLowerCase() ?? "";
     if (!handle) {
       res.status(400).json({ error: "Handle is required" });
     } else if (!projectName) {
@@ -70,9 +70,9 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
   };
 
   const getRunByHandleHandler: RequestHandler<{ handle?: string; projectName?: string; runName?: string }, Run | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim() ?? "";
-    const projectName = req.params.projectName?.trim() ?? "";
-    const runName = req.params.runName?.trim() ?? "";
+    const handle = req.params.handle?.trim().toLowerCase() ?? "";
+    const projectName = req.params.projectName?.trim().toLowerCase() ?? "";
+    const runName = req.params.runName?.trim().toLowerCase() ?? "";
     if (!handle) {
       res.status(400).json({ error: "Handle is required" });
     } else if (!projectName) {
@@ -90,9 +90,9 @@ export function registerAccountRoutes(app: RouteApp, db: Database): void {
   };
 
   const getScalarsByHandleHandler: RequestHandler<{ handle?: string; projectName?: string; runName?: string }, Scalar[] | ErrorResponse> = async (req, res) => {
-    const handle = req.params.handle?.trim() ?? "";
-    const projectName = req.params.projectName?.trim() ?? "";
-    const runName = req.params.runName?.trim() ?? "";
+    const handle = req.params.handle?.trim().toLowerCase() ?? "";
+    const projectName = req.params.projectName?.trim().toLowerCase() ?? "";
+    const runName = req.params.runName?.trim().toLowerCase() ?? "";
     if (!handle) {
       res.status(400).json({ error: "Handle is required" });
     } else if (!projectName) {

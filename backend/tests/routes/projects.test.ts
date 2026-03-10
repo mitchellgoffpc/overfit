@@ -22,9 +22,9 @@ describe("projects routes", () => {
   });
 
   it("upserts and fetches a project", async () => {
-    await request(app).put(`${API_BASE}/projects/project-1`).send({ accountId: "user-1", name: "Underfit", description: "Tracking runs" }).expect(200);
+    await request(app).put(`${API_BASE}/projects/project-1`).send({ accountId: "user-1", name: "underfit", description: "Tracking runs" }).expect(200);
     const response = await request(app).get(`${API_BASE}/projects/project-1`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "Underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
   });
 
   it("rejects unknown projects", async () => {
@@ -44,8 +44,8 @@ describe("projects routes", () => {
 
   it("lists most active projects for the current user", async () => {
     await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
-    await upsertProject(db, { id: "project-2", accountId: "user-1", name: "Telemetry", description: null });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
+    await upsertProject(db, { id: "project-2", accountId: "user-1", name: "telemetry", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
     await upsertRun(db, { id: "run-2", projectId: "project-2", userId: "user-1", name: "Run 2", status: "finished", metadata: null });
     await upsertRun(db, { id: "run-3", projectId: "project-2", userId: "user-1", name: "Run 3", status: "running", metadata: null });

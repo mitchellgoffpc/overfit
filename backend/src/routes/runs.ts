@@ -29,11 +29,11 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
 
     const projectId = req.body?.projectId ?? existing?.projectId;
     const userId = req.body?.userId ?? existing?.userId;
-    const name = req.body?.name ?? existing?.name;
+    const name = (req.body?.name ?? existing?.name ?? "").trim().toLowerCase();
     const status = req.body?.status ?? existing?.status;
     const missingFields = Object.entries({ projectId, userId, name, status }).filter(([, value]) => !value).map(([label]) => label);
 
-    const nameError = testSlug(name ?? "");
+    const nameError = testSlug(name);
     if (missingFields.length > 0) {
       res.status(400).json({ error: `Run fields are required: ${missingFields.join(", ")}` });
     } else if (nameError) {

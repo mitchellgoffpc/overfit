@@ -53,7 +53,7 @@ describe("users routes", () => {
 
   it("lists runs for a user by created date", async () => {
     await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
     await delay(5);
     await upsertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "Run 2", status: "finished", metadata: null });

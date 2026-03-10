@@ -1,5 +1,4 @@
 import type { ID, Scalar } from "@underfit/types";
-import { sql } from "kysely";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
@@ -45,7 +44,7 @@ export const listScalarsByHandleProjectNameAndRunName = async (db: Database, han
     .innerJoin(projectsTable, `${projectsTable}.id`, `${runsTable}.projectId`)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${projectsTable}.accountId`)
     .selectAll(table)
-    .where(sql`lower(${sql.ref(`${accountsTable}.handle`)})`, "=", handle.toLowerCase())
+    .where(`${accountsTable}.handle`, "=", handle)
     .where(`${projectsTable}.name`, "=", projectName)
     .where(`${runsTable}.name`, "=", runName)
     .orderBy(`${table}.step`, "asc")

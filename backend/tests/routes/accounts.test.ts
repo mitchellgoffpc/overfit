@@ -23,7 +23,7 @@ describe("accounts routes", () => {
   });
 
   it("checks whether a handle exists", async () => {
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "Ada Lovelace", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada lovelace", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/handle-exists`).expect(400);
     expect(missing.body).toMatchObject({ error: "Handle is required" });
@@ -65,10 +65,10 @@ describe("accounts routes", () => {
 
   it("fetches a project by account handle and name", async () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: "Tracking runs" });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
 
     const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "Underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Missing`).expect(404);
     expect(missing.body).toMatchObject({ error: "Project not found" });
@@ -76,7 +76,7 @@ describe("accounts routes", () => {
 
   it("fetches a run by account handle, project name, and run name", async () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
 
     const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit/runs/baseline`).expect(200);
@@ -88,7 +88,7 @@ describe("accounts routes", () => {
 
   it("fetches scalars by account handle, project name, and run name", async () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "Underfit", description: null });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
     await upsertScalar(db, { id: "scalar-1", runId: "run-1", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
     await upsertScalar(db, { id: "scalar-2", runId: "run-1", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });

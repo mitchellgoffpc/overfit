@@ -35,7 +35,7 @@ export const getProjectByHandleAndName = async (db: Database, handle: string, na
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
     .selectAll(table)
-    .where(sql`lower(${sql.ref(`${accountsTable}.handle`)})`, "=", handle.toLowerCase())
+    .where(`${accountsTable}.handle`, "=", handle)
     .where(`${table}.name`, "=", name)
     .executeTakeFirst();
 };

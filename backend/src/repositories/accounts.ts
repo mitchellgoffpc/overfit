@@ -1,5 +1,4 @@
 import type { Account, AccountType, ID, Organization, User } from "@underfit/types";
-import { sql } from "kysely";
 
 import type { Database } from "db";
 import { table as organizationsTable } from "repositories/organizations";
@@ -59,7 +58,7 @@ export const getAccount = async (db: Database, id: ID): Promise<User | Organizat
 
 export const getAccountByHandle = async (db: Database, handle: string): Promise<User | Organization | undefined> => {
   const query = db.selectFrom(table).select([`${table}.id as id`, `${table}.type as type`]);
-  const account = await query.where(sql`lower(handle)`, "=", handle.toLowerCase()).executeTakeFirst();
+  const account = await query.where(`${table}.handle`, "=", handle).executeTakeFirst();
   return account ? await hydrateAccount(db, account) : undefined;
 };
 
