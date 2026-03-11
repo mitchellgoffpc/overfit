@@ -2,9 +2,9 @@ import type { Run } from "@underfit/types";
 import { create } from "zustand";
 
 import { request } from "helpers";
-import { useProjectStore } from "stores/projects";
 
 export const buildRunKey = (handle: string, projectName: string, runName: string): string => `${handle}/${projectName}/${runName}`;
+const getRunsByKey = (runs: Run[]) => Object.fromEntries(runs.map((run) => [buildRunKey(run.projectOwner, run.projectName, run.name), run]));
 
 interface RunState {
   runsByKey: Record<string, Run>;
@@ -21,32 +21,19 @@ export const useRunStore = create<RunState>((set) => ({
 
   fetchRuns: async (handle: string) => {
     set({ isLoading: true, error: null });
-    const projects = Object.values(useProjectStore.getState().projectsByKey);
-    const projectNameById = new Map(projects.map((project) => [project.id, project.name]));
-
     const { ok, body, error } = await request<Run[]>(`users/${handle}/runs`);
-    if (!ok) {
+    if (ok) {
+      set(({ runsByKey }) => ({ isLoading: false, error: null, runsByKey: { ...runsByKey, ...getRunsByKey(body) } }));
+    } else {
       set({ error, isLoading: false });
-      return;
     }
-
-    set((state) => {
-      const next = { ...state.runsByKey };
-      body.forEach((run) => {
-        const projectName = projectNameById.get(run.projectId);
-        if (projectName) {
-          next[buildRunKey(handle, projectName, run.name)] = run;
-        }
-      });
-      return { runsByKey: next, isLoading: false, error: null };
-    });
   },
 
   fetchRun: async (handle: string, projectName: string, runName: string) => {
     set({ isLoading: true, error: null });
     const { ok, body, error } = await request<Run>(`accounts/${handle}/projects/${projectName}/runs/${runName}`);
     if (ok) {
-      set(({ runsByKey }) => ({ error: null, isLoading: false, runsByKey: { ...runsByKey, [buildRunKey(handle, projectName, runName)]: body } }));
+      set(({ runsByKey }) => ({ error: null, isLoading: false, runsByKey: { ...runsByKey, ...getRunsByKey([body]) } }));
       return body;
     } else {
       set({ error, isLoading: false });

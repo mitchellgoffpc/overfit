@@ -72,9 +72,9 @@ project_two_response="$(json_request "PUT" "/accounts/$user_handle/projects/$pro
 project_one_id="$(jq -r '.id' <<<"$project_one_response")"
 project_two_id="$(jq -r '.id' <<<"$project_two_response")"
 
-json_request "PUT" "/runs/run_solaris_001" "{\"projectId\":\"$project_one_id\",\"userId\":\"$user_id\",\"name\":\"baseline-resnet\",\"status\":\"finished\",\"metadata\":{\"accuracy\":0.91,\"epochs\":40,\"dataset\":\"sat-imagery-v2\"}}" >/dev/null
-json_request "PUT" "/runs/run_orbit_001" "{\"projectId\":\"$project_two_id\",\"userId\":\"$user_id\",\"name\":\"distilbert-finetune\",\"status\":\"running\",\"metadata\":{\"f1\":0.84,\"dataset\":\"support-tickets\",\"batchSize\":32}}" >/dev/null
-json_request "PUT" "/runs/run_orbit_002" "{\"projectId\":\"$project_two_id\",\"userId\":\"$user_id\",\"name\":\"llama3-eval\",\"status\":\"failed\",\"metadata\":{\"reason\":\"oom\",\"maxTokens\":2048,\"samples\":1200}}" >/dev/null
+json_request "PUT" "/runs/run_solaris_001" "{\"projectId\":\"$project_one_id\",\"user\":\"$user_handle\",\"name\":\"baseline-resnet\",\"status\":\"finished\",\"metadata\":{\"accuracy\":0.91,\"epochs\":40,\"dataset\":\"sat-imagery-v2\"}}" >/dev/null
+json_request "PUT" "/runs/run_orbit_001" "{\"projectId\":\"$project_two_id\",\"user\":\"$user_handle\",\"name\":\"distilbert-finetune\",\"status\":\"running\",\"metadata\":{\"f1\":0.84,\"dataset\":\"support-tickets\",\"batchSize\":32}}" >/dev/null
+json_request "PUT" "/runs/run_orbit_002" "{\"projectId\":\"$project_two_id\",\"user\":\"$user_handle\",\"name\":\"llama3-eval\",\"status\":\"failed\",\"metadata\":{\"reason\":\"oom\",\"maxTokens\":2048,\"samples\":1200}}" >/dev/null
 
 scalar_rows="$(
   node <<'NODE'

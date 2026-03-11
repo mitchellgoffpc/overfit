@@ -6,7 +6,7 @@ import { buildProjectKey, useProjectStore } from "stores/projects";
 
 const project: Project = {
   id: "project-1",
-  account: "ada",
+  owner: "ada",
   name: "demo",
   description: "Demo project",
   createdAt: "2025-01-02T00:00:00.000Z",

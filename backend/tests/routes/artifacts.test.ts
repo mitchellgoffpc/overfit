@@ -10,7 +10,7 @@ import { createApp } from "app";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
-import { upsertRun } from "repositories/runs";
+import { insertRun } from "repositories/runs";
 import { upsertUser } from "repositories/users";
 import { createStorage } from "storage";
 
@@ -32,7 +32,7 @@ describe("artifacts routes", () => {
     app = createApp(db, createStorage({ type: "file", file: { baseDir: storageBaseDir } }));
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
-    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
+    await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
   });
 
   it("upserts and fetches an artifact", async () => {

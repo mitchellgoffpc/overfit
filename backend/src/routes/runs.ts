@@ -1,30 +1,44 @@
-import { API_BASE, testSlug } from "@underfit/types";
+import { randomBytes } from "crypto";
+
+import { API_BASE } from "@underfit/types";
 import type { Run } from "@underfit/types";
 
 import type { Database } from "db";
-import { getRun, getRunByHandleProjectNameAndName, listRuns, listRunsByUser, upsertRun } from "repositories/runs";
+import { getProject } from "repositories/projects";
+import { getRun, insertRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
 import { getUserByHandle } from "repositories/users";
-import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
+import { requireAuth } from "routes/auth";
+import type { RouteApp, RouteHandler } from "routes/helpers";
 
-type UpsertRunPayload = Partial<Omit<Run, "id" | "createdAt" | "updatedAt">>;
+type InsertRunPayload = Partial<Pick<Run, "status" | "metadata">>;
+type UpdateRunPayload = Partial<Pick<Run, "status" | "metadata">>;
 
 export function registerRunRoutes(app: RouteApp, db: Database): void {
-  const listRunsHandler: RouteHandler<Record<string, string>, Run[]> = async (_req, res) => {
-    res.json(await listRuns(db));
-  };
-
-  const listRunsByHandleHandler: RouteHandler<{ handle: string }, Run[]> = async (req, res) => {
+  const listUserRunsHandler: RouteHandler<{ handle: string }, Run[]> = async (req, res) => {
     const user = await getUserByHandle(db, req.params.handle.trim().toLowerCase());
     if (!user) {
       res.status(404).json({ error: "User not found" });
     } else {
-      res.json(await listRunsByUser(db, user.id));
+      res.json(await listUserRuns(db, user.id));
     }
   };
 
-  const getRunHandler: RouteHandler<RouteParams, Run> = async (req, res) => {
-    const run = await getRun(db, req.params.id);
+  const listProjectRunsHandler: RouteHandler<{ handle: string; projectName: string }, Run[]> = async (req, res) => {
+    const handle = req.params.handle.trim().toLowerCase();
+    const projectName = req.params.projectName.trim().toLowerCase();
+    const project = await getProject(db, handle, projectName);
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+    } else {
+      res.json(await listProjectRuns(db, handle, projectName));
+    }
+  };
 
+  const getRunHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Run> = async (req, res) => {
+    const handle = req.params.handle.trim().toLowerCase();
+    const projectName = req.params.projectName.trim().toLowerCase();
+    const runName = req.params.runName.trim().toLowerCase();
+    const run = await getRun(db, handle, projectName, runName);
     if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
@@ -32,49 +46,45 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const upsertRunHandler: RouteHandler<RouteParams, Run, UpsertRunPayload> = async (req, res) => {
-    const id = req.params.id;
-    const existing = await getRun(db, id);
-
-    const projectId = req.body.projectId ?? existing?.projectId;
-    const userId = req.body.userId ?? existing?.userId;
-    const name = (req.body.name ?? existing?.name ?? "").trim().toLowerCase();
-    const status = req.body.status ?? existing?.status;
-    const missingFields = Object.entries({ projectId, userId, name, status }).filter(([, value]) => !value).map(([label]) => label);
-
-    const nameError = testSlug(name);
-    if (missingFields.length > 0) {
-      res.status(400).json({ error: `Run fields are required: ${missingFields.join(", ")}` });
-    } else if (nameError) {
-      res.status(400).json({ error: nameError });
+  const insertRunHandler: RouteHandler<{ handle: string; projectName: string }, Run, InsertRunPayload> = async (req, res) => {
+    const status = req.body.status;
+    const handle = req.params.handle.trim().toLowerCase();
+    const projectName = req.params.projectName.trim().toLowerCase();
+    const project = await getProject(db, handle, projectName);
+    if (!project) {
+      res.status(404).json({ error: "Project not found" });
+    } else if (!status) {
+      res.status(400).json({ error: `Run fields are required: status` });
     } else {
-      const run = await upsertRun(db, {
-        id,
-        projectId,
-        userId,
-        name,
+      const run = await insertRun(db, {
+        id: randomBytes(16).toString("hex"),
+        projectId: project.id,
+        userId: req.user.id,
+        name: randomBytes(6).toString("hex"),
         status,
-        metadata: req.body.metadata ?? existing?.metadata ?? null
+        metadata: req.body.metadata ?? null
       });
       res.json(run);
     }
   };
 
-  const getRunByHandleHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Run> = async (req, res) => {
+  const updateRunHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Run, UpdateRunPayload> = async (req, res) => {
+    const { status, metadata } = req.body;
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
     const runName = req.params.runName.trim().toLowerCase();
-    const run = await getRunByHandleProjectNameAndName(db, handle, projectName, runName);
-    if (!run) {
+    const existing = await getRun(db, handle, projectName, runName);
+    if (!existing) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      res.json(run);
+      const run = await updateRun(db, existing.id, { status, metadata });
+      res.json(run ?? existing);
     }
   };
 
-  app.get(`${API_BASE}/runs`, listRunsHandler);
-  app.get(`${API_BASE}/users/:handle/runs`, listRunsByHandleHandler);
-  app.get(`${API_BASE}/runs/:id`, getRunHandler);
-  app.put(`${API_BASE}/runs/:id`, upsertRunHandler);
-  app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, getRunByHandleHandler);
+  app.get(`${API_BASE}/users/:handle/runs`, listUserRunsHandler);
+  app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, listProjectRunsHandler);
+  app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, getRunHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, requireAuth(db), insertRunHandler);
+  app.put(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, updateRunHandler);
 }

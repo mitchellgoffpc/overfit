@@ -7,7 +7,7 @@ import { buildRunKey, useRunStore } from "stores/runs";
 
 const project: Project = {
   id: "project-1",
-  account: "ada",
+  owner: "ada",
   name: "demo",
   description: "Demo project",
   createdAt: "2025-01-02T00:00:00.000Z",
@@ -17,7 +17,9 @@ const project: Project = {
 const run: Run = {
   id: "run-1",
   projectId: "project-1",
-  userId: "user-1",
+  user: "ada",
+  projectName: "demo",
+  projectOwner: "ada",
   name: "run-a",
   status: "running",
   createdAt: "2025-01-02T00:00:00.000Z",
@@ -48,13 +50,16 @@ describe("run store", () => {
 
   it("stores runs keyed by handle and project name when fetching succeeds", async () => {
     useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "demo")]: project } });
-    const otherRun: Run = { ...run, id: "run-2", projectId: "project-2", name: "run-b" };
+    const otherRun: Run = { ...run, id: "run-2", projectId: "project-2", projectName: "other", name: "run-b" };
     fetchMock.mockResolvedValueOnce(createResponse([run, otherRun]));
 
     await useRunStore.getState().fetchRuns("ada");
 
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/ada/runs`, { credentials: "include" });
-    expect(useRunStore.getState().runsByKey).toEqual({ [buildRunKey("ada", "demo", "run-a")]: run });
+    expect(useRunStore.getState().runsByKey).toEqual({
+      [buildRunKey("ada", "demo", "run-a")]: run,
+      [buildRunKey("ada", "other", "run-b")]: otherRun
+    });
     expect(useRunStore.getState().isLoading).toBe(false);
     expect(useRunStore.getState().error).toBeNull();
   });

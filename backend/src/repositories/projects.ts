@@ -8,11 +8,11 @@ import { nowIso } from "repositories/helpers";
 export const table = "projects";
 const runsTable = "runs";
 
-export type ProjectRow = Omit<Project, "account"> & { accountId: ID };
+export type ProjectRow = Omit<Project, "owner"> & { accountId: ID };
 
 const projectSelect = [
   `${table}.id as id`,
-  `${accountsTable}.handle as account`,
+  `${accountsTable}.handle as owner`,
   `${table}.name as name`,
   `${table}.description as description`,
   `${table}.createdAt as createdAt`,
@@ -75,7 +75,7 @@ export const listProjectsByUserActivity = async (db: Database, userId: ID): Prom
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
     .select([
       `${table}.id as id`,
-      `${accountsTable}.handle as account`,
+      `${accountsTable}.handle as owner`,
       `${table}.name as name`,
       `${table}.description as description`,
       `${table}.createdAt as createdAt`,

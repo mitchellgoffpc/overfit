@@ -4,13 +4,32 @@ import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
 import { table as projectsTable } from "repositories/projects";
+import { table as usersTable } from "repositories/users";
 
-export type RunRow = Omit<Run, "metadata"> & { metadata: string | null };
+export type RunRow = Omit<Run, "user" | "projectName" | "projectOwner" | "metadata"> & { userId: ID; metadata: string | null };
+type InsertRunRow = Omit<RunRow, "createdAt" | "updatedAt" | "metadata"> & { metadata: Run["metadata"] };
+type UpdateRunRow = Partial<Pick<InsertRunRow, "status" | "metadata">>;
 
 export const table = "runs";
 
-const toRow = (run: Run): RunRow => ({ ...run, metadata: encodeJson(run.metadata) });
-const fromRow = (row: RunRow): Run => ({ ...row, metadata: decodeJson(row.metadata) });
+const selectRuns = (db: Database) => db
+  .selectFrom(table)
+  .innerJoin(usersTable, `${usersTable}.id`, `${table}.userId`)
+  .innerJoin(accountsTable, `${accountsTable}.id`, `${usersTable}.id`)
+  .innerJoin(projectsTable, `${projectsTable}.id`, `${table}.projectId`)
+  .innerJoin(`${accountsTable} as projectAccount`, "projectAccount.id", `${projectsTable}.accountId`)
+  .select([
+    `${table}.id as id`,
+    `${table}.projectId as projectId`,
+    `${accountsTable}.handle as user`,
+    `${projectsTable}.name as projectName`,
+    `projectAccount.handle as projectOwner`,
+    `${table}.name as name`,
+    `${table}.status as status`,
+    `${table}.createdAt as createdAt`,
+    `${table}.updatedAt as updatedAt`,
+    `${table}.metadata as metadata`
+  ]);
 
 export const createRunsTable = async (db: Database): Promise<void> => {
   await db.schema
@@ -28,42 +47,47 @@ export const createRunsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const listRuns = async (db: Database): Promise<Run[]> => {
-  const rows = await db.selectFrom(table).selectAll().execute();
-  return rows.map((row) => fromRow(row));
+export const listUserRuns = async (db: Database, userId: ID): Promise<Run[]> => {
+  const rows = await selectRuns(db).where(`${table}.userId`, "=", userId).orderBy(`${table}.createdAt`, "desc").execute();
+  return rows.map((row) => ({ ...row, metadata: decodeJson(row.metadata) }));
 };
 
-export const listRunsByUser = async (db: Database, userId: ID): Promise<Run[]> => {
-  const rows = await db.selectFrom(table).selectAll().where("userId", "=", userId).orderBy("createdAt", "desc").execute();
-  return rows.map((row) => fromRow(row));
+export const listProjectRuns = async (db: Database, handle: string, projectName: string): Promise<Run[]> => {
+  const rows = await selectRuns(db)
+    .where("projectAccount.handle", "=", handle)
+    .where(`${projectsTable}.name`, "=", projectName)
+    .orderBy(`${table}.createdAt`, "desc")
+    .execute();
+  return rows.map((row) => ({ ...row, metadata: decodeJson(row.metadata) }));
 };
 
-export const getRun = async (db: Database, id: ID): Promise<Run | undefined> => {
-  const row = await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-  return row ? fromRow(row) : undefined;
+const getRunById = async (db: Database, id: ID): Promise<Run | undefined> => {
+  const row = await selectRuns(db).where(`${table}.id`, "=", id).executeTakeFirst();
+  return row ? { ...row, metadata: decodeJson(row.metadata) } : undefined;
 };
 
-export const getRunByHandleProjectNameAndName = async (db: Database, handle: string, projectName: string, runName: string): Promise<Run | undefined> => {
-  const row = await db
-    .selectFrom(table)
-    .innerJoin(projectsTable, `${projectsTable}.id`, `${table}.projectId`)
-    .innerJoin(accountsTable, `${accountsTable}.id`, `${projectsTable}.accountId`)
-    .selectAll(table)
-    .where(`${accountsTable}.handle`, "=", handle)
+export const getRun = async (db: Database, handle: string, projectName: string, runName: string): Promise<Run | undefined> => {
+  const row = await selectRuns(db)
+    .where("projectAccount.handle", "=", handle)
     .where(`${projectsTable}.name`, "=", projectName)
     .where(`${table}.name`, "=", runName)
     .executeTakeFirst();
-  return row ? fromRow(row) : undefined;
+  return row ? { ...row, metadata: decodeJson(row.metadata) } : undefined;
 };
 
 export const hasRun = async (db: Database, id: ID): Promise<boolean> => {
   return Boolean(await db.selectFrom(table).select("id").where("id", "=", id).executeTakeFirst());
 };
 
-export const upsertRun = async (db: Database, run: Omit<Run, "createdAt" | "updatedAt">): Promise<Run> => {
-  const payload: Run = { ...run, createdAt: nowIso(), updatedAt: nowIso() };
-  const row = toRow(payload);
-  const { id: _, createdAt: __, ...updates } = row;
-  await db.insertInto(table).values(row).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getRun(db, run.id) ?? payload;
+export const insertRun = async (db: Database, run: InsertRunRow): Promise<Run> => {
+  const payload = { ...run, createdAt: nowIso(), updatedAt: nowIso(), metadata: encodeJson(run.metadata) };
+  await db.insertInto(table).values(payload).execute();
+  return await getRunById(db, run.id) ?? payload;
+};
+
+export const updateRun = async (db: Database, id: ID, updates: UpdateRunRow): Promise<Run | undefined> => {
+  const payload = { ...updates, updatedAt: nowIso() };
+  if (Object.hasOwn(updates, "metadata")) { payload.metadata = encodeJson(updates.metadata ?? null); }
+  await db.updateTable(table).set(payload).where("id", "=", id).execute();
+  return await getRunById(db, id);
 };

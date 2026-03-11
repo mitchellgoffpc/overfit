@@ -7,9 +7,6 @@ export type ArtifactRow = Omit<Artifact, "metadata"> & { metadata: string | null
 
 const table = "artifacts";
 
-const toRow = (artifact: Artifact): ArtifactRow => ({ ...artifact, metadata: encodeJson(artifact.metadata) });
-const fromRow = (row: ArtifactRow): Artifact => ({ ...row, metadata: decodeJson(row.metadata) });
-
 export const createArtifactsTable = async (db: Database): Promise<void> => {
   await db.schema
     .createTable(table)
@@ -28,17 +25,17 @@ export const createArtifactsTable = async (db: Database): Promise<void> => {
 
 export const listArtifacts = async (db: Database): Promise<Artifact[]> => {
   const rows = await db.selectFrom(table).selectAll().execute();
-  return rows.map((row) => fromRow(row));
+  return rows.map((row) => ({ ...row, metadata: decodeJson(row.metadata) }));
 };
 
 export const getArtifact = async (db: Database, id: ID): Promise<Artifact | undefined> => {
   const row = await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-  return row ? fromRow(row) : undefined;
+  return row ? { ...row, metadata: decodeJson(row.metadata) } : undefined;
 };
 
 export const upsertArtifact = async (db: Database, artifact: Omit<Artifact, "createdAt" | "updatedAt">): Promise<Artifact> => {
   const payload: Artifact = { ...artifact, createdAt: nowIso(), updatedAt: nowIso() };
-  const row = toRow(payload);
+  const row: ArtifactRow = { ...payload, metadata: encodeJson(payload.metadata) };
   const { id: _, createdAt: __, ...updates } = row;
   await db.insertInto(table).values(row).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
   return await getArtifact(db, artifact.id) ?? payload;

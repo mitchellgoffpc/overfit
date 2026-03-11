@@ -63,7 +63,7 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
                   </div>
                   <RunStatusBadge status={run.status} />
                   <span className="text-[13px] text-brand-textMuted">—</span>
-                  <span>{user?.handle ?? run.userId}</span>
+                  <span>{user?.handle ?? run.user}</span>
                   <span className="text-[13px] text-brand-textMuted">—</span>
                   <span>{formatRunTime(run.createdAt)}</span>
                   <span>{formatDuration(run.createdAt, run.updatedAt)}</span>

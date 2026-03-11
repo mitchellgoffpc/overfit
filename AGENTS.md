@@ -12,9 +12,18 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 - Red diffs are better than green diffs.
 - When practical, prefer `if/else if/else` blocks to multiple `if` blocks with early returns.
 - Avoid short docstrings. Use docstrings only when detailed multi-line documentation is required.
-- Keep flows simple and consistent: store actions should return straightforward `{ ok, error }` results (never throw), and pages should be thin.
-- Minimize defensive bloat. Assume successful responses include expected fields unless there is a clear reason not to.
 - Tests are located in a top-level `tests` folder next to the `src` folder in each subproject.
+- Optimize for code that is immediately understandable, even if it does less defensive checking.
+
+## Frontend structure
+
+- All API call logic in the frontend should live in the frontend/src/stores/, either as a function within the store, or as a top-level helper functions for things that don't need acceess to the store.
+- Minimize defensive bloat. Assume successful API responses include all the expected fields unless there is a clear reason not to.
+
+## Backend structure
+
+- All validation logic is performed by the route handlers in backend/src/routes/.
+- Anything that touches the database should live in backend/src/repositories.
 
 ## Committing changes
 

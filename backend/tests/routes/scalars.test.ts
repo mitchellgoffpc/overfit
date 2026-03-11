@@ -6,7 +6,7 @@ import { createApp } from "app";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
-import { upsertRun } from "repositories/runs";
+import { insertRun } from "repositories/runs";
 import { insertScalar } from "repositories/scalars";
 import { upsertUser } from "repositories/users";
 
@@ -21,7 +21,7 @@ describe("scalar routes", () => {
     app = createApp(db);
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
-    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "run-1", status: "running", metadata: null });
+    await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "run-1", status: "running", metadata: null });
   });
 
   it("inserts a scalar", async () => {
@@ -40,7 +40,7 @@ describe("scalar routes", () => {
   });
 
   it("fetches scalars by account handle, project name, and run name", async () => {
-    await upsertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
+    await insertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
     await insertScalar(db, { id: "scalar-1", runId: "run-2", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
     await insertScalar(db, { id: "scalar-2", runId: "run-2", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
 

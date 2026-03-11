@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { request } from "helpers";
 
 export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
+const getProjectsByKey = (projects: Project[]) => Object.fromEntries(projects.map((project) => [buildProjectKey(project.owner, project.name), project]));
 
 interface ProjectState {
   projectsByKey: Record<string, Project>;
@@ -22,10 +23,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
     set({ isLoading: true, error: null });
     const { ok, body, error } = await request<Project[]>(`accounts/${handle}/projects`);
     if (ok) {
-      set(({ projectsByKey }) => {
-        const newProjects = Object.fromEntries(body.map((project) => [buildProjectKey(handle, project.name), project]));
-        return { isLoading: false, error: null, projectsByKey: { ...projectsByKey, ...newProjects } };
-      });
+      set(({ projectsByKey }) => ({ isLoading: false, error: null, projectsByKey: { ...projectsByKey, ...getProjectsByKey(body) } }));
     } else {
       set({ error, isLoading: false });
     }
@@ -35,7 +33,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
     set({ isLoading: true, error: null });
     const { ok, body, error } = await request<Project>(`accounts/${handle}/projects/${projectName}`);
     if (ok) {
-      set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, [buildProjectKey(handle, projectName)]: body } }));
+      set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, ...getProjectsByKey([body]) } }));
       return body;
     } else {
       set({ error, isLoading: false });

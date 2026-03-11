@@ -7,18 +7,7 @@ import { table as runsTable } from "repositories/runs";
 
 const table = "scalars";
 
-export interface ScalarRow {
-  id: string;
-  runId: string;
-  step: number | null;
-  values: string;
-  timestamp: string;
-}
-
-const toScalar = (row: ScalarRow): Scalar => ({
-  ...row,
-  values: JSON.parse(row.values) as Record<string, number>,
-});
+export type ScalarRow = Omit<Scalar, "values"> & { values: string };
 
 export const createScalarsTable = async (db: Database): Promise<void> => {
   await db.schema
@@ -44,7 +33,7 @@ export const getScalars = async (db: Database, handle: string, projectName: stri
     .where(`${runsTable}.name`, "=", runName)
     .orderBy(`${table}.step`, "asc")
     .execute();
-  return rows.map(toScalar);
+  return rows.map((row) => ({ ...row, values: JSON.parse(row.values) as Record<string, number> }));
 };
 
 export const insertScalar = async (db: Database, scalar: Scalar): Promise<Scalar> => {

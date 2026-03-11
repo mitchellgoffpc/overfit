@@ -2,6 +2,7 @@ export const organizationRoles = ["ADMIN", "MEMBER"] as const;
 export const accountTypes = ["USER", "ORGANIZATION"] as const;
 
 export type ID = string;
+export type Handle = string;
 export type Timestamp = string;
 export type RunStatus = "queued" | "running" | "finished" | "failed" | "canceled";
 export type OrganizationRole = (typeof organizationRoles)[number];
@@ -9,7 +10,7 @@ export type AccountType = (typeof accountTypes)[number];
 
 export interface Account {
   id: ID;
-  handle: string;
+  handle: Handle;
   displayName: string;
   type: AccountType;
 }
@@ -55,7 +56,7 @@ export interface OrganizationMember {
 
 export interface Project {
   id: ID;
-  account: string;
+  owner: Handle;
   name: string;
   description: string | null;
   createdAt: Timestamp;
@@ -65,7 +66,9 @@ export interface Project {
 export interface Run {
   id: ID;
   projectId: ID;
-  userId: ID;
+  user: Handle;
+  projectName: string;
+  projectOwner: Handle;
   name: string;
   status: RunStatus;
   createdAt: Timestamp;
