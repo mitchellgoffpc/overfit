@@ -9,6 +9,18 @@ export type UserRow = Omit<User, "handle" | "displayName" | "type">;
 
 export const table = "users";
 
+const selectUserColumns = () => [
+  `${table}.id as id`,
+  `${table}.email as email`,
+  `${table}.name as name`,
+  `${table}.bio as bio`,
+  `${accountsTable}.handle as handle`,
+  `${accountsTable}.displayName as displayName`,
+  `${accountsTable}.type as type`,
+  `${table}.createdAt as createdAt`,
+  `${table}.updatedAt as updatedAt`
+] as const;
+
 export const createUsersTable = async (db: Database): Promise<void> => {
   await db.schema
     .createTable(table)
@@ -31,18 +43,17 @@ export const getUser = async (db: Database, id: ID): Promise<User | undefined> =
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select([
-      `${table}.id as id`,
-      `${table}.email as email`,
-      `${table}.name as name`,
-      `${table}.bio as bio`,
-      `${accountsTable}.handle as handle`,
-      `${accountsTable}.displayName as displayName`,
-      `${accountsTable}.type as type`,
-      `${table}.createdAt as createdAt`,
-      `${table}.updatedAt as updatedAt`
-    ])
+    .select(selectUserColumns())
     .where(`${table}.id`, "=", id)
+    .executeTakeFirst();
+};
+
+export const getUserByHandle = async (db: Database, handle: string): Promise<User | undefined> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
+    .select(selectUserColumns())
+    .where(`${accountsTable}.handle`, "=", handle)
     .executeTakeFirst();
 };
 
@@ -50,17 +61,7 @@ export const getUserByEmail = async (db: Database, email: string): Promise<User 
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select([
-      `${table}.id as id`,
-      `${table}.email as email`,
-      `${table}.name as name`,
-      `${table}.bio as bio`,
-      `${accountsTable}.handle as handle`,
-      `${accountsTable}.displayName as displayName`,
-      `${accountsTable}.type as type`,
-      `${table}.createdAt as createdAt`,
-      `${table}.updatedAt as updatedAt`
-    ])
+    .select(selectUserColumns())
     .where(sql`lower(${sql.ref(`${table}.email`)})`, "=", email.toLowerCase())
     .executeTakeFirst();
 };

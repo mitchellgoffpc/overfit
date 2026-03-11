@@ -53,7 +53,7 @@ describe("project store", () => {
 
     await useProjectStore.getState().fetchProjects("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/ada/projects`, { credentials: "include" });
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
     expect(useProjectStore.getState().error).toBeNull();
@@ -64,7 +64,7 @@ describe("project store", () => {
 
     await useProjectStore.getState().fetchProjects("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/ada/projects`, { credentials: "include" });
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
   });
 

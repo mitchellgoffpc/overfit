@@ -39,7 +39,7 @@ describe("auth store", () => {
 
     await useAuthStore.getState().loadUser();
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/me`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/me`, { credentials: "include" });
     expect(useAuthStore.getState().status).toBe("authenticated");
     expect(useAuthStore.getState().user).toEqual(user);
   });
@@ -90,7 +90,7 @@ describe("auth store", () => {
     const result = await checkEmailValid("ada@underfit.local");
 
     expect(result).toBe(EMAIL_IN_USE_ERROR);
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=ada%40underfit.local`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/emails/exists?email=ada%40underfit.local`, { credentials: "include" });
   });
 
   it("returns an error when handle availability checks fail", async () => {
@@ -107,7 +107,7 @@ describe("auth store", () => {
     const result = await checkHandleValid("ada");
 
     expect(result).toBe(USERNAME_IN_USE_ERROR);
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=ada`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/ada/exists`, { credentials: "include" });
   });
 
   it("sets unauthenticated when the user request fails", async () => {
@@ -138,7 +138,7 @@ describe("auth store", () => {
     const result = await useAuthStore.getState().updateUserProfile("Ada", "Math pioneer");
 
     expect(result).toEqual({ ok: true });
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/me`, {
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/me`, {
       credentials: "include",
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

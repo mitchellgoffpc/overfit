@@ -1,3 +1,5 @@
+import { setTimeout as delay } from "timers/promises";
+
 import { API_BASE, SLUG_HINT } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -6,6 +8,7 @@ import { createApp } from "app";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
+import { upsertRun } from "repositories/runs";
 import { upsertUser } from "repositories/users";
 
 describe("runs routes", () => {
@@ -45,6 +48,23 @@ describe("runs routes", () => {
   it("rejects invalid run names", async () => {
     const response = await request(app).put(`${API_BASE}/runs/reject-3`).send({ projectId: "project-1", userId: "user-1", name: "run 3", status: "running" }).expect(400);
     expect(response.body).toMatchObject({ error: SLUG_HINT });
+  });
+
+  it("lists runs for a user handle by created date", async () => {
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
+    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
+    await delay(5);
+    await upsertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "Run 2", status: "finished", metadata: null });
+    await upsertRun(db, { id: "run-3", projectId: "project-1", userId: "user-2", name: "Run 3", status: "running", metadata: null });
+
+    const response = await request(app).get(`${API_BASE}/users/ada/runs`).expect(200);
+    const runs = response.body as { id: string }[];
+    expect(runs.map((run) => run.id)).toEqual(["run-2", "run-1"]);
+  });
+
+  it("rejects unknown user handles when listing runs", async () => {
+    const response = await request(app).get(`${API_BASE}/users/missing/runs`).expect(404);
+    expect(response.body).toMatchObject({ error: "User not found" });
   });
 
 });

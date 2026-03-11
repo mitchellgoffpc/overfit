@@ -2,7 +2,8 @@ import { API_BASE, testSlug } from "@underfit/types";
 import type { Run } from "@underfit/types";
 
 import type { Database } from "db";
-import { getRun, getRunByHandleProjectNameAndName, listRuns, upsertRun } from "repositories/runs";
+import { getRun, getRunByHandleProjectNameAndName, listRuns, listRunsByUser, upsertRun } from "repositories/runs";
+import { getUserByHandle } from "repositories/users";
 import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 
 type UpsertRunPayload = Partial<Omit<Run, "id" | "createdAt" | "updatedAt">>;
@@ -10,6 +11,15 @@ type UpsertRunPayload = Partial<Omit<Run, "id" | "createdAt" | "updatedAt">>;
 export function registerRunRoutes(app: RouteApp, db: Database): void {
   const listRunsHandler: RouteHandler<Record<string, string>, Run[]> = async (_req, res) => {
     res.json(await listRuns(db));
+  };
+
+  const listRunsByHandleHandler: RouteHandler<{ handle: string }, Run[]> = async (req, res) => {
+    const user = await getUserByHandle(db, req.params.handle.trim().toLowerCase());
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+    } else {
+      res.json(await listRunsByUser(db, user.id));
+    }
   };
 
   const getRunHandler: RouteHandler<RouteParams, Run> = async (req, res) => {
@@ -63,7 +73,8 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
   };
 
   app.get(`${API_BASE}/runs`, listRunsHandler);
+  app.get(`${API_BASE}/users/:handle/runs`, listRunsByHandleHandler);
   app.get(`${API_BASE}/runs/:id`, getRunHandler);
   app.put(`${API_BASE}/runs/:id`, upsertRunHandler);
-  app.get(`${API_BASE}/accounts/by-handle/:handle/projects/:projectName/runs/:runName`, getRunByHandleHandler);
+  app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, getRunByHandleHandler);
 }

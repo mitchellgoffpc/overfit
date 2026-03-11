@@ -21,25 +21,33 @@ describe("projects routes", () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
   });
 
-  it("upserts and fetches a project", async () => {
-    await request(app).put(`${API_BASE}/projects/project-1`).send({ accountId: "user-1", name: "underfit", description: "Tracking runs" }).expect(200);
-    const response = await request(app).get(`${API_BASE}/projects/project-1`).expect(200);
+  it("fetches projects by account handle and project name", async () => {
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
     expect(response.body).toMatchObject({ id: "project-1", account: "ada", name: "underfit", description: "Tracking runs" });
   });
 
   it("rejects unknown projects", async () => {
-    const response = await request(app).get(`${API_BASE}/projects/missing`).expect(404);
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects/missing`).expect(404);
     expect(response.body).toMatchObject({ error: "Project not found" });
   });
 
-  it("rejects missing required fields", async () => {
-    const response = await request(app).put(`${API_BASE}/projects/project-2`).send({ description: "Missing name" }).expect(400);
-    expect(response.body).toMatchObject({ error: "Project fields are required: name, accountId" });
+  it("upserts and fetches a project by account handle and name", async () => {
+    const upsertResponse = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Tracking runs" }).expect(200);
+    expect(upsertResponse.body).toMatchObject({ account: "ada", name: "underfit", description: "Tracking runs" });
+
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
+    expect(response.body).toMatchObject({ account: "ada", name: "underfit", description: "Tracking runs" });
   });
 
   it("rejects invalid project names", async () => {
-    const response = await request(app).put(`${API_BASE}/projects/project-2`).send({ accountId: "user-1", name: "Underfit Labs" }).expect(400);
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/Underfit%20Labs`).send({ description: null }).expect(400);
     expect(response.body).toMatchObject({ error: SLUG_HINT });
+  });
+
+  it("rejects upserting projects for unknown accounts", async () => {
+    const response = await request(app).put(`${API_BASE}/accounts/missing/projects/underfit`).send({ description: null }).expect(404);
+    expect(response.body).toMatchObject({ error: "Account not found" });
   });
 
   it("lists most active projects for the current user", async () => {
@@ -52,7 +60,7 @@ describe("projects routes", () => {
     await upsertRun(db, { id: "run-4", projectId: "project-1", userId: "user-2", name: "Run 4", status: "running", metadata: null });
     await upsertSession(db, { id: "token-1", userId: "user-1", expiresAt: "2099-01-01T00:00:00.000Z" });
 
-    const response = await request(app).get(`${API_BASE}/projects/me`).set("x-session-token", "token-1").expect(200);
+    const response = await request(app).get(`${API_BASE}/me/projects`).set("x-session-token", "token-1").expect(200);
     expect((response.body as Project[]).map((project) => project.id)).toEqual(["project-2", "project-1"]);
   });
 
@@ -61,7 +69,7 @@ describe("projects routes", () => {
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertProject(db, { id: "project-2", accountId: "user-2", name: "compiler", description: null });
 
-    const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects`).expect(200);
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects`).expect(200);
     expect(response.body).toMatchObject([{ id: "project-1", account: "ada", name: "underfit" }]);
   });
 });

@@ -74,7 +74,7 @@ describe("auth routes", () => {
     expect(loginBody.user.id).toBe(registerBody.user.id);
     expect(loginCookie).toContain(`underfit_session=${token}`);
 
-    const current = await getWithCookie(app, `${API_BASE}/users/me`, loginCookie ?? "");
+    const current = await getWithCookie(app, `${API_BASE}/me`, loginCookie ?? "");
     expect((current.body as { id: string }).id).toBe(registerBody.user.id);
   });
 
@@ -92,7 +92,7 @@ describe("auth routes", () => {
     expect(logout.body).toMatchObject({ status: "ok" });
     expect(getSetCookie(logout)).toContain("underfit_session=;");
 
-    const current = await getWithToken(app, `${API_BASE}/users/me`, token, 401);
+    const current = await getWithToken(app, `${API_BASE}/me`, token, 401);
     expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
   });
 
@@ -100,7 +100,7 @@ describe("auth routes", () => {
     const login = await post(app, "auth/register", { email: "cookie@example.com", handle: "cookie", password: "password123" });
     const cookie = getSetCookie(login);
 
-    const current = await getWithCookie(app, `${API_BASE}/users/me`, cookie ?? "");
+    const current = await getWithCookie(app, `${API_BASE}/me`, cookie ?? "");
 
     expect((current.body as { handle: string }).handle).toBe("cookie");
   });
@@ -143,7 +143,7 @@ describe("auth routes", () => {
       const token = registerBody.session.token;
 
       vi.advanceTimersByTime(1000 * 60 * 60 * 24 * 31);
-      const current = await getWithToken(app, `${API_BASE}/users/me`, token, 401);
+      const current = await getWithToken(app, `${API_BASE}/me`, token, 401);
       expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
     } finally {
       vi.useRealTimers();

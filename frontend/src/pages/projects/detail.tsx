@@ -27,7 +27,7 @@ export default function ProjectDetailRoute(): ReactElement {
   }, [fetchProjects, handle]);
 
   useEffect(() => {
-    if (user && !isProjectsLoading) { void fetchRuns(user.id); }
+    if (user && !isProjectsLoading) { void fetchRuns(user.handle); }
   }, [fetchRuns, isProjectsLoading, user]);
 
   const projectList = Object.values(projectsByKey);

@@ -32,7 +32,7 @@ describe("settings routes", () => {
   it("updates the current user profile", async () => {
     const { session } = await registerUser(app, "sam@example.com", "sam");
     const response = await request(app)
-      .patch(`${API_BASE}/users/me`)
+      .patch(`${API_BASE}/me`)
       .set("Authorization", `Bearer ${session.token}`)
       .send({ name: "Sam Tester", bio: "Building models." })
       .expect(200);
@@ -42,7 +42,7 @@ describe("settings routes", () => {
   it("creates and deletes API keys", async () => {
     const { user, session } = await registerUser(app, "alex@example.com", "alex");
     const created = await request(app)
-      .post(`${API_BASE}/users/me/api-keys`)
+      .post(`${API_BASE}/me/api-keys`)
       .set("Authorization", `Bearer ${session.token}`)
       .send({ label: "CI" })
       .expect(200);
@@ -51,19 +51,19 @@ describe("settings routes", () => {
     expect(typeof createdBody.token).toBe("string");
 
     const list = await request(app)
-      .get(`${API_BASE}/users/me/api-keys`)
+      .get(`${API_BASE}/me/api-keys`)
       .set("Authorization", `Bearer ${session.token}`)
       .expect(200);
     const listBody = list.body as ApiKey[];
     expect(listBody.length).toBe(1);
 
     await request(app)
-      .delete(`${API_BASE}/users/me/api-keys/${createdBody.id}`)
+      .delete(`${API_BASE}/me/api-keys/${createdBody.id}`)
       .set("Authorization", `Bearer ${session.token}`)
       .expect(200);
 
     const listAfterDelete = await request(app)
-      .get(`${API_BASE}/users/me/api-keys`)
+      .get(`${API_BASE}/me/api-keys`)
       .set("Authorization", `Bearer ${session.token}`)
       .expect(200);
     const listAfterDeleteBody = listAfterDelete.body as ApiKey[];

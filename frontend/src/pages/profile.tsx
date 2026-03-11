@@ -26,7 +26,7 @@ export default function ProfileRoute(): ReactElement {
   }, [fetchProjects, user]);
 
   useEffect(() => {
-    if (user && !isProjectsLoading) { void fetchRuns(user.id); }
+    if (user && !isProjectsLoading) { void fetchRuns(user.handle); }
   }, [fetchRuns, isProjectsLoading, user]);
 
   return (

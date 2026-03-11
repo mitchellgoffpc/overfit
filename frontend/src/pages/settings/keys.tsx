@@ -21,7 +21,7 @@ export default function SettingsKeysContent(): ReactElement {
       setIsApiKeysLoading(true);
       setApiKeysError(null);
       try {
-        const result = await request<ApiKey[]>("users/me/api-keys");
+        const result = await request<ApiKey[]>("me/api-keys");
         if (!result.ok) {
           setApiKeysError(result.error);
           setIsApiKeysLoading(false);
@@ -45,7 +45,7 @@ export default function SettingsKeysContent(): ReactElement {
     setIsCreatingKey(true);
     setApiKeysError(null);
     try {
-      const result = await request<ApiKey>("users/me/api-keys", {
+      const result = await request<ApiKey>("me/api-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: newKeyLabel })
@@ -70,7 +70,7 @@ export default function SettingsKeysContent(): ReactElement {
     setIsDeletingKey(id);
     setApiKeysError(null);
     try {
-      const result = await request<{ status: "ok" }>(`users/me/api-keys/${id}`, { method: "DELETE" });
+      const result = await request<{ status: "ok" }>(`me/api-keys/${id}`, { method: "DELETE" });
       if (!result.ok) {
         setApiKeysError(result.error);
         setIsDeletingKey(null);

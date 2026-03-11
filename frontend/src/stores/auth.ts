@@ -8,17 +8,13 @@ type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
 interface AuthResponse { user: User };
 
-const checkAvailability = async (path: string, param: "email" | "handle", value: string) => {
-  const query = new URLSearchParams({ [param]: value });
-  return await request<{ exists: boolean }>(`${path}?${query.toString()}`);
-};
-
 export const checkEmailValid = async (email: string): Promise<string | null> => {
   const trimmed = email.trim();
   if (!trimmed) { return null; }
   const validationError = testEmail(trimmed);
   if (validationError) { return validationError; }
-  const result = await checkAvailability("users/email-exists", "email", trimmed);
+  const query = new URLSearchParams({ email: trimmed });
+  const result = await request<{ exists: boolean }>(`emails/exists?${query.toString()}`);
   return result.ok ? (result.body.exists ? EMAIL_IN_USE_ERROR : null) : result.error;
 };
 
@@ -27,7 +23,7 @@ export const checkHandleValid = async (handle: string): Promise<string | null> =
   if (!trimmed) { return null; }
   const validationError = testHandle(trimmed);
   if (validationError) { return validationError; }
-  const result = await checkAvailability("accounts/handle-exists", "handle", trimmed);
+  const result = await request<{ exists: boolean }>(`accounts/${encodeURIComponent(trimmed)}/exists`);
   return result.ok ? (result.body.exists ? USERNAME_IN_USE_ERROR : null) : result.error;
 };
 
@@ -47,7 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadUser: async () => {
     set({ status: "loading" });
-    const { ok, body, status: statusCode } = await request<User>("users/me");
+    const { ok, body, status: statusCode } = await request<User>("me");
     if (ok) {
       set({ user: body, status: "authenticated" });
     } else if (statusCode === 401) {
@@ -81,7 +77,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateUserProfile: async (name: string, bio: string) => {
-    const { ok, error, body } = await request<User>("users/me", {
+    const { ok, error, body } = await request<User>("me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, bio })

@@ -20,7 +20,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   fetchProjects: async (handle: string) => {
     set({ isLoading: true, error: null });
-    const { ok, body, error } = await request<Project[]>(`accounts/by-handle/${handle}/projects`);
+    const { ok, body, error } = await request<Project[]>(`accounts/${handle}/projects`);
     if (ok) {
       set(({ projectsByKey }) => {
         const newProjects = Object.fromEntries(body.map((project) => [buildProjectKey(handle, project.name), project]));
@@ -33,7 +33,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   fetchProject: async (handle: string, projectName: string) => {
     set({ isLoading: true, error: null });
-    const { ok, body, error } = await request<Project>(`accounts/by-handle/${handle}/projects/${projectName}`);
+    const { ok, body, error } = await request<Project>(`accounts/${handle}/projects/${projectName}`);
     if (ok) {
       set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, [buildProjectKey(handle, projectName)]: body } }));
       return body;

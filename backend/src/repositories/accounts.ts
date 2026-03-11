@@ -1,4 +1,4 @@
-import type { Account, AccountType, ID, Organization, User } from "@underfit/types";
+import type { AccountType, ID, Organization, User } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as organizationsTable } from "repositories/organizations";
@@ -52,20 +52,8 @@ const hydrateAccount = async (db: Database, account: { id: ID; type: AccountType
   }
 };
 
-export const getAccount = async (db: Database, id: ID): Promise<User | Organization | undefined> => {
-  const query = db.selectFrom(table).select([`${table}.id as id`, `${table}.type as type`]);
-  const account = await query.where(`${table}.id`, "=", id).executeTakeFirst();
-  return account ? await hydrateAccount(db, account) : undefined;
-};
-
-export const getAccountByHandle = async (db: Database, handle: string): Promise<User | Organization | undefined> => {
+export const getAccount = async (db: Database, handle: string): Promise<User | Organization | undefined> => {
   const query = db.selectFrom(table).select([`${table}.id as id`, `${table}.type as type`]);
   const account = await query.where(`${table}.handle`, "=", handle).executeTakeFirst();
   return account ? await hydrateAccount(db, account) : undefined;
-};
-
-export const upsertAccount = async (db: Database, account: Account): Promise<Account> => {
-  const { id: _, ...updates } = account;
-  await db.insertInto(table).values(account).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return account;
 };

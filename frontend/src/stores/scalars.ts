@@ -17,7 +17,7 @@ export const useScalarStore = create<ScalarState>((set) => ({
 
   fetchScalarsByHandle: async (handle: string, projectName: string, runName: string) => {
     set({ isLoading: true, error: null });
-    const { ok, body, error } = await request<Scalar[]>(`accounts/by-handle/${handle}/projects/${projectName}/runs/${runName}/scalars`);
+    const { ok, body, error } = await request<Scalar[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
     if (ok) {
       set({ scalars: body, isLoading: false, error: null });
     } else {

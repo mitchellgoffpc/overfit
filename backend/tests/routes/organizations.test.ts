@@ -19,61 +19,53 @@ describe("organizations routes", () => {
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
   });
 
-  it("upserts and fetches an organization", async () => {
-    await request(app).put(`${API_BASE}/organizations/org-2`).send({ handle: "core2", displayName: "Core2" }).expect(200);
-    const response = await request(app).get(`${API_BASE}/organizations/org-2`).expect(200);
-    expect(response.body).toMatchObject({ id: "org-2", handle: "core2", displayName: "Core2" });
+  it("upserts an organization by handle", async () => {
+    const response = await request(app).put(`${API_BASE}/organizations/core2`).send({ displayName: "Core2" }).expect(200);
+    expect(response.body).toMatchObject({ handle: "core2", displayName: "Core2" });
   });
 
-  it("rejects unknown organizations", async () => {
-    const response = await request(app).get(`${API_BASE}/organizations/missing`).expect(404);
-    expect(response.body).toMatchObject({ error: "Organization not found" });
-  });
-
-  it("rejects missing required fields", async () => {
-    const missingPayload = await request(app).put(`${API_BASE}/organizations/reject`).expect(400);
-    expect(missingPayload.body).toMatchObject({ error: "Organization fields are required: handle" });
-
-    const missingHandle = await request(app).put(`${API_BASE}/organizations/reject`).send({ displayName: "Core" }).expect(400);
-    expect(missingHandle.body).toMatchObject({ error: "Organization fields are required: handle" });
+  it("upserts organizations by handle and preserves ids", async () => {
+    const originalId = "org-1";
+    const updated = await request(app).put(`${API_BASE}/organizations/core`).send({ displayName: "Core Team" }).expect(200);
+    expect(updated.body).toMatchObject({ id: originalId, handle: "core", displayName: "Core Team" });
   });
 
   it("lists organization members", async () => {
-    await request(app).put(`${API_BASE}/organizations/org-1/members/user-1`).expect(200);
-    const response = await request(app).get(`${API_BASE}/organizations/org-1/members`).expect(200);
+    await request(app).put(`${API_BASE}/organizations/core/members/ada`).expect(200);
+    const response = await request(app).get(`${API_BASE}/organizations/core/members`).expect(200);
     expect(response.body).toMatchObject([
       { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", role: "MEMBER" }
     ]);
   });
 
   it("creates and deletes memberships", async () => {
-    await request(app).put(`${API_BASE}/organizations/org-1/members/user-1`).send({ role: "ADMIN" }).expect(200);
-    await request(app).delete(`${API_BASE}/organizations/org-1/members/user-1`).expect(200);
-    const response = await request(app).get(`${API_BASE}/organizations/org-1/members`).expect(200);
+    await request(app).put(`${API_BASE}/organizations/core/members/ada`).send({ role: "ADMIN" }).expect(200);
+    await request(app).delete(`${API_BASE}/organizations/core/members/ada`).expect(200);
+    const response = await request(app).get(`${API_BASE}/organizations/core/members`).expect(200);
     expect(response.body).toEqual([]);
   });
 
   it("rejects invalid membership roles", async () => {
-    const response = await request(app).put(`${API_BASE}/organizations/org-1/members/user-1`).send({ role: "OWNER" }).expect(400);
+    const response = await request(app).put(`${API_BASE}/organizations/core/members/ada`).send({ role: "OWNER" }).expect(400);
     expect(response.body).toMatchObject({ error: "Organization role is invalid" });
   });
 
   it("rejects unknown orgs and users when creating memberships", async () => {
-    const missingOrg = await request(app).put(`${API_BASE}/organizations/missing/members/user-1`).expect(404);
+    const missingOrg = await request(app).put(`${API_BASE}/organizations/missing/members/ada`).expect(404);
     expect(missingOrg.body).toMatchObject({ error: "Organization not found" });
 
-    const missingUser = await request(app).put(`${API_BASE}/organizations/org-1/members/missing`).expect(404);
+    const missingUser = await request(app).put(`${API_BASE}/organizations/core/members/missing`).expect(404);
     expect(missingUser.body).toMatchObject({ error: "User not found" });
   });
 
   it("rejects unknown orgs, users, and memberships when deleting memberships", async () => {
-    const missingOrg = await request(app).delete(`${API_BASE}/organizations/missing/members/user-1`).expect(404);
+    const missingOrg = await request(app).delete(`${API_BASE}/organizations/missing/members/ada`).expect(404);
     expect(missingOrg.body).toMatchObject({ error: "Organization not found" });
 
-    const missingUser = await request(app).delete(`${API_BASE}/organizations/org-1/members/missing`).expect(404);
+    const missingUser = await request(app).delete(`${API_BASE}/organizations/core/members/missing`).expect(404);
     expect(missingUser.body).toMatchObject({ error: "User not found" });
 
-    const missingMembership = await request(app).delete(`${API_BASE}/organizations/org-1/members/user-1`).expect(404);
+    const missingMembership = await request(app).delete(`${API_BASE}/organizations/core/members/ada`).expect(404);
     expect(missingMembership.body).toMatchObject({ error: "Membership not found" });
   });
 });

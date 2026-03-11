@@ -1,4 +1,4 @@
-import type { ID, Scalar } from "@underfit/types";
+import type { Scalar } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
@@ -32,12 +32,7 @@ export const createScalarsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const listScalars = async (db: Database, runId: ID): Promise<Scalar[]> => {
-  const rows = await db.selectFrom(table).selectAll().where("runId", "=", runId).orderBy("step", "asc").execute();
-  return rows.map(toScalar);
-};
-
-export const listScalarsByHandleProjectNameAndRunName = async (db: Database, handle: string, projectName: string, runName: string): Promise<Scalar[]> => {
+export const getScalars = async (db: Database, handle: string, projectName: string, runName: string): Promise<Scalar[]> => {
   const rows = await db
     .selectFrom(table)
     .innerJoin(runsTable, `${runsTable}.id`, `${table}.runId`)

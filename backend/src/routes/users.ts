@@ -1,15 +1,14 @@
 import { randomBytes } from "crypto";
 
 import { API_BASE } from "@underfit/types";
-import type { ApiKey, Organization, OrganizationRole, Run, User } from "@underfit/types";
+import type { ApiKey, Organization, OrganizationRole, User } from "@underfit/types";
 
 import type { Database } from "db";
 import { createApiKey, deleteApiKey, listApiKeysByUser } from "repositories/api-keys.js";
 import { listOrganizationMembershipsByUserId } from "repositories/organization-members";
-import { listRunsByUser } from "repositories/runs";
-import { getUser, getUserByEmail, updateUserProfile } from "repositories/users";
+import { getUserByEmail, getUserByHandle, updateUserProfile } from "repositories/users";
 import { requireAuth } from "routes/auth";
-import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
+import type { RouteApp, RouteHandler } from "routes/helpers";
 
 interface EmailExistsQuery { email?: string }
 interface ExistsResponse { exists: boolean }
@@ -28,19 +27,8 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getUserHandler: RouteHandler<RouteParams, User> = async (req, res) => {
-    const user = await getUser(db, req.params.id);
-
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      res.json(user);
-    }
-  };
-
-  const listUserMembershipsHandler: RouteHandler<RouteParams, UserMembershipsResponse> = async (req, res) => {
-    const user = await getUser(db, req.params.id);
-
+  const listUserMembershipsHandler: RouteHandler<{ handle: string }, UserMembershipsResponse> = async (req, res) => {
+    const user = await getUserByHandle(db, req.params.handle.trim().toLowerCase());
     if (!user) {
       res.status(404).json({ error: "User not found" });
     } else {
@@ -48,18 +36,8 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const listUserRunsHandler: RouteHandler<RouteParams, Run[]> = async (req, res) => {
-    const user = await getUser(db, req.params.id);
-
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      res.json(await listRunsByUser(db, user.id));
-    }
-  };
-
-  const redirectUserMembershipHandler: RouteHandler<{ id: string; organizationId: string }, unknown> = (req, res) => {
-    res.redirect(307, `${API_BASE}/organizations/${req.params.organizationId}/members/${req.params.id}`);
+  const redirectUserMembershipHandler: RouteHandler<{ handle: string; organizationHandle: string }, unknown> = (req, res) => {
+    res.redirect(307, `${API_BASE}/organizations/${req.params.organizationHandle}/members/${req.params.handle}`);
   };
 
   const updateProfileHandler: RouteHandler<Record<string, string>, User, UpdateProfilePayload> = async (req, res) => {
@@ -110,15 +88,13 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     res.json({ status: "ok" });
   };
 
-  app.get(`${API_BASE}/users/me`, requireAuth(db), getCurrentUserHandler);
-  app.patch(`${API_BASE}/users/me`, requireAuth(db), updateProfileHandler);
-  app.get(`${API_BASE}/users/me/api-keys`, requireAuth(db), listApiKeysHandler);
-  app.post(`${API_BASE}/users/me/api-keys`, requireAuth(db), createApiKeyHandler);
-  app.delete(`${API_BASE}/users/me/api-keys/:id`, requireAuth(db), deleteApiKeyHandler);
-  app.get(`${API_BASE}/users/email-exists`, emailExistsHandler);
-  app.get(`${API_BASE}/users/:id`, getUserHandler);
-  app.get(`${API_BASE}/users/:id/memberships`, listUserMembershipsHandler);
-  app.get(`${API_BASE}/users/:id/runs`, listUserRunsHandler);
-  app.put(`${API_BASE}/users/:id/memberships/:organizationId`, redirectUserMembershipHandler);
-  app.delete(`${API_BASE}/users/:id/memberships/:organizationId`, redirectUserMembershipHandler);
+  app.get(`${API_BASE}/emails/exists`, emailExistsHandler);
+  app.get(`${API_BASE}/me`, requireAuth(db), getCurrentUserHandler);
+  app.patch(`${API_BASE}/me`, requireAuth(db), updateProfileHandler);
+  app.get(`${API_BASE}/me/api-keys`, requireAuth(db), listApiKeysHandler);
+  app.post(`${API_BASE}/me/api-keys`, requireAuth(db), createApiKeyHandler);
+  app.delete(`${API_BASE}/me/api-keys/:id`, requireAuth(db), deleteApiKeyHandler);
+  app.get(`${API_BASE}/users/:handle/memberships`, listUserMembershipsHandler);
+  app.put(`${API_BASE}/users/:handle/memberships/:organizationHandle`, redirectUserMembershipHandler);
+  app.delete(`${API_BASE}/users/:handle/memberships/:organizationHandle`, redirectUserMembershipHandler);
 }

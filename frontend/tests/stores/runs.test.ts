@@ -66,9 +66,9 @@ describe("run store", () => {
     const otherRun: Run = { ...run, id: "run-2", projectId: "project-2", name: "run-b" };
     fetchMock.mockResolvedValueOnce(createResponse([run, otherRun]));
 
-    await useRunStore.getState().fetchRuns("user-1");
+    await useRunStore.getState().fetchRuns("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/user-1/runs`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/ada/runs`, { credentials: "include" });
     expect(useRunStore.getState().runsByKey).toEqual({ [buildRunKey("ada", "demo", "run-a")]: run });
     expect(useRunStore.getState().isLoading).toBe(false);
     expect(useRunStore.getState().error).toBeNull();
@@ -77,7 +77,7 @@ describe("run store", () => {
   it("stores the error when the run list request fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 500 }));
 
-    await useRunStore.getState().fetchRuns("user-1");
+    await useRunStore.getState().fetchRuns("ada");
 
     expect(useRunStore.getState().error).toBe("Request failed with status 500");
     expect(useRunStore.getState().isLoading).toBe(false);
@@ -86,7 +86,7 @@ describe("run store", () => {
   it("stores the error when the run list request throws", async () => {
     fetchMock.mockRejectedValueOnce(new Error("network error"));
 
-    await useRunStore.getState().fetchRuns("user-1");
+    await useRunStore.getState().fetchRuns("ada");
 
     expect(useRunStore.getState().error).toBe("network error");
     expect(useRunStore.getState().isLoading).toBe(false);

@@ -38,7 +38,7 @@ describe("scalar store", () => {
     await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `${apiBase}/accounts/by-handle/ada/projects/demo/runs/run-1/scalars`,
+      `${apiBase}/accounts/ada/projects/demo/runs/run-1/scalars`,
       { credentials: "include" }
     );
     expect(useScalarStore.getState().scalars).toEqual([scalar]);
@@ -52,7 +52,7 @@ describe("scalar store", () => {
     await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `${apiBase}/accounts/by-handle/ada/projects/demo/runs/run-1/scalars`,
+      `${apiBase}/accounts/ada/projects/demo/runs/run-1/scalars`,
       { credentials: "include" }
     );
   });

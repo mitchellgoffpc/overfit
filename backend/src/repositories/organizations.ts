@@ -18,22 +18,7 @@ export const createOrganizationsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const listOrganizations = async (db: Database): Promise<Organization[]> => {
-  return await db
-    .selectFrom(table)
-    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select([
-      `${table}.id as id`,
-      `${accountsTable}.handle as handle`,
-      `${accountsTable}.displayName as displayName`,
-      `${accountsTable}.type as type`,
-      `${table}.createdAt as createdAt`,
-      `${table}.updatedAt as updatedAt`
-    ])
-    .execute();
-};
-
-export const getOrganization = async (db: Database, id: ID): Promise<Organization | undefined> => {
+const getOrganizationById = async (db: Database, id: ID): Promise<Organization | undefined> => {
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
@@ -49,6 +34,22 @@ export const getOrganization = async (db: Database, id: ID): Promise<Organizatio
     .executeTakeFirst();
 };
 
+export const getOrganization = async (db: Database, handle: string): Promise<Organization | undefined> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
+    .select([
+      `${table}.id as id`,
+      `${accountsTable}.handle as handle`,
+      `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.type as type`,
+      `${table}.createdAt as createdAt`,
+      `${table}.updatedAt as updatedAt`
+    ])
+    .where(`${accountsTable}.handle`, "=", handle)
+    .executeTakeFirst();
+};
+
 export const upsertOrganization = async (db: Database, organization: Omit<Organization, "createdAt" | "updatedAt">): Promise<Organization> => {
   const payload: Organization = { ...organization, createdAt: nowIso(), updatedAt: nowIso() };
   const { type: _type, handle, displayName, ...organizationRow } = payload;
@@ -60,5 +61,5 @@ export const upsertOrganization = async (db: Database, organization: Omit<Organi
 
   const { id: _id, createdAt: __, ...updates } = organizationRow;
   await db.insertInto(table).values(organizationRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getOrganization(db, organization.id) ?? payload;
+  return await getOrganizationById(db, organization.id) ?? payload;
 };

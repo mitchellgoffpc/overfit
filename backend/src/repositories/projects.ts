@@ -33,11 +33,7 @@ export const createProjectsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const listProjects = async (db: Database): Promise<Project[]> => {
-  return await db.selectFrom(table).innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`).select(projectSelect).execute();
-};
-
-export const listProjectsByHandle = async (db: Database, handle: string): Promise<Project[]> => {
+export const listProjects = async (db: Database, handle: string): Promise<Project[]> => {
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
@@ -46,7 +42,7 @@ export const listProjectsByHandle = async (db: Database, handle: string): Promis
     .execute();
 };
 
-export const getProject = async (db: Database, id: ID): Promise<Project | undefined> => {
+const getProjectById = async (db: Database, id: ID): Promise<Project | undefined> => {
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
@@ -55,11 +51,7 @@ export const getProject = async (db: Database, id: ID): Promise<Project | undefi
     .executeTakeFirst();
 };
 
-export const getProjectRow = async (db: Database, id: ID): Promise<ProjectRow | undefined> => {
-  return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-};
-
-export const getProjectByHandleAndName = async (db: Database, handle: string, name: string): Promise<Project | undefined> => {
+export const getProject = async (db: Database, handle: string, name: string): Promise<Project | undefined> => {
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
@@ -73,9 +65,7 @@ export const upsertProject = async (db: Database, project: Omit<ProjectRow, "cre
   const payload: ProjectRow = { ...project, createdAt: nowIso(), updatedAt: nowIso() };
   const { id: _, createdAt: __, ...updates } = payload;
   await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  const saved = await getProject(db, project.id);
-  if (!saved) { throw new Error("Project not found after upsert"); }
-  return saved;
+  return await getProjectById(db, project.id) ?? payload;
 };
 
 export const listProjectsByUserActivity = async (db: Database, userId: ID): Promise<Project[]> => {

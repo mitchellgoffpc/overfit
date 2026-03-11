@@ -8,7 +8,7 @@ wait_for_server() {
   local start_time
   start_time="$(date +%s000)"
   while true; do
-    if curl -sS -o /dev/null -f "$base_url/organizations" &>/dev/null; then
+    if curl -sS -o /dev/null -f "$base_url/health" &>/dev/null; then
       return 0
     fi
     local now
@@ -58,16 +58,19 @@ elif [[ "$auth_status" -lt 200 || "$auth_status" -ge 300 ]]; then
 fi
 
 user_id="$(jq -r '.user.id' <<<"$auth_body")"
+user_handle="$(jq -r '.user.handle' <<<"$auth_body")"
 
-organization_id="org_acme_labs"
-project_one_id="project_solaris"
-project_two_id="project_orbit"
+organization_handle="acme-labs"
+project_one_name="solaris"
+project_two_name="orbit"
 
-json_request "PUT" "/organizations/$organization_id" '{"handle":"acme-labs","displayName":"Acme Labs"}' >/dev/null
-json_request "PUT" "/organizations/$organization_id/members/$user_id" '{"role":"ADMIN"}' >/dev/null
+json_request "PUT" "/organizations/$organization_handle" '{"displayName":"Acme Labs"}' >/dev/null
+json_request "PUT" "/organizations/$organization_handle/members/$user_handle" '{"role":"ADMIN"}' >/dev/null
 
-json_request "PUT" "/projects/$project_one_id" "{\"accountId\":\"$user_id\",\"name\":\"Solaris\",\"description\":\"Computer vision experiments for aerial imagery classification.\"}" >/dev/null
-json_request "PUT" "/projects/$project_two_id" "{\"accountId\":\"$user_id\",\"name\":\"Orbit\",\"description\":\"Language model evaluation runs for support ticket triage.\"}" >/dev/null
+project_one_response="$(json_request "PUT" "/accounts/$user_handle/projects/$project_one_name" '{"description":"Computer vision experiments for aerial imagery classification."}')"
+project_two_response="$(json_request "PUT" "/accounts/$user_handle/projects/$project_two_name" '{"description":"Language model evaluation runs for support ticket triage."}')"
+project_one_id="$(jq -r '.id' <<<"$project_one_response")"
+project_two_id="$(jq -r '.id' <<<"$project_two_response")"
 
 json_request "PUT" "/runs/run_solaris_001" "{\"projectId\":\"$project_one_id\",\"userId\":\"$user_id\",\"name\":\"baseline-resnet\",\"status\":\"finished\",\"metadata\":{\"accuracy\":0.91,\"epochs\":40,\"dataset\":\"sat-imagery-v2\"}}" >/dev/null
 json_request "PUT" "/runs/run_orbit_001" "{\"projectId\":\"$project_two_id\",\"userId\":\"$user_id\",\"name\":\"distilbert-finetune\",\"status\":\"running\",\"metadata\":{\"f1\":0.84,\"dataset\":\"support-tickets\",\"batchSize\":32}}" >/dev/null
@@ -91,9 +94,12 @@ for (let index = 0; index < 140; index += 1) {
 NODE
 )"
 
-for run_id in run_solaris_001 run_orbit_001 run_orbit_002; do
+for run_name in baseline-resnet distilbert-finetune llama3-eval; do
+  project_name="$project_two_name"
+  if [[ "$run_name" == "baseline-resnet" ]]; then
+    project_name="$project_one_name"
+  fi
   while IFS=$'\t' read -r scalar_suffix scalar_step scalar_train_loss scalar_train_acc scalar_val_loss scalar_val_acc scalar_timestamp; do
-    scalar_id="scalar_${run_id}_${scalar_suffix}"
-    json_request "PUT" "/scalars/$scalar_id" "{\"runId\":\"$run_id\",\"step\":$scalar_step,\"values\":{\"train/loss\":$scalar_train_loss,\"train/acc\":$scalar_train_acc,\"val/loss\":$scalar_val_loss,\"val/acc\":$scalar_val_acc},\"timestamp\":\"$scalar_timestamp\"}" >/dev/null
+    json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/scalars" "{\"step\":$scalar_step,\"values\":{\"train/loss\":$scalar_train_loss,\"train/acc\":$scalar_train_acc,\"val/loss\":$scalar_val_loss,\"val/acc\":$scalar_val_acc},\"timestamp\":\"$scalar_timestamp\"}" >/dev/null
   done <<<"$scalar_rows"
 done

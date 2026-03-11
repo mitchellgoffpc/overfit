@@ -96,7 +96,7 @@ describe("SignupRoute", () => {
     fireEvent.change(emailInput, { target: { value: "existing@underfit.local" } });
     fireEvent.blur(emailInput);
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=existing%40underfit.local`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/emails/exists?email=existing%40underfit.local`, { credentials: "include" });
     const error = await screen.findByText(EMAIL_IN_USE_ERROR);
     expect(error).toBeInTheDocument();
   });
@@ -115,7 +115,7 @@ describe("SignupRoute", () => {
     fireEvent.change(usernameInput, { target: { value: "existing-user" } });
     fireEvent.blur(usernameInput);
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=existing-user`, { credentials: "include" });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/existing-user/exists`, { credentials: "include" });
     const error = await screen.findByText(USERNAME_IN_USE_ERROR);
     expect(error).toBeInTheDocument();
   });

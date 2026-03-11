@@ -15,7 +15,7 @@ import type { User, UserAuth } from "@underfit/types";
 import type { RequestHandler, Response } from "express";
 
 import type { Database } from "db";
-import { getAccountByHandle } from "repositories/accounts";
+import { getAccount } from "repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
 import { getUserByEmail, getUser, upsertUser } from "repositories/users";
@@ -130,7 +130,7 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
       res.status(400).json({ error: handleError });
     } else if (passwordError) {
       res.status(400).json({ error: passwordError });
-    } else if (await getAccountByHandle(db, handle)) {
+    } else if (await getAccount(db, handle)) {
       res.status(409).json({ error: USERNAME_IN_USE_ERROR });
     } else if (await getUserByEmail(db, email)) {
       res.status(409).json({ error: EMAIL_IN_USE_ERROR });
