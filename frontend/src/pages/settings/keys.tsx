@@ -2,11 +2,11 @@ import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
-import { apiBase } from "helpers";
+import { request } from "helpers";
 import { useAuthStore } from "stores/auth";
 
 export default function SettingsKeysContent(): ReactElement {
-  const sessionToken = useAuthStore((state) => state.sessionToken);
+  const status = useAuthStore((state) => state.status);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeysLoaded, setApiKeysLoaded] = useState(false);
   const [apiKeysError, setApiKeysError] = useState<string | null>(null);
@@ -16,19 +16,18 @@ export default function SettingsKeysContent(): ReactElement {
   const [isDeletingKey, setIsDeletingKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (apiKeysLoaded || !sessionToken) { return; }
+    if (apiKeysLoaded || status !== "authenticated") { return; }
     const loadApiKeys = async () => {
       setIsApiKeysLoading(true);
       setApiKeysError(null);
       try {
-        const response = await fetch(`${apiBase}/users/me/api-keys`, { headers: { Authorization: `Bearer ${sessionToken}` } });
-        if (!response.ok) {
-          setApiKeysError(`Failed to load API keys (${String(response.status)})`);
+        const result = await request<ApiKey[]>("users/me/api-keys");
+        if (!result.ok) {
+          setApiKeysError(result.error);
           setIsApiKeysLoading(false);
           return;
         }
-        const payload = (await response.json()) as ApiKey[];
-        setApiKeys(payload);
+        setApiKeys(result.body);
         setApiKeysLoaded(true);
         setIsApiKeysLoading(false);
       } catch (error) {
@@ -39,25 +38,24 @@ export default function SettingsKeysContent(): ReactElement {
     };
 
     void loadApiKeys();
-  }, [apiKeysLoaded, sessionToken]);
+  }, [apiKeysLoaded, status]);
 
   const handleCreateKey = async () => {
-    if (!sessionToken) { return; }
+    if (status !== "authenticated") { return; }
     setIsCreatingKey(true);
     setApiKeysError(null);
     try {
-      const response = await fetch(`${apiBase}/users/me/api-keys`, {
+      const result = await request<ApiKey>("users/me/api-keys", {
         method: "POST",
-        headers: { Authorization: `Bearer ${sessionToken}`, "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: newKeyLabel })
       });
-      if (!response.ok) {
-        setApiKeysError(`Failed to create API key (${String(response.status)})`);
+      if (!result.ok) {
+        setApiKeysError(result.error);
         setIsCreatingKey(false);
         return;
       }
-      const created = (await response.json()) as ApiKey;
-      setApiKeys((current) => [created, ...current]);
+      setApiKeys((current) => [result.body, ...current]);
       setNewKeyLabel("");
       setIsCreatingKey(false);
     } catch (error) {
@@ -68,16 +66,13 @@ export default function SettingsKeysContent(): ReactElement {
   };
 
   const handleDeleteKey = async (id: string) => {
-    if (!sessionToken) { return; }
+    if (status !== "authenticated") { return; }
     setIsDeletingKey(id);
     setApiKeysError(null);
     try {
-      const response = await fetch(`${apiBase}/users/me/api-keys/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${sessionToken}` }
-      });
-      if (!response.ok) {
-        setApiKeysError(`Failed to delete API key (${String(response.status)})`);
+      const result = await request<{ status: "ok" }>(`users/me/api-keys/${id}`, { method: "DELETE" });
+      if (!result.ok) {
+        setApiKeysError(result.error);
         setIsDeletingKey(null);
         return;
       }

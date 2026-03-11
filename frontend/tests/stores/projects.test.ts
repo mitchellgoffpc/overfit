@@ -38,8 +38,7 @@ describe("project store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    localStorage.clear();
-    useAuthStore.setState({ user: null, sessionToken: null, status: "idle" });
+    useAuthStore.setState({ user: null, status: "idle" });
     useProjectStore.setState({ projectsByKey: {}, isLoading: false, error: null });
     vi.restoreAllMocks();
   });
@@ -48,24 +47,24 @@ describe("project store", () => {
     expect(buildProjectKey("ada", "demo")).toBe("ada/demo");
   });
 
-  it("fetches projects for a handle with auth headers", async () => {
-    useAuthStore.setState({ user, sessionToken: "token-123" });
+  it("fetches projects for a handle with cookie credentials", async () => {
+    useAuthStore.setState({ user, status: "authenticated" });
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
     await useProjectStore.getState().fetchProjects("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { headers: { Authorization: "Bearer token-123" } });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { credentials: "include" });
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
     expect(useProjectStore.getState().error).toBeNull();
   });
 
-  it("fetches public projects without auth headers", async () => {
+  it("fetches public projects with cookie credentials", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
     await useProjectStore.getState().fetchProjects("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { headers: undefined });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { credentials: "include" });
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
   });
 

@@ -45,7 +45,6 @@ describe("SignupRoute", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
-    localStorage.clear();
   });
 
   afterEach(() => {
@@ -97,7 +96,7 @@ describe("SignupRoute", () => {
     fireEvent.change(emailInput, { target: { value: "existing@underfit.local" } });
     fireEvent.blur(emailInput);
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=existing%40underfit.local`);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=existing%40underfit.local`, { credentials: "include" });
     const error = await screen.findByText(EMAIL_IN_USE_ERROR);
     expect(error).toBeInTheDocument();
   });
@@ -116,7 +115,7 @@ describe("SignupRoute", () => {
     fireEvent.change(usernameInput, { target: { value: "existing-user" } });
     fireEvent.blur(usernameInput);
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=existing-user`);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=existing-user`, { credentials: "include" });
     const error = await screen.findByText(USERNAME_IN_USE_ERROR);
     expect(error).toBeInTheDocument();
   });
@@ -165,9 +164,8 @@ describe("SignupRoute", () => {
     expect(await within(form).findByText("Sign up failed")).toBeInTheDocument();
   });
 
-  it("stores the session token and navigates on successful signup", async () => {
+  it("navigates on successful signup", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-456" }, user }));
-    const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
     const { hook } = memoryLocation({ path: "/signup" });
 
     render(
@@ -188,10 +186,7 @@ describe("SignupRoute", () => {
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(setItemSpy).toHaveBeenCalledWith("underfitSessionToken", "token-456");
       expect(navigateMock).toHaveBeenCalledWith("/");
     });
-
-    setItemSpy.mockRestore();
   });
 });

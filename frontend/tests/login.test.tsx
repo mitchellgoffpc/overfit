@@ -5,6 +5,7 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import LoginPage from "pages/login";
+import { useAuthStore } from "stores/auth";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
@@ -39,7 +40,7 @@ describe("LoginRoute", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
-    localStorage.clear();
+    useAuthStore.setState({ user: null, status: "unauthenticated" });
   });
 
   afterEach(() => {
@@ -70,9 +71,10 @@ describe("LoginRoute", () => {
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/login`, expect.any(Object));
   });
 
-  it("stores the session token and navigates on successful login", async () => {
+  it("navigates on successful login", async () => {
+    useAuthStore.setState({ user: null, status: "idle" });
+    fetchMock.mockResolvedValueOnce(createResponse({ error: "Session token is required" }, { ok: false, status: 401 }));
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" }, user }));
-    const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
     const { hook } = memoryLocation({ path: "/login" });
 
     render(
@@ -92,10 +94,7 @@ describe("LoginRoute", () => {
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(setItemSpy).toHaveBeenCalledWith("underfitSessionToken", "token-123");
       expect(navigateMock).toHaveBeenCalledWith("/");
     });
-
-    setItemSpy.mockRestore();
   });
 });

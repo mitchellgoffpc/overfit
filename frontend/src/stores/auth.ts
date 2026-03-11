@@ -6,7 +6,7 @@ import { request, post } from "helpers";
 
 type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
-interface AuthResponse { session: { token: string }; user: User };
+interface AuthResponse { user: User };
 
 const checkAvailability = async (path: string, param: "email" | "handle", value: string) => {
   const query = new URLSearchParams({ [param]: value });
@@ -33,7 +33,6 @@ export const checkHandleValid = async (handle: string): Promise<string | null> =
 
 interface AuthState {
   user: User | null;
-  sessionToken: string | null;
   status: AuthStatus;
   loadUser: () => Promise<void>;
   logout: () => Promise<void>;
@@ -44,27 +43,22 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  sessionToken: localStorage.getItem("underfitSessionToken"),
   status: "idle",
 
   loadUser: async () => {
-    const { sessionToken } = get();
-    if (sessionToken) {
-      set({ status: "loading" });
-      const { ok, body } = await request<User>("users/me", { headers: { Authorization: `Bearer ${sessionToken}` } });
-      if (ok) {
-        set({ user: body, status: "authenticated" });
-        return;
-      }
+    set({ status: "loading" });
+    const { ok, body, status: statusCode } = await request<User>("users/me");
+    if (ok) {
+      set({ user: body, status: "authenticated" });
+    } else if (statusCode === 401) {
+      set({ user: null, status: "unauthenticated" });
     }
-    set({ user: null, status: "unauthenticated" });
   },
 
   login: async (email: string, password: string) => {
     const { ok, error, body } = await post<AuthResponse>("auth/login", { email, password });
     if (ok) {
-      localStorage.setItem("underfitSessionToken", body.session.token);
-      set({ sessionToken: body.session.token, user: body.user, status: "authenticated" });
+      set({ user: body.user, status: "authenticated" });
       return { ok: true };
     } else {
       return { ok: false, error };
@@ -74,8 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signup: async (email: string, handle: string, password: string) => {
     const { ok, error, body } = await post<AuthResponse>("auth/register", { email, handle, password });
     if (ok) {
-      localStorage.setItem("underfitSessionToken", body.session.token);
-      set({ sessionToken: body.session.token, user: body.user, status: "authenticated" });
+      set({ user: body.user, status: "authenticated" });
       return { ok: true };
     } else {
       return { ok: false, error };
@@ -83,19 +76,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    const { sessionToken } = get();
-    if (sessionToken) {
-      await request("auth/logout", { method: "POST", headers: { Authorization: `Bearer ${sessionToken}` } });
-    }
-    localStorage.removeItem("underfitSessionToken");
-    set({ user: null, sessionToken: null, status: "idle" });
+    if (get().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
+    set({ user: null, status: "idle" });
   },
 
   updateUserProfile: async (name: string, bio: string) => {
-    const { sessionToken } = get();
     const { ok, error, body } = await request<User>("users/me", {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${sessionToken ?? ""}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, bio })
     });
     if (ok) {

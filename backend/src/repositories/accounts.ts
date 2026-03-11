@@ -5,6 +5,7 @@ import { table as organizationsTable } from "repositories/organizations";
 import { table as usersTable } from "repositories/users";
 
 export const table = "accounts";
+const handleUniqueIndex = "accounts_handle_unique";
 
 export const createAccountsTable = async (db: Database): Promise<void> => {
   await db.schema
@@ -14,6 +15,7 @@ export const createAccountsTable = async (db: Database): Promise<void> => {
     .addColumn("handle", "text", (col) => col.notNull())
     .addColumn("displayName", "text", (col) => col.notNull())
     .addColumn("type", "text", (col) => col.notNull().defaultTo("USER"))
+    .addUniqueConstraint(handleUniqueIndex, ["handle"])
     .execute();
 };
 

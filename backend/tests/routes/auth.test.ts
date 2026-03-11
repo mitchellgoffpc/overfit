@@ -23,6 +23,13 @@ async function getWithToken(app: RouteApp, path: string, token: string, status =
     .expect(status);
 }
 
+async function getWithCookie(app: RouteApp, path: string, cookie: string, status = 200) {
+  return request(app)
+    .get(path)
+    .set("Cookie", cookie)
+    .expect(status);
+}
+
 async function postWithToken(app: RouteApp, path: string, token: string, status = 200) {
   return request(app)
     .post(path)
@@ -37,6 +44,12 @@ async function post(app: RouteApp, path: string, payload: Record<string, unknown
     .expect(status);
 }
 
+const getSetCookie = (response: Response): string | undefined => {
+  const headers = response.headers as Record<string, string | string[] | undefined>;
+  const cookie = headers["set-cookie"];
+  return Array.isArray(cookie) ? cookie[0] : cookie;
+};
+
 describe("auth routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
@@ -49,15 +62,19 @@ describe("auth routes", () => {
   it("registers, logs in, and returns current user", async () => {
     const register = await post(app, "auth/register", { email: "sam@example.com", handle: "sam", password: "password123" });
     const registerBody = register.body as { user: { id: string; email: string; handle: string }; session: { token: string } };
+    const registerCookie = getSetCookie(register);
     expect(registerBody.user).toMatchObject({ email: "sam@example.com", handle: "sam" });
     expect(typeof registerBody.session.token).toBe("string");
+    expect(registerCookie).toContain(`underfit_session=${registerBody.session.token}`);
 
     const login = await post(app, "auth/login", { email: "sam@example.com", password: "password123" });
     const loginBody = login.body as { user: { id: string }; session: { token: string } };
+    const loginCookie = getSetCookie(login);
     const token = loginBody.session.token;
     expect(loginBody.user.id).toBe(registerBody.user.id);
+    expect(loginCookie).toContain(`underfit_session=${token}`);
 
-    const current = await getWithToken(app, `${API_BASE}/users/me`, token);
+    const current = await getWithCookie(app, `${API_BASE}/users/me`, loginCookie ?? "");
     expect((current.body as { id: string }).id).toBe(registerBody.user.id);
   });
 
@@ -73,9 +90,19 @@ describe("auth routes", () => {
 
     const logout = await postWithToken(app, `${API_BASE}/auth/logout`, token);
     expect(logout.body).toMatchObject({ status: "ok" });
+    expect(getSetCookie(logout)).toContain("underfit_session=;");
 
     const current = await getWithToken(app, `${API_BASE}/users/me`, token, 401);
     expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
+  });
+
+  it("accepts cookie authentication alongside bearer auth", async () => {
+    const login = await post(app, "auth/register", { email: "cookie@example.com", handle: "cookie", password: "password123" });
+    const cookie = getSetCookie(login);
+
+    const current = await getWithCookie(app, `${API_BASE}/users/me`, cookie ?? "");
+
+    expect((current.body as { handle: string }).handle).toBe("cookie");
   });
 
   it("rejects duplicate handles and emails", async () => {

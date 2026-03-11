@@ -36,18 +36,16 @@ describe("Navbar logout", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
-    localStorage.clear();
-    useAuthStore.setState({ user: null, sessionToken: null, status: "idle" });
+    useAuthStore.setState({ user: null, status: "idle" });
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it("logs out with a session token and clears auth state", async () => {
+  it("logs out and clears auth state", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true });
-    localStorage.setItem("underfitSessionToken", "token-123");
-    useAuthStore.setState({ user, sessionToken: "token-123", status: "authenticated" });
+    useAuthStore.setState({ user, status: "authenticated" });
     const { hook } = memoryLocation({ path: "/" });
 
     render(
@@ -61,19 +59,17 @@ describe("Navbar logout", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, {
-        method: "POST",
-        headers: { Authorization: "Bearer token-123" }
+        credentials: "include",
+        method: "POST"
       });
       expect(navigateMock).toHaveBeenCalledWith("/login");
     });
 
-    expect(localStorage.getItem("underfitSessionToken")).toBeNull();
-    expect(useAuthStore.getState().sessionToken).toBeNull();
     expect(useAuthStore.getState().user).toBeNull();
   });
 
-  it("logs out without calling the API when no token exists", async () => {
-    useAuthStore.setState({ user, sessionToken: null, status: "authenticated" });
+  it("logs out with the session cookie even when no token is stored in memory", async () => {
+    useAuthStore.setState({ user, status: "authenticated" });
     const { hook } = memoryLocation({ path: "/" });
 
     render(
@@ -86,12 +82,13 @@ describe("Navbar logout", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Sign Out" }));
 
     await waitFor(() => {
-      expect(fetchMock).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, {
+        credentials: "include",
+        method: "POST"
+      });
       expect(navigateMock).toHaveBeenCalledWith("/login");
     });
 
-    expect(localStorage.getItem("underfitSessionToken")).toBeNull();
-    expect(useAuthStore.getState().sessionToken).toBeNull();
     expect(useAuthStore.getState().user).toBeNull();
   });
 });

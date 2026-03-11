@@ -12,7 +12,7 @@ import {
   testHandle
 } from "@underfit/types";
 import type { User, UserAuth } from "@underfit/types";
-import type { RequestHandler } from "express";
+import type { RequestHandler, Response } from "express";
 
 import type { Database } from "db";
 import { getAccountByHandle } from "repositories/accounts";
@@ -27,6 +27,7 @@ const PASSWORD_BYTES = 32;
 const SALT_BYTES = 16;
 const SESSION_BYTES = 32;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+const SESSION_COOKIE_NAME = "underfit_session";
 
 interface AuthSession {
   token: string;
@@ -50,8 +51,6 @@ interface LoginPayload {
   password?: string;
 }
 
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
-
 const hashPassword = (password: string, salt: string, iterations: number, digest: string) => (
   pbkdf2Sync(password, salt, iterations, PASSWORD_BYTES, digest).toString("hex")
 );
@@ -69,16 +68,25 @@ const resolveSessionToken = (value?: string) => {
   return type?.toLowerCase() === "bearer" && token ? token : value;
 };
 
-const getSessionToken = (headers: Record<string, string | string[] | undefined>) => {
+const setSessionCookie = (res: Response, token: string, expiresAt: string) => {
+  res.cookie(SESSION_COOKIE_NAME, token, { path: "/", httpOnly: true, sameSite: "lax", expires: new Date(expiresAt) });
+};
+
+const clearSessionCookie = (res: Response) => {
+  res.clearCookie(SESSION_COOKIE_NAME, { path: "/", httpOnly: true, sameSite: "lax" });
+};
+
+const getSessionToken = (headers: Record<string, string | string[] | undefined>, cookies: Record<string, string>) => {
   const headerValue = Array.isArray(headers.authorization) ? headers.authorization[0] : headers.authorization;
   const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
-  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader);
+  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader) ?? cookies[SESSION_COOKIE_NAME]
   return raw?.trim();
 };
 
 export const requireAuth = (db: Database): RequestHandler => async (req, res, next) => {
-  const token = getSessionToken(req.headers);
+  const token = getSessionToken(req.headers, req.cookies as Record<string, string>);
   if (!token) {
+    clearSessionCookie(res);
     res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
     return
   }
@@ -86,6 +94,7 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
   const session = await getSession(db, token);
   if (!session || new Date(session.expiresAt).getTime() <= Date.now()) {
     if (session) { await deleteSession(db, token); }
+    clearSessionCookie(res);
     res.status(401).json({ error: SESSION_INVALID_ERROR });
     return;
   }
@@ -101,7 +110,7 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
 
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
   const register: RouteHandler<Record<string, string>, AuthResponse, RegisterPayload> = async (req, res) => {
-    const email = normalizeEmail(req.body.email ?? "");
+    const email = req.body.email?.trim().toLowerCase() ?? "";
     const handle = (req.body.handle ?? "").trim().toLowerCase();
     const password = req.body.password ?? "";
 
@@ -150,12 +159,13 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
       const token = randomBytes(SESSION_BYTES).toString("base64url");
       const session = await upsertSession(db, { id: token, userId: user.id, expiresAt });
 
+      setSessionCookie(res, token, expiresAt);
       res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
     }
   };
 
   const login: RouteHandler<Record<string, string>, AuthResponse, LoginPayload> = async (req, res) => {
-    const email = normalizeEmail(req.body.email ?? "");
+    const email = req.body.email?.trim().toLowerCase() ?? "";
     const password = req.body.password ?? "";
 
     if (!email || !password) {
@@ -178,21 +188,25 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
     const token = randomBytes(SESSION_BYTES).toString("base64url");
     const session = await upsertSession(db, { id: token, userId: user.id, expiresAt });
+    setSessionCookie(res, token, expiresAt);
     res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
   };
 
   const logout: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
-    const token = getSessionToken(req.headers);
+    const token = getSessionToken(req.headers, req.cookies as Record<string, string>);
     if (!token) {
+      clearSessionCookie(res);
       res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
       return;
     }
     const session = await getSession(db, token);
     if (!session) {
+      clearSessionCookie(res);
       res.status(401).json({ error: SESSION_INVALID_ERROR });
       return;
     }
     await deleteSession(db, token);
+    clearSessionCookie(res);
     res.json({ status: "ok" });
   };
 

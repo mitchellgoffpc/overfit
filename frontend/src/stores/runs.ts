@@ -22,13 +22,11 @@ export const useRunStore = create<RunState>((set) => ({
 
   fetchRuns: async (userId: string) => {
     set({ isLoading: true, error: null });
-    const sessionToken = useAuthStore.getState().sessionToken;
     const handle = useAuthStore.getState().user?.handle ?? "workspace";
-    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
     const projects = Object.values(useProjectStore.getState().projectsByKey);
     const projectNameById = new Map(projects.map((project) => [project.id, project.name]));
 
-    const { ok, body, error } = await request<Run[]>(`users/${userId}/runs`, { headers });
+    const { ok, body, error } = await request<Run[]>(`users/${userId}/runs`);
     if (!ok) {
       set({ error, isLoading: false });
       return;
@@ -48,10 +46,7 @@ export const useRunStore = create<RunState>((set) => ({
 
   fetchRun: async (handle: string, projectName: string, runName: string) => {
     set({ isLoading: true, error: null });
-    const sessionToken = useAuthStore.getState().sessionToken;
-    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
-
-    const { ok, body, error } = await request<Run>(`accounts/by-handle/${handle}/projects/${projectName}/runs/${runName}`, { headers });
+    const { ok, body, error } = await request<Run>(`accounts/by-handle/${handle}/projects/${projectName}/runs/${runName}`);
     if (ok) {
       set(({ runsByKey }) => ({ error: null, isLoading: false, runsByKey: { ...runsByKey, [buildRunKey(handle, projectName, runName)]: body } }));
       return body;

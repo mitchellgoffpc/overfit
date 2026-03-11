@@ -2,7 +2,6 @@ import type { Scalar } from "@underfit/types";
 import { create } from "zustand";
 
 import { request } from "helpers";
-import { useAuthStore } from "stores/auth";
 
 interface ScalarState {
   scalars: Scalar[];
@@ -18,10 +17,7 @@ export const useScalarStore = create<ScalarState>((set) => ({
 
   fetchScalarsByHandle: async (handle: string, projectName: string, runName: string) => {
     set({ isLoading: true, error: null });
-    const sessionToken = useAuthStore.getState().sessionToken;
-    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
-
-    const { ok, body, error } = await request<Scalar[]>(`accounts/by-handle/${handle}/projects/${projectName}/runs/${runName}/scalars`, { headers });
+    const { ok, body, error } = await request<Scalar[]>(`accounts/by-handle/${handle}/projects/${projectName}/runs/${runName}/scalars`);
     if (ok) {
       set({ scalars: body, isLoading: false, error: null });
     } else {

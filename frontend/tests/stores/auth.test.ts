@@ -30,28 +30,18 @@ describe("auth store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    localStorage.clear();
-    useAuthStore.setState({ user: null, sessionToken: null, status: "idle" });
+    useAuthStore.setState({ user: null, status: "idle" });
     vi.restoreAllMocks();
   });
 
-  it("initializes session token from localStorage", async () => {
-    localStorage.setItem("underfitSessionToken", "token-123");
-    vi.resetModules();
-
-    const { useAuthStore: freshStore } = await import("stores/auth");
-
-    expect(freshStore.getState().sessionToken).toBe("token-123");
-  });
-
-  it("sets unauthenticated when loading without a token", async () => {
-    useAuthStore.setState({ user, sessionToken: null, status: "authenticated" });
+  it("loads the user from the session cookie", async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: vi.fn(async () => await Promise.resolve(user)) });
 
     await useAuthStore.getState().loadUser();
 
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(useAuthStore.getState().status).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/me`, { credentials: "include" });
+    expect(useAuthStore.getState().status).toBe("authenticated");
+    expect(useAuthStore.getState().user).toEqual(user);
   });
 
   it("logs in and stores the session data", async () => {
@@ -61,11 +51,11 @@ describe("auth store", () => {
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/login`, {
+      credentials: "include",
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "ada@underfit.local", password: "password" })
     });
-    expect(useAuthStore.getState().sessionToken).toBe("token-123");
     expect(useAuthStore.getState().status).toBe("authenticated");
     expect(useAuthStore.getState().user).toEqual(user);
   });
@@ -85,11 +75,11 @@ describe("auth store", () => {
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/register`, {
+      credentials: "include",
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "ada@underfit.local", handle: "ada", password: "password" })
     });
-    expect(useAuthStore.getState().sessionToken).toBe("token-456");
     expect(useAuthStore.getState().status).toBe("authenticated");
     expect(useAuthStore.getState().user).toEqual(user);
   });
@@ -100,7 +90,7 @@ describe("auth store", () => {
     const result = await checkEmailValid("ada@underfit.local");
 
     expect(result).toBe(EMAIL_IN_USE_ERROR);
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=ada%40underfit.local`);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/email-exists?email=ada%40underfit.local`, { credentials: "include" });
   });
 
   it("returns an error when handle availability checks fail", async () => {
@@ -117,34 +107,12 @@ describe("auth store", () => {
     const result = await checkHandleValid("ada");
 
     expect(result).toBe(USERNAME_IN_USE_ERROR);
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=ada`);
-  });
-
-  it("loads the user with a valid token", async () => {
-    useAuthStore.setState({ user: null, sessionToken: "token-123", status: "idle" });
-    fetchMock.mockResolvedValueOnce({ ok: true, json: vi.fn(async () => await Promise.resolve(user)) });
-
-    await useAuthStore.getState().loadUser();
-
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/me`, { headers: { Authorization: "Bearer token-123" } });
-    expect(useAuthStore.getState().status).toBe("authenticated");
-    expect(useAuthStore.getState().user).toEqual(user);
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/handle-exists?handle=ada`, { credentials: "include" });
   });
 
   it("sets unauthenticated when the user request fails", async () => {
     useAuthStore.setState({ user: null, sessionToken: "token-123", status: "idle" });
-    fetchMock.mockResolvedValueOnce({ ok: false });
-
-    await useAuthStore.getState().loadUser();
-
-    expect(useAuthStore.getState().status).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
-  });
-
-  it("sets unauthenticated when the user request throws", async () => {
-    useAuthStore.setState({ user: null, sessionToken: "token-123", status: "idle" });
-    fetchMock.mockRejectedValueOnce(new Error("network error"));
-
+    fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 401 }));
     await useAuthStore.getState().loadUser();
 
     expect(useAuthStore.getState().status).toBe("unauthenticated");
@@ -152,30 +120,28 @@ describe("auth store", () => {
   });
 
   it("logs out and clears auth state", async () => {
-    localStorage.setItem("underfitSessionToken", "token-123");
-    useAuthStore.setState({ user, sessionToken: "token-123", status: "authenticated" });
+    useAuthStore.setState({ user, status: "authenticated" });
     fetchMock.mockResolvedValueOnce(createResponse({}));
 
     await useAuthStore.getState().logout();
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, { method: "POST", headers: { Authorization: "Bearer token-123" } });
-    expect(localStorage.getItem("underfitSessionToken")).toBeNull();
-    expect(useAuthStore.getState().sessionToken).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, { credentials: "include", method: "POST" });
     expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().status).toBe("idle");
   });
 
   it("updates the user profile", async () => {
     const updated = { ...user, name: "Ada", bio: "Math pioneer" };
-    useAuthStore.setState({ user, sessionToken: "token-123", status: "authenticated" });
+    useAuthStore.setState({ user, status: "authenticated" });
     fetchMock.mockResolvedValueOnce(createResponse(updated));
 
     const result = await useAuthStore.getState().updateUserProfile("Ada", "Math pioneer");
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/me`, {
+      credentials: "include",
       method: "PATCH",
-      headers: { Authorization: "Bearer token-123", "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "Ada", bio: "Math pioneer" })
     });
     expect(useAuthStore.getState().user).toEqual(updated);

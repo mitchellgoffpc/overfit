@@ -27,35 +27,33 @@ describe("scalar store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    localStorage.clear();
-    useAuthStore.setState({ user: null, sessionToken: null, status: "idle" });
+    useAuthStore.setState({ user: null, status: "idle" });
     useScalarStore.setState({ scalars: [], isLoading: false, error: null });
     vi.restoreAllMocks();
   });
 
-  it("fetches scalars with auth headers when a session token is present", async () => {
-    useAuthStore.setState({ sessionToken: "token-123" });
+  it("fetches scalars with cookie credentials when authenticated", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([scalar]));
 
     await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${apiBase}/accounts/by-handle/ada/projects/demo/runs/run-1/scalars`,
-      { headers: { Authorization: "Bearer token-123" } }
+      { credentials: "include" }
     );
     expect(useScalarStore.getState().scalars).toEqual([scalar]);
     expect(useScalarStore.getState().isLoading).toBe(false);
     expect(useScalarStore.getState().error).toBeNull();
   });
 
-  it("fetches scalars without headers when no session token is present", async () => {
+  it("fetches scalars with cookie credentials when no session token is present", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([scalar]));
 
     await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${apiBase}/accounts/by-handle/ada/projects/demo/runs/run-1/scalars`,
-      { headers: undefined }
+      { credentials: "include" }
     );
   });
 

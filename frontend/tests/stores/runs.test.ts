@@ -50,8 +50,7 @@ describe("run store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    localStorage.clear();
-    useAuthStore.setState({ user: null, sessionToken: null, status: "idle" });
+    useAuthStore.setState({ user: null, status: "idle" });
     useProjectStore.setState({ projectsByKey: {}, isLoading: false, error: null });
     useRunStore.setState({ runsByKey: {}, isLoading: false, error: null });
     vi.restoreAllMocks();
@@ -62,14 +61,14 @@ describe("run store", () => {
   });
 
   it("stores runs keyed by handle and project name when fetching succeeds", async () => {
-    useAuthStore.setState({ user, sessionToken: "token-123" });
+    useAuthStore.setState({ user, status: "authenticated" });
     useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "demo")]: project } });
     const otherRun: Run = { ...run, id: "run-2", projectId: "project-2", name: "run-b" };
     fetchMock.mockResolvedValueOnce(createResponse([run, otherRun]));
 
     await useRunStore.getState().fetchRuns("user-1");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/user-1/runs`, { headers: { Authorization: "Bearer token-123" } });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/users/user-1/runs`, { credentials: "include" });
     expect(useRunStore.getState().runsByKey).toEqual({ [buildRunKey("ada", "demo", "run-a")]: run });
     expect(useRunStore.getState().isLoading).toBe(false);
     expect(useRunStore.getState().error).toBeNull();

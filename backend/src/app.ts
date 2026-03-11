@@ -1,4 +1,5 @@
 import { API_BASE, API_VERSION } from "@underfit/types";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import type { Express, Request, Response } from "express";
@@ -17,7 +18,8 @@ import type { StorageBackend } from "storage";
 export function createApp(db: Database, storage: StorageBackend | null = null): Express {
   const app = express();
 
-  app.use(cors());
+  app.use(cors({ origin: true, credentials: true }));
+  app.use(cookieParser());
   app.use((req, res, next) => {
     express.json()(req, res, (err) => {
       req.body ??= {};

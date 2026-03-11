@@ -2,7 +2,6 @@ import type { Project } from "@underfit/types";
 import { create } from "zustand";
 
 import { request } from "helpers";
-import { useAuthStore } from "stores/auth";
 
 export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
 
@@ -21,10 +20,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   fetchProjects: async (handle: string) => {
     set({ isLoading: true, error: null });
-    const sessionToken = useAuthStore.getState().sessionToken;
-    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
-
-    const { ok, body, error } = await request<Project[]>(`accounts/by-handle/${handle}/projects`, { headers });
+    const { ok, body, error } = await request<Project[]>(`accounts/by-handle/${handle}/projects`);
     if (ok) {
       set(({ projectsByKey }) => {
         const newProjects = Object.fromEntries(body.map((project) => [buildProjectKey(handle, project.name), project]));
@@ -37,10 +33,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
 
   fetchProject: async (handle: string, projectName: string) => {
     set({ isLoading: true, error: null });
-    const sessionToken = useAuthStore.getState().sessionToken;
-    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
-
-    const { ok, body, error } = await request<Project>(`accounts/by-handle/${handle}/projects/${projectName}`, { headers });
+    const { ok, body, error } = await request<Project>(`accounts/by-handle/${handle}/projects/${projectName}`);
     if (ok) {
       set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, [buildProjectKey(handle, projectName)]: body } }));
       return body;
