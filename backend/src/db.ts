@@ -1,4 +1,4 @@
-import type { Account, ApiKey, OrganizationMember, Project, Session, UserAuth } from "@underfit/types";
+import type { Account, ApiKey, OrganizationMember, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 
@@ -10,6 +10,7 @@ import { createOrganizationMembersTable } from "repositories/organization-member
 import type { OrganizationRow } from "repositories/organizations.js";
 import { createOrganizationsTable } from "repositories/organizations.js";
 import { createProjectsTable } from "repositories/projects.js";
+import type { ProjectRow } from "repositories/projects.js";
 import type { RunRow } from "repositories/runs.js";
 import { createRunsTable } from "repositories/runs.js";
 import type { ScalarRow } from "repositories/scalars.js";
@@ -38,7 +39,7 @@ export interface DatabaseSchema {
   sessions: Session;
   organizations: OrganizationRow;
   organization_members: OrganizationMember;
-  projects: Project;
+  projects: ProjectRow;
   runs: RunRow;
   artifacts: ArtifactRow;
   scalars: ScalarRow;

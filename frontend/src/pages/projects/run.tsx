@@ -5,8 +5,8 @@ import { useParams } from "wouter";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import Navbar from "components/Navbar";
-import { buildRunKey, useRunStore } from "store/runs";
-import { useScalarStore } from "store/scalars";
+import { buildRunKey, useRunStore } from "stores/runs";
+import { useScalarStore } from "stores/scalars";
 
 export default function RunDetailRoute(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
@@ -14,7 +14,7 @@ export default function RunDetailRoute(): ReactElement {
   const run = useRunStore((state) => state.runsByKey[runKey]);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
-  const fetchRunByHandle = useRunStore((state) => state.fetchRunByHandle);
+  const fetchRun = useRunStore((state) => state.fetchRun);
   const scalars = useScalarStore((state) => state.scalars);
   const scalarError = useScalarStore((state) => state.error);
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
@@ -26,8 +26,8 @@ export default function RunDetailRoute(): ReactElement {
   const yFormatter = useMemo(() => (value: number) => value.toFixed(2), []);
 
   useEffect(() => {
-    if (!run) { void fetchRunByHandle(handle, projectName, runName); }
-  }, [fetchRunByHandle, handle, projectName, run, runName]);
+    if (!run) { void fetchRun(handle, projectName, runName); }
+  }, [fetchRun, handle, projectName, run, runName]);
 
   useEffect(() => {
     void fetchScalarsByHandle(handle, projectName, runName);

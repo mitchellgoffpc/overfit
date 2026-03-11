@@ -2,8 +2,8 @@ import type { Run } from "@underfit/types";
 import { create } from "zustand";
 
 import { request } from "helpers";
-import { useAuthStore } from "store/auth";
-import { useProjectStore } from "store/projects";
+import { useAuthStore } from "stores/auth";
+import { useProjectStore } from "stores/projects";
 
 export const buildRunKey = (handle: string, projectName: string, runName: string): string => `${handle}/${projectName}/${runName}`;
 
@@ -12,7 +12,7 @@ interface RunState {
   isLoading: boolean;
   error: string | null;
   fetchRuns: (userId: string) => Promise<void>;
-  fetchRunByHandle: (handle: string, projectName: string, runName: string) => Promise<Run | null>;
+  fetchRun: (handle: string, projectName: string, runName: string) => Promise<Run | null>;
 }
 
 export const useRunStore = create<RunState>((set) => ({
@@ -46,18 +46,18 @@ export const useRunStore = create<RunState>((set) => ({
     });
   },
 
-  fetchRunByHandle: async (handle: string, projectName: string, runName: string) => {
+  fetchRun: async (handle: string, projectName: string, runName: string) => {
     set({ isLoading: true, error: null });
     const sessionToken = useAuthStore.getState().sessionToken;
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
 
     const { ok, body, error } = await request<Run>(`accounts/by-handle/${handle}/projects/${projectName}/runs/${runName}`, { headers });
-    if (!ok) {
+    if (ok) {
+      set(({ runsByKey }) => ({ error: null, isLoading: false, runsByKey: { ...runsByKey, [buildRunKey(handle, projectName, runName)]: body } }));
+      return body;
+    } else {
       set({ error, isLoading: false });
       return null;
     }
-
-    set(({ runsByKey }) => ({ error: null, isLoading: false, runsByKey: { ...runsByKey, [buildRunKey(handle, projectName, runName)]: body } }));
-    return body;
   }
 }));

@@ -2,8 +2,8 @@ import type { Project, User } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiBase } from "helpers";
-import { useAuthStore } from "store/auth";
-import { buildProjectKey, useProjectStore } from "store/projects";
+import { useAuthStore } from "stores/auth";
+import { buildProjectKey, useProjectStore } from "stores/projects";
 
 const user: User = {
   id: "user-1",
@@ -19,7 +19,7 @@ const user: User = {
 
 const project: Project = {
   id: "project-1",
-  accountId: "acct-1",
+  account: "ada",
   name: "demo",
   description: "Demo project",
   createdAt: "2025-01-02T00:00:00.000Z",
@@ -48,13 +48,13 @@ describe("project store", () => {
     expect(buildProjectKey("ada", "demo")).toBe("ada/demo");
   });
 
-  it("fetches projects for the current user with auth headers", async () => {
+  it("fetches projects for a handle with auth headers", async () => {
     useAuthStore.setState({ user, sessionToken: "token-123" });
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
-    await useProjectStore.getState().fetchProjects();
+    await useProjectStore.getState().fetchProjects("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/projects/me`, { headers: { Authorization: "Bearer token-123" } });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { headers: { Authorization: "Bearer token-123" } });
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
     expect(useProjectStore.getState().error).toBeNull();
@@ -63,16 +63,16 @@ describe("project store", () => {
   it("fetches public projects without auth headers", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
-    await useProjectStore.getState().fetchProjects();
+    await useProjectStore.getState().fetchProjects("ada");
 
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/projects`, { headers: undefined });
-    expect(useProjectStore.getState().projectsByKey).toEqual({});
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/by-handle/ada/projects`, { headers: undefined });
+    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
   });
 
   it("stores the error when the project list request fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 500 }));
 
-    await useProjectStore.getState().fetchProjects();
+    await useProjectStore.getState().fetchProjects("ada");
 
     expect(useProjectStore.getState().error).toBe("Request failed with status 500");
     expect(useProjectStore.getState().isLoading).toBe(false);
@@ -81,7 +81,7 @@ describe("project store", () => {
   it("stores the error when the project list request throws", async () => {
     fetchMock.mockRejectedValueOnce(new Error("network error"));
 
-    await useProjectStore.getState().fetchProjects();
+    await useProjectStore.getState().fetchProjects("ada");
 
     expect(useProjectStore.getState().error).toBe("network error");
     expect(useProjectStore.getState().isLoading).toBe(false);
@@ -90,7 +90,7 @@ describe("project store", () => {
   it("stores backend errors when fetching a project fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Project not found" }, { ok: false, status: 404 }));
 
-    const result = await useProjectStore.getState().fetchProjectByHandle("ada", "demo");
+    const result = await useProjectStore.getState().fetchProject("ada", "demo");
 
     expect(result).toBeNull();
     expect(useProjectStore.getState().error).toBe("Project not found");
@@ -100,7 +100,7 @@ describe("project store", () => {
   it("stores projects by handle and name when fetching succeeds", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(project));
 
-    const result = await useProjectStore.getState().fetchProjectByHandle("ada", "demo");
+    const result = await useProjectStore.getState().fetchProject("ada", "demo");
 
     expect(result).toEqual(project);
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });

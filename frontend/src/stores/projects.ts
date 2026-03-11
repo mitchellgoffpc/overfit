@@ -2,7 +2,7 @@ import type { Project } from "@underfit/types";
 import { create } from "zustand";
 
 import { request } from "helpers";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
 
@@ -10,8 +10,8 @@ interface ProjectState {
   projectsByKey: Record<string, Project>;
   isLoading: boolean;
   error: string | null;
-  fetchProjects: () => Promise<void>;
-  fetchProjectByHandle: (handle: string, projectName: string) => Promise<Project | null>;
+  fetchProjects: (handle: string) => Promise<void>;
+  fetchProject: (handle: string, projectName: string) => Promise<Project | null>;
 }
 
 export const useProjectStore = create<ProjectState>((set) => ({
@@ -19,42 +19,34 @@ export const useProjectStore = create<ProjectState>((set) => ({
   isLoading: false,
   error: null,
 
-  fetchProjects: async () => {
+  fetchProjects: async (handle: string) => {
     set({ isLoading: true, error: null });
     const sessionToken = useAuthStore.getState().sessionToken;
-    const handle = useAuthStore.getState().user?.handle;
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
-    const endpoint = sessionToken ? "projects/me" : "projects";
 
-    const { ok, body, error } = await request<Project[]>(endpoint, { headers });
-    if (!ok) {
+    const { ok, body, error } = await request<Project[]>(`accounts/by-handle/${handle}/projects`, { headers });
+    if (ok) {
+      set(({ projectsByKey }) => {
+        const newProjects = Object.fromEntries(body.map((project) => [buildProjectKey(handle, project.name), project]));
+        return { isLoading: false, error: null, projectsByKey: { ...projectsByKey, ...newProjects } };
+      });
+    } else {
       set({ error, isLoading: false });
-      return;
     }
-
-    set((state) => {
-      const next = { ...state.projectsByKey };
-      if (handle) {
-        body.forEach((project) => {
-          next[buildProjectKey(handle, project.name)] = project;
-        });
-      }
-      return { projectsByKey: next, isLoading: false, error: null };
-    });
   },
 
-  fetchProjectByHandle: async (handle: string, projectName: string) => {
+  fetchProject: async (handle: string, projectName: string) => {
     set({ isLoading: true, error: null });
     const sessionToken = useAuthStore.getState().sessionToken;
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
 
     const { ok, body, error } = await request<Project>(`accounts/by-handle/${handle}/projects/${projectName}`, { headers });
-    if (!ok) {
+    if (ok) {
+      set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, [buildProjectKey(handle, projectName)]: body } }));
+      return body;
+    } else {
       set({ error, isLoading: false });
       return null;
     }
-
-    set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, [buildProjectKey(handle, projectName)]: body } }));
-    return body;
   }
 }));

@@ -6,7 +6,7 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import Navbar from "components/Navbar";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 

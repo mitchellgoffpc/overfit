@@ -68,7 +68,7 @@ describe("accounts routes", () => {
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
 
     const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Underfit`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: "project-1", account: "ada", name: "underfit", description: "Tracking runs" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects/Missing`).expect(404);
     expect(missing.body).toMatchObject({ error: "Project not found" });

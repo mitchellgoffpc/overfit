@@ -3,7 +3,7 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
-import { checkEmailValid, checkHandleValid, useAuthStore } from "store/auth";
+import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
 
 export default function SignupRoute(): ReactElement {
   const [, navigate] = useLocation();

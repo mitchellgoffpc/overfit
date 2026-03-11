@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import Navbar from "components/Navbar";
 import RunsPanel from "components/RunsPanel";
 import Sidebar from "components/Sidebar";
-import { useAuthStore } from "store/auth";
-import { useProjectStore } from "store/projects";
-import { useRunStore } from "store/runs";
+import { useAuthStore } from "stores/auth";
+import { useProjectStore } from "stores/projects";
+import { useRunStore } from "stores/runs";
 
 export default function IndexRoute(): ReactElement {
   const user = useAuthStore((state) => state.user);
@@ -20,7 +20,7 @@ export default function IndexRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    if (user) { void fetchProjects(); }
+    if (user?.handle) { void fetchProjects(user.handle); }
   }, [fetchProjects, user]);
 
   useEffect(() => {

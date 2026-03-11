@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
 import { apiBase } from "helpers";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 export default function SettingsKeysContent(): ReactElement {
   const sessionToken = useAuthStore((state) => state.sessionToken);

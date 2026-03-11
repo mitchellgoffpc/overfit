@@ -4,7 +4,7 @@ import { Link, Redirect, Route, Switch, useLocation } from "wouter";
 import Navbar from "components/Navbar";
 import SettingsKeysContent from "pages/settings/keys";
 import SettingsProfileContent from "pages/settings/profile";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 const tabs = [
   { path: "/settings/profile", label: "Profile", title: "Profile", description: "Update the name and bio shown across your workspace." },

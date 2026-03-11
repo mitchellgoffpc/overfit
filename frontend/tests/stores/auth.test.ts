@@ -2,7 +2,7 @@ import { API_VERSION, EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR } from "@underfi
 import type { User } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { checkEmailValid, checkHandleValid, useAuthStore } from "store/auth";
+import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
@@ -39,7 +39,7 @@ describe("auth store", () => {
     localStorage.setItem("underfitSessionToken", "token-123");
     vi.resetModules();
 
-    const { useAuthStore: freshStore } = await import("store/auth");
+    const { useAuthStore: freshStore } = await import("stores/auth");
 
     expect(freshStore.getState().sessionToken).toBe("token-123");
   });

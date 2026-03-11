@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 interface NavbarProps {
   readonly locationLabel: string;

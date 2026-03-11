@@ -2,7 +2,7 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 export default function LoginRoute(): ReactElement {
   const [, navigate] = useLocation();

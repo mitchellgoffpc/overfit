@@ -10,7 +10,7 @@ import ProjectDetailPage from "pages/projects/detail";
 import RunDetailPage from "pages/projects/run";
 import SettingsPage from "pages/settings/index";
 import SignupPage from "pages/signup";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 function AuthLayout({ children }: { readonly children: ReactNode }): ReactElement {
   const status = useAuthStore((state) => state.status);

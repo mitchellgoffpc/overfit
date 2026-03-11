@@ -55,7 +55,7 @@ export interface OrganizationMember {
 
 export interface Project {
   id: ID;
-  accountId: ID;
+  account: string;
   name: string;
   description: string | null;
   createdAt: Timestamp;

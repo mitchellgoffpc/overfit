@@ -2,7 +2,7 @@ import type { Scalar } from "@underfit/types";
 import { create } from "zustand";
 
 import { request } from "helpers";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 interface ScalarState {
   scalars: Scalar[];

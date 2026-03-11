@@ -2,9 +2,9 @@ import type { Project, Run, User } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiBase } from "helpers";
-import { useAuthStore } from "store/auth";
-import { buildProjectKey, useProjectStore } from "store/projects";
-import { buildRunKey, useRunStore } from "store/runs";
+import { useAuthStore } from "stores/auth";
+import { buildProjectKey, useProjectStore } from "stores/projects";
+import { buildRunKey, useRunStore } from "stores/runs";
 
 const user: User = {
   id: "user-1",
@@ -20,7 +20,7 @@ const user: User = {
 
 const project: Project = {
   id: "project-1",
-  accountId: "acct-1",
+  account: "ada",
   name: "demo",
   description: "Demo project",
   createdAt: "2025-01-02T00:00:00.000Z",
@@ -96,7 +96,7 @@ describe("run store", () => {
   it("stores backend errors when fetching a run fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Run not found" }, { ok: false, status: 404 }));
 
-    const result = await useRunStore.getState().fetchRunByHandle("ada", "demo", "run-a");
+    const result = await useRunStore.getState().fetchRun("ada", "demo", "run-a");
 
     expect(result).toBeNull();
     expect(useRunStore.getState().error).toBe("Run not found");
@@ -106,7 +106,7 @@ describe("run store", () => {
   it("stores runs by handle and name when fetching succeeds", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(run));
 
-    const result = await useRunStore.getState().fetchRunByHandle("ada", "demo", "run-a");
+    const result = await useRunStore.getState().fetchRun("ada", "demo", "run-a");
 
     expect(result).toEqual(run);
     expect(useRunStore.getState().runsByKey).toEqual({ [buildRunKey("ada", "demo", "run-a")]: run });

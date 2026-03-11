@@ -24,7 +24,7 @@ describe("projects routes", () => {
   it("upserts and fetches a project", async () => {
     await request(app).put(`${API_BASE}/projects/project-1`).send({ accountId: "user-1", name: "underfit", description: "Tracking runs" }).expect(200);
     const response = await request(app).get(`${API_BASE}/projects/project-1`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: "project-1", account: "ada", name: "underfit", description: "Tracking runs" });
   });
 
   it("rejects unknown projects", async () => {
@@ -54,5 +54,14 @@ describe("projects routes", () => {
 
     const response = await request(app).get(`${API_BASE}/projects/me`).set("x-session-token", "token-1").expect(200);
     expect((response.body as Project[]).map((project) => project.id)).toEqual(["project-2", "project-1"]);
+  });
+
+  it("lists projects by account handle", async () => {
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
+    await upsertProject(db, { id: "project-2", accountId: "user-2", name: "compiler", description: null });
+
+    const response = await request(app).get(`${API_BASE}/accounts/by-handle/ada/projects`).expect(200);
+    expect(response.body).toMatchObject([{ id: "project-1", account: "ada", name: "underfit" }]);
   });
 });

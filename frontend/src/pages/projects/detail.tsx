@@ -5,9 +5,9 @@ import { useParams } from "wouter";
 import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";
 import Sidebar from "components/Sidebar";
-import { useAuthStore } from "store/auth";
-import { buildProjectKey, useProjectStore } from "store/projects";
-import { useRunStore } from "store/runs";
+import { useAuthStore } from "stores/auth";
+import { buildProjectKey, useProjectStore } from "stores/projects";
+import { useRunStore } from "stores/runs";
 
 export default function ProjectDetailRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
@@ -16,15 +16,15 @@ export default function ProjectDetailRoute(): ReactElement {
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const fetchProjectByHandle = useProjectStore((state) => state.fetchProjectByHandle);
+  const fetchProject = useProjectStore((state) => state.fetchProject);
   const runsByKey = useRunStore((state) => state.runsByKey);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
   const fetchRuns = useRunStore((state) => state.fetchRuns);
 
   useEffect(() => {
-    if (user) { void fetchProjects(); }
-  }, [fetchProjects, user]);
+    if (handle) { void fetchProjects(handle); }
+  }, [fetchProjects, handle]);
 
   useEffect(() => {
     if (user && !isProjectsLoading) { void fetchRuns(user.id); }
@@ -35,8 +35,8 @@ export default function ProjectDetailRoute(): ReactElement {
   const projectKey = buildProjectKey(handle, projectName);
   const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
   useEffect(() => {
-    if (!project) { void fetchProjectByHandle(handle, projectName); }
-  }, [fetchProjectByHandle, handle, project, projectName]);
+    if (!project) { void fetchProject(handle, projectName); }
+  }, [fetchProject, handle, project, projectName]);
   const projectRuns = project ? runList.filter((run) => run.projectId === project.id) : [];
   const showProjectNotFound = !project && !isProjectsLoading;
 

@@ -4,7 +4,7 @@ import { Router, Route, Switch } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import LoginPage from "pages/login";
-import { useAuthStore } from "store/auth";
+import { useAuthStore } from "stores/auth";
 
 describe("IndexRoute", () => {
   beforeEach(() => {

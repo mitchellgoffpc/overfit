@@ -2,8 +2,8 @@ import { API_VERSION } from "@underfit/types";
 import type { Scalar } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useAuthStore } from "store/auth";
-import { useScalarStore } from "store/scalars";
+import { useAuthStore } from "stores/auth";
+import { useScalarStore } from "stores/scalars";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 

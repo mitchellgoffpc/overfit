@@ -8,6 +8,17 @@ import { nowIso } from "repositories/helpers";
 export const table = "projects";
 const runsTable = "runs";
 
+export type ProjectRow = Omit<Project, "account"> & { accountId: ID };
+
+const projectSelect = [
+  `${table}.id as id`,
+  `${accountsTable}.handle as account`,
+  `${table}.name as name`,
+  `${table}.description as description`,
+  `${table}.createdAt as createdAt`,
+  `${table}.updatedAt as updatedAt`
+] as const;
+
 export const createProjectsTable = async (db: Database): Promise<void> => {
   await db.schema
     .createTable(table)
@@ -23,10 +34,28 @@ export const createProjectsTable = async (db: Database): Promise<void> => {
 };
 
 export const listProjects = async (db: Database): Promise<Project[]> => {
-  return await db.selectFrom(table).selectAll().execute();
+  return await db.selectFrom(table).innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`).select(projectSelect).execute();
+};
+
+export const listProjectsByHandle = async (db: Database, handle: string): Promise<Project[]> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
+    .select(projectSelect)
+    .where(`${accountsTable}.handle`, "=", handle)
+    .execute();
 };
 
 export const getProject = async (db: Database, id: ID): Promise<Project | undefined> => {
+  return await db
+    .selectFrom(table)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
+    .select(projectSelect)
+    .where(`${table}.id`, "=", id)
+    .executeTakeFirst();
+};
+
+export const getProjectRow = async (db: Database, id: ID): Promise<ProjectRow | undefined> => {
   return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
 };
 
@@ -34,26 +63,29 @@ export const getProjectByHandleAndName = async (db: Database, handle: string, na
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
-    .selectAll(table)
+    .select(projectSelect)
     .where(`${accountsTable}.handle`, "=", handle)
     .where(`${table}.name`, "=", name)
     .executeTakeFirst();
 };
 
-export const upsertProject = async (db: Database, project: Omit<Project, "createdAt" | "updatedAt">): Promise<Project> => {
-  const payload: Project = { ...project, createdAt: nowIso(), updatedAt: nowIso() };
+export const upsertProject = async (db: Database, project: Omit<ProjectRow, "createdAt" | "updatedAt">): Promise<Project> => {
+  const payload: ProjectRow = { ...project, createdAt: nowIso(), updatedAt: nowIso() };
   const { id: _, createdAt: __, ...updates } = payload;
   await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getProject(db, project.id) ?? payload;
+  const saved = await getProject(db, project.id);
+  if (!saved) { throw new Error("Project not found after upsert"); }
+  return saved;
 };
 
 export const listProjectsByUserActivity = async (db: Database, userId: ID): Promise<Project[]> => {
   return await db
     .selectFrom(runsTable)
     .innerJoin(table, `${table}.id`, `${runsTable}.projectId`)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
     .select([
       `${table}.id as id`,
-      `${table}.accountId as accountId`,
+      `${accountsTable}.handle as account`,
       `${table}.name as name`,
       `${table}.description as description`,
       `${table}.createdAt as createdAt`,
@@ -62,7 +94,7 @@ export const listProjectsByUserActivity = async (db: Database, userId: ID): Prom
     .where(`${runsTable}.userId`, "=", userId)
     .groupBy([
       `${table}.id`,
-      `${table}.accountId`,
+      `${accountsTable}.handle`,
       `${table}.name`,
       `${table}.description`,
       `${table}.createdAt`,
