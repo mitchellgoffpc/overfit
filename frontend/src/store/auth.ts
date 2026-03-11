@@ -2,24 +2,15 @@ import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, testEmail, testHandle } from
 import type { User } from "@underfit/types";
 import { create } from "zustand";
 
-import { apiBase } from "helpers";
+import { request, post } from "helpers";
 
 type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
-type AvailabilityResult = { ok: true; exists: boolean } | { ok: false; error: string };
 interface AuthResponse { session: { token: string }; user: User };
 
-const checkAvailability = async (path: string, param: "email" | "handle", value: string): Promise<AvailabilityResult> => {
-  try {
-    const query = new URLSearchParams({ [param]: value });
-    const response = await fetch(`${apiBase}/${path}?${query.toString()}`);
-    const body = (await response.json()) as { exists?: boolean };
-    if (!response.ok) { return { ok: false, error: `Unable to verify ${param}` }; }
-    return { ok: true, exists: Boolean(body.exists) };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : `Unable to verify ${param}`;
-    return { ok: false, error: message || `Unable to verify ${param}` };
-  }
+const checkAvailability = async (path: string, param: "email" | "handle", value: string) => {
+  const query = new URLSearchParams({ [param]: value });
+  return await request<{ exists: boolean }>(`${path}?${query.toString()}`);
 };
 
 export const checkEmailValid = async (email: string): Promise<string | null> => {
@@ -28,7 +19,7 @@ export const checkEmailValid = async (email: string): Promise<string | null> => 
   const validationError = testEmail(trimmed);
   if (validationError) { return validationError; }
   const result = await checkAvailability("users/email-exists", "email", trimmed);
-  return result.ok ? (result.exists ? EMAIL_IN_USE_ERROR : null) : result.error;
+  return result.ok ? (result.body.exists ? EMAIL_IN_USE_ERROR : null) : result.error;
 };
 
 export const checkHandleValid = async (handle: string): Promise<string | null> => {
@@ -37,7 +28,7 @@ export const checkHandleValid = async (handle: string): Promise<string | null> =
   const validationError = testHandle(trimmed);
   if (validationError) { return validationError; }
   const result = await checkAvailability("accounts/handle-exists", "handle", trimmed);
-  return result.ok ? (result.exists ? USERNAME_IN_USE_ERROR : null) : result.error;
+  return result.ok ? (result.body.exists ? USERNAME_IN_USE_ERROR : null) : result.error;
 };
 
 interface AuthState {
@@ -58,77 +49,43 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadUser: async () => {
     const { sessionToken } = get();
-    if (!sessionToken) {
-      set({ user: null, status: "unauthenticated" });
-      return;
-    }
-
-    set({ status: "loading" });
-    try {
-      const response = await fetch(`${apiBase}/users/me`, { headers: { Authorization: `Bearer ${sessionToken}` } });
-      if (!response.ok) {
-        set({ user: null, status: "unauthenticated" });
-      } else {
-        const user = (await response.json()) as User;
-        set({ user, status: "authenticated" });
+    if (sessionToken) {
+      set({ status: "loading" });
+      const { ok, body } = await request<User>("users/me", { headers: { Authorization: `Bearer ${sessionToken}` } });
+      if (ok) {
+        set({ user: body, status: "authenticated" });
+        return;
       }
-    } catch {
-      set({ user: null, status: "unauthenticated" });
     }
+    set({ user: null, status: "unauthenticated" });
   },
 
   login: async (email: string, password: string) => {
-    try {
-      const response = await fetch(`${apiBase}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const body = (await response.json()) as AuthResponse | { error?: string };
-      if (!response.ok) {
-        return { ok: false, error: (body as { error?: string }).error ?? `Login failed (${String(response.status)})` };
-      } else {
-        const { user, session: { token } } = body as AuthResponse;
-        localStorage.setItem("underfitSessionToken", token);
-        set({ sessionToken: token, user, status: "authenticated" });
-        return { ok: true };
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Login failed";
-      return { ok: false, error: message || "Login failed" };
+    const { ok, error, body } = await post<AuthResponse>("auth/login", { email, password });
+    if (ok) {
+      localStorage.setItem("underfitSessionToken", body.session.token);
+      set({ sessionToken: body.session.token, user: body.user, status: "authenticated" });
+      return { ok: true };
+    } else {
+      return { ok: false, error };
     }
   },
 
   signup: async (email: string, handle: string, password: string) => {
-    try {
-      const response = await fetch(`${apiBase}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, handle, password })
-      });
-      const body = (await response.json()) as AuthResponse | { error?: string };
-      if (!response.ok) {
-        return { ok: false, error: (body as { error?: string }).error ?? `Sign up failed (${String(response.status)})` };
-      } else {
-        const { user, session: { token } } = body as AuthResponse;
-        localStorage.setItem("underfitSessionToken", token);
-        set({ sessionToken: token, user, status: "authenticated" });
-        return { ok: true };
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Sign up failed";
-      return { ok: false, error: message || "Sign up failed" };
+    const { ok, error, body } = await post<AuthResponse>("auth/register", { email, handle, password });
+    if (ok) {
+      localStorage.setItem("underfitSessionToken", body.session.token);
+      set({ sessionToken: body.session.token, user: body.user, status: "authenticated" });
+      return { ok: true };
+    } else {
+      return { ok: false, error };
     }
   },
 
   logout: async () => {
     const { sessionToken } = get();
     if (sessionToken) {
-      try {
-        await fetch(`${apiBase}/auth/logout`, { method: "POST", headers: { Authorization: `Bearer ${sessionToken}` } });
-      } catch {
-        void 0;
-      }
+      await request("auth/logout", { method: "POST", headers: { Authorization: `Bearer ${sessionToken}` } });
     }
     localStorage.removeItem("underfitSessionToken");
     set({ user: null, sessionToken: null, status: "idle" });
@@ -136,22 +93,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   updateUserProfile: async (name: string, bio: string) => {
     const { sessionToken } = get();
-    try {
-      const response = await fetch(`${apiBase}/users/me`, {
-        method: "PATCH",
-        headers: { Authorization: `Bearer ${sessionToken ?? ""}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ name, bio })
-      });
-      const body = (await response.json()) as User | { error?: string };
-      if (!response.ok) {
-        return { ok: false, error: (body as { error?: string }).error ?? `Save failed (${String(response.status)})` };
-      }
-      const user = body as User;
-      set({ user, status: "authenticated" });
+    const { ok, error, body } = await request<User>("users/me", {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${sessionToken ?? ""}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name, bio })
+    });
+    if (ok) {
+      set({ user: body, status: "authenticated" });
       return { ok: true };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Save failed";
-      return { ok: false, error: message || "Save failed" };
+    } else {
+      return { ok: false, error };
     }
   },
 }));

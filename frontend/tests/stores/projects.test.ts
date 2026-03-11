@@ -74,7 +74,7 @@ describe("project store", () => {
 
     await useProjectStore.getState().fetchProjects();
 
-    expect(useProjectStore.getState().error).toBe("Failed to fetch projects (500)");
+    expect(useProjectStore.getState().error).toBe("Request failed with status 500");
     expect(useProjectStore.getState().isLoading).toBe(false);
   });
 
@@ -84,14 +84,6 @@ describe("project store", () => {
     await useProjectStore.getState().fetchProjects();
 
     expect(useProjectStore.getState().error).toBe("network error");
-    expect(useProjectStore.getState().isLoading).toBe(false);
-  });
-
-  it("rejects project lookups without required params", async () => {
-    const result = await useProjectStore.getState().fetchProjectByHandle("", "");
-
-    expect(result).toBeNull();
-    expect(useProjectStore.getState().error).toBe("Missing project lookup params");
     expect(useProjectStore.getState().isLoading).toBe(false);
   });
 

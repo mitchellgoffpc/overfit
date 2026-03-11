@@ -61,14 +61,6 @@ describe("run store", () => {
     expect(buildRunKey("ada", "demo", "run-a")).toBe("ada/demo/run-a");
   });
 
-  it("rejects run fetches without a user id", async () => {
-    await useRunStore.getState().fetchRuns("");
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(useRunStore.getState().error).toBe("Missing user id");
-    expect(useRunStore.getState().isLoading).toBe(false);
-  });
-
   it("stores runs keyed by handle and project name when fetching succeeds", async () => {
     useAuthStore.setState({ user, sessionToken: "token-123" });
     useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "demo")]: project } });
@@ -88,7 +80,7 @@ describe("run store", () => {
 
     await useRunStore.getState().fetchRuns("user-1");
 
-    expect(useRunStore.getState().error).toBe("Failed to fetch runs (500)");
+    expect(useRunStore.getState().error).toBe("Request failed with status 500");
     expect(useRunStore.getState().isLoading).toBe(false);
   });
 
@@ -98,14 +90,6 @@ describe("run store", () => {
     await useRunStore.getState().fetchRuns("user-1");
 
     expect(useRunStore.getState().error).toBe("network error");
-    expect(useRunStore.getState().isLoading).toBe(false);
-  });
-
-  it("rejects run lookups without required params", async () => {
-    const result = await useRunStore.getState().fetchRunByHandle("", "", "");
-
-    expect(result).toBeNull();
-    expect(useRunStore.getState().error).toBe("Missing run lookup params");
     expect(useRunStore.getState().isLoading).toBe(false);
   });
 

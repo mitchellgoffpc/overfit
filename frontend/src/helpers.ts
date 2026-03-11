@@ -1,7 +1,30 @@
 import { API_VERSION } from "@underfit/types";
 import type { Project, Run } from "@underfit/types";
 
+type APIResponse<T> = { ok: true; body: T } | { ok: false; error: string };
+
 export const apiBase = `http://localhost:4000/api/${API_VERSION}`;
+
+export const request = async <T>(path: string, init?: RequestInit): Promise<APIResponse<T>> => {
+  const url = path.startsWith("/") ? `${apiBase}${path}` : `${apiBase}/${path}`;
+  try {
+    const response = init ? await fetch(url, init) : await fetch(url); // This is just to make testing easier
+    const payload = await response.json().catch(() => null) as T | {error: string} | null;
+
+    if (!response.ok) {
+      return { ok: false, error: payload && "error" in payload ? payload.error : `Request failed with status ${String(response.status)}` };
+    } else if (payload) {
+      return { ok: true, body: payload };
+    } else {
+      return { ok: false, error: "Invalid response" };
+    }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Request failed" };
+  }
+};
+
+export const post = async <T>(path: string, payload: Record<string, unknown>): Promise<APIResponse<T>> =>
+  await request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 
 export const formatDate = (timestamp: string, options?: Intl.DateTimeFormatOptions): string => {
   const date = new Date(timestamp);

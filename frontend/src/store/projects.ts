@@ -1,16 +1,10 @@
 import type { Project } from "@underfit/types";
 import { create } from "zustand";
 
-import { apiBase } from "helpers";
+import { request } from "helpers";
 import { useAuthStore } from "store/auth";
 
 export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
-const getErrorMessage = (body: unknown): string | null => {
-  if (!body || typeof body !== "object") { return null; }
-  if (!("error" in body)) { return null; }
-  const errorValue = body.error;
-  return typeof errorValue === "string" ? errorValue : null;
-};
 
 interface ProjectState {
   projectsByKey: Record<string, Project>;
@@ -24,6 +18,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   projectsByKey: {},
   isLoading: false,
   error: null,
+
   fetchProjects: async () => {
     set({ isLoading: true, error: null });
     const sessionToken = useAuthStore.getState().sessionToken;
@@ -31,56 +26,35 @@ export const useProjectStore = create<ProjectState>((set) => ({
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
     const endpoint = sessionToken ? "projects/me" : "projects";
 
-    try {
-      const response = await fetch(`${apiBase}/${endpoint}`, { headers });
+    const { ok, body, error } = await request<Project[]>(endpoint, { headers });
+    if (!ok) {
+      set({ error, isLoading: false });
+      return;
+    }
 
-      if (!response.ok) {
-        set({ error: `Failed to fetch projects (${String(response.status)})`, isLoading: false });
-        return;
+    set((state) => {
+      const next = { ...state.projectsByKey };
+      if (handle) {
+        body.forEach((project) => {
+          next[buildProjectKey(handle, project.name)] = project;
+        });
       }
-
-      const projects = (await response.json()) as Project[];
-      set((state) => {
-        const next = { ...state.projectsByKey };
-        if (handle) {
-          projects.forEach((project) => {
-            next[buildProjectKey(handle, project.name)] = project;
-          });
-        }
-        return { projectsByKey: next, isLoading: false, error: null };
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to fetch projects";
-      set({ error: message, isLoading: false });
-    }
+      return { projectsByKey: next, isLoading: false, error: null };
+    });
   },
+
   fetchProjectByHandle: async (handle: string, projectName: string) => {
-    if (!handle || !projectName) {
-      set({ error: "Missing project lookup params", isLoading: false });
-      return null;
-    }
     set({ isLoading: true, error: null });
     const sessionToken = useAuthStore.getState().sessionToken;
     const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : undefined;
 
-    try {
-      const response = await fetch(`${apiBase}/accounts/by-handle/${handle}/projects/${projectName}`, { headers });
-      const body = await response.json().catch(() => null) as unknown;
-      if (!response.ok) {
-        set({ error: getErrorMessage(body) ?? `Failed to fetch project (${String(response.status)})`, isLoading: false });
-        return null;
-      }
-      const project = body as Project;
-      set((state) => ({
-        projectsByKey: { ...state.projectsByKey, [buildProjectKey(handle, projectName)]: project },
-        isLoading: false,
-        error: null
-      }));
-      return project;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to fetch project";
-      set({ error: message, isLoading: false });
+    const { ok, body, error } = await request<Project>(`accounts/by-handle/${handle}/projects/${projectName}`, { headers });
+    if (!ok) {
+      set({ error, isLoading: false });
       return null;
     }
+
+    set(({ projectsByKey }) => ({ error: null, isLoading: false, projectsByKey: { ...projectsByKey, [buildProjectKey(handle, projectName)]: body } }));
+    return body;
   }
 }));

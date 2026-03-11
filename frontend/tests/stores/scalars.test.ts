@@ -64,7 +64,7 @@ describe("scalar store", () => {
 
     await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
 
-    expect(useScalarStore.getState().error).toBe("Failed to fetch scalars (500)");
+    expect(useScalarStore.getState().error).toBe("Request failed with status 500");
     expect(useScalarStore.getState().isLoading).toBe(false);
   });
 

@@ -70,14 +70,6 @@ describe("auth store", () => {
     expect(useAuthStore.getState().user).toEqual(user);
   });
 
-  it("returns an error when login response does not include user data", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" } }));
-
-    const result = await useAuthStore.getState().login("ada@underfit.local", "password");
-
-    expect(result).toEqual({ ok: false, error: "Login failed" });
-  });
-
   it("returns an error when login fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Invalid credentials" }, { ok: false, status: 401 }));
 
@@ -116,7 +108,7 @@ describe("auth store", () => {
 
     const result = await checkHandleValid("ada");
 
-    expect(result).toBe("Unable to verify handle");
+    expect(result).toBe("Request failed with status 500");
   });
 
   it("returns a conflict error when handle is already in use", async () => {
