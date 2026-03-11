@@ -1,11 +1,13 @@
 import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, testEmail, testHandle } from "@underfit/types";
-import type { User } from "@underfit/types";
+import type { ApiKey, User } from "@underfit/types";
 import { create } from "zustand";
 
 import { request, post } from "helpers";
 
 type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
+type ApiKeysResult = { ok: true; body: ApiKey[] } | { ok: false; error: string };
+type CreateApiKeyResult = { ok: true; body: ApiKey } | { ok: false; error: string };
 interface AuthResponse { user: User };
 
 export const checkEmailValid = async (email: string): Promise<string | null> => {
@@ -25,6 +27,25 @@ export const checkHandleValid = async (handle: string): Promise<string | null> =
   if (validationError) { return validationError; }
   const result = await request<{ exists: boolean }>(`accounts/${encodeURIComponent(trimmed)}/exists`);
   return result.ok ? (result.body.exists ? USERNAME_IN_USE_ERROR : null) : result.error;
+};
+
+export const loadApiKeys = async (): Promise<ApiKeysResult> => {
+  const { ok, error, body } = await request<ApiKey[]>("me/api-keys");
+  return ok ? { ok: true, body } : { ok: false, error };
+};
+
+export const createApiKey = async (label: string): Promise<CreateApiKeyResult> => {
+  const { ok, error, body } = await request<ApiKey>("me/api-keys", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label })
+  });
+  return ok ? { ok: true, body } : { ok: false, error };
+};
+
+export const deleteApiKey = async (id: string): Promise<AuthResult> => {
+  const { ok, error } = await request<{ status: "ok" }>(`me/api-keys/${id}`, { method: "DELETE" });
+  return ok ? { ok: true } : { ok: false, error };
 };
 
 interface AuthState {

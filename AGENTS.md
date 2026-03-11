@@ -17,8 +17,11 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 
 ## Frontend structure
 
-- All API call logic in the frontend should live in the frontend/src/stores/, either as a function within the store, or as a top-level helper functions for things that don't need acceess to the store.
 - Minimize defensive bloat. Assume successful API responses include all the expected fields unless there is a clear reason not to.
+- API logic must live in `frontend/src/stores/`. Never call `fetch`/`request`/`post` directly from pages or components. Choose placement by behavior:
+  - If a function reads/writes Zustand state (`set`, `get`, store fields), implement it as a store method.
+  - If a function only performs HTTP requests and returns data/errors (no `set`/`get`/store field access), implement it as a top-level exported helper in the same store file.
+  - When unsure, default to a top-level helper and only promote to a store method when state mutation is needed.
 
 ## Backend structure
 

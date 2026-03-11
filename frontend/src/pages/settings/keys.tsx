@@ -2,8 +2,7 @@ import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
-import { request } from "helpers";
-import { useAuthStore } from "stores/auth";
+import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
 
 export default function SettingsKeysContent(): ReactElement {
   const status = useAuthStore((state) => state.status);
@@ -17,50 +16,34 @@ export default function SettingsKeysContent(): ReactElement {
 
   useEffect(() => {
     if (apiKeysLoaded || status !== "authenticated") { return; }
-    const loadApiKeys = async () => {
+    const loadKeys = async () => {
       setIsApiKeysLoading(true);
       setApiKeysError(null);
-      try {
-        const result = await request<ApiKey[]>("me/api-keys");
-        if (!result.ok) {
-          setApiKeysError(result.error);
-          setIsApiKeysLoading(false);
-          return;
-        }
+      const result = await loadApiKeys();
+      if (result.ok) {
         setApiKeys(result.body);
         setApiKeysLoaded(true);
         setIsApiKeysLoading(false);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to load API keys";
-        setApiKeysError(message);
+      } else {
+        setApiKeysError(result.error);
         setIsApiKeysLoading(false);
       }
     };
 
-    void loadApiKeys();
+    void loadKeys();
   }, [apiKeysLoaded, status]);
 
   const handleCreateKey = async () => {
     if (status !== "authenticated") { return; }
     setIsCreatingKey(true);
     setApiKeysError(null);
-    try {
-      const result = await request<ApiKey>("me/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: newKeyLabel })
-      });
-      if (!result.ok) {
-        setApiKeysError(result.error);
-        setIsCreatingKey(false);
-        return;
-      }
+    const result = await createApiKey(newKeyLabel);
+    if (result.ok) {
       setApiKeys((current) => [result.body, ...current]);
       setNewKeyLabel("");
       setIsCreatingKey(false);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to create API key";
-      setApiKeysError(message);
+    } else {
+      setApiKeysError(result.error);
       setIsCreatingKey(false);
     }
   };
@@ -69,18 +52,12 @@ export default function SettingsKeysContent(): ReactElement {
     if (status !== "authenticated") { return; }
     setIsDeletingKey(id);
     setApiKeysError(null);
-    try {
-      const result = await request<{ status: "ok" }>(`me/api-keys/${id}`, { method: "DELETE" });
-      if (!result.ok) {
-        setApiKeysError(result.error);
-        setIsDeletingKey(null);
-        return;
-      }
+    const result = await deleteApiKey(id);
+    if (result.ok) {
       setApiKeys((current) => current.filter((key) => key.id !== id));
       setIsDeletingKey(null);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete API key";
-      setApiKeysError(message);
+    } else {
+      setApiKeysError(result.error);
       setIsDeletingKey(null);
     }
   };
