@@ -2,7 +2,7 @@ import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, testEmail, testHandle } from
 import type { ApiKey, User } from "@underfit/types";
 import { create } from "zustand";
 
-import { request, post } from "helpers";
+import { request, send } from "helpers";
 
 type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
@@ -35,11 +35,7 @@ export const loadApiKeys = async (): Promise<ApiKeysResult> => {
 };
 
 export const createApiKey = async (label: string): Promise<CreateApiKeyResult> => {
-  const { ok, error, body } = await request<ApiKey>("me/api-keys", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ label })
-  });
+  const { ok, error, body } = await send<ApiKey>("me/api-keys", "POST", { label });
   return ok ? { ok: true, body } : { ok: false, error };
 };
 
@@ -73,7 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email: string, password: string) => {
-    const { ok, error, body } = await post<AuthResponse>("auth/login", { email, password });
+    const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
     if (ok) {
       set({ user: body.user, status: "authenticated" });
       return { ok: true };
@@ -83,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signup: async (email: string, handle: string, password: string) => {
-    const { ok, error, body } = await post<AuthResponse>("auth/register", { email, handle, password });
+    const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
     if (ok) {
       set({ user: body.user, status: "authenticated" });
       return { ok: true };
@@ -98,11 +94,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   updateUserProfile: async (name: string, bio: string) => {
-    const { ok, error, body } = await request<User>("me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, bio })
-    });
+    const { ok, error, body } = await send<User>("me", "PATCH", { name, bio });
     if (ok) {
       set({ user: body, status: "authenticated" });
       return { ok: true };

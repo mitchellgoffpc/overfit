@@ -25,8 +25,10 @@ export const request = async <T>(path: string, init?: RequestInit): Promise<APIR
   }
 };
 
-export const post = async <T>(path: string, payload: Record<string, unknown>): Promise<APIResponse<T>> =>
-  await request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+type SendMethod = "POST" | "PATCH" | "PUT";
+
+export const send = async <T>(path: string, method: SendMethod, payload: Record<string, unknown>): Promise<APIResponse<T>> =>
+  await request(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 
 export const formatDate = (timestamp: string, options?: Intl.DateTimeFormatOptions): string => {
   const date = new Date(timestamp);

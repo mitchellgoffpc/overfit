@@ -73,14 +73,7 @@ export const listProjectsByUserActivity = async (db: Database, userId: ID): Prom
     .selectFrom(runsTable)
     .innerJoin(table, `${table}.id`, `${runsTable}.projectId`)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
-    .select([
-      `${table}.id as id`,
-      `${accountsTable}.handle as owner`,
-      `${table}.name as name`,
-      `${table}.description as description`,
-      `${table}.createdAt as createdAt`,
-      `${table}.updatedAt as updatedAt`
-    ])
+    .select(projectSelect)
     .where(`${runsTable}.userId`, "=", userId)
     .groupBy([
       `${table}.id`,

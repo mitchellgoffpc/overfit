@@ -1,4 +1,4 @@
-import type { ID, Organization } from "@underfit/types";
+import type { Organization } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
@@ -16,22 +16,6 @@ export const createOrganizationsTable = async (db: Database): Promise<void> => {
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
     .execute();
-};
-
-const getOrganizationById = async (db: Database, id: ID): Promise<Organization | undefined> => {
-  return await db
-    .selectFrom(table)
-    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select([
-      `${table}.id as id`,
-      `${accountsTable}.handle as handle`,
-      `${accountsTable}.displayName as displayName`,
-      `${accountsTable}.type as type`,
-      `${table}.createdAt as createdAt`,
-      `${table}.updatedAt as updatedAt`
-    ])
-    .where(`${table}.id`, "=", id)
-    .executeTakeFirst();
 };
 
 export const getOrganization = async (db: Database, handle: string): Promise<Organization | undefined> => {
@@ -61,5 +45,5 @@ export const upsertOrganization = async (db: Database, organization: Omit<Organi
 
   const { id: _id, createdAt: __, ...updates } = organizationRow;
   await db.insertInto(table).values(organizationRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getOrganizationById(db, organization.id) ?? payload;
+  return await getOrganization(db, handle) ?? payload;
 };

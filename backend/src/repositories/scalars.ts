@@ -2,6 +2,7 @@ import type { Scalar } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
+import { decodeJson } from "repositories/helpers";
 import { table as projectsTable } from "repositories/projects";
 import { table as runsTable } from "repositories/runs";
 
@@ -33,7 +34,7 @@ export const getScalars = async (db: Database, handle: string, projectName: stri
     .where(`${runsTable}.name`, "=", runName)
     .orderBy(`${table}.step`, "asc")
     .execute();
-  return rows.map((row) => ({ ...row, values: JSON.parse(row.values) as Record<string, number> }));
+  return rows.map((row) => ({ ...row, values: decodeJson(row.values) }));
 };
 
 export const insertScalar = async (db: Database, scalar: Scalar): Promise<Scalar> => {

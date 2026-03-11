@@ -9,11 +9,11 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 - Keep code clean and concise. Do not add comments unless the logic is non-obvious.
 - Avoid splitting statements across multiple lines without a readability benefit. If it fits under 160 characters, keep it on one line.
 - Prefer minimal, clear abstractions over clever ones.
-- Red diffs are better than green diffs.
 - When practical, prefer `if/else if/else` blocks to multiple `if` blocks with early returns.
 - Avoid short docstrings. Use docstrings only when detailed multi-line documentation is required.
 - Tests are located in a top-level `tests` folder next to the `src` folder in each subproject.
 - Optimize for code that is immediately understandable, even if it does less defensive checking.
+- If a variable or function is only used once, inline it.
 
 ## Frontend structure
 

@@ -20,36 +20,22 @@ export const createAccountsTable = async (db: Database): Promise<void> => {
 };
 
 const hydrateAccount = async (db: Database, account: { id: ID; type: AccountType }): Promise<User | Organization | undefined> => {
-  if (account.type === "USER") {
-    return await db
-      .selectFrom(usersTable)
-      .innerJoin(table, `${table}.id`, `${usersTable}.id`)
-      .select([
-        `${usersTable}.id as id`,
-        `${usersTable}.email as email`,
-        `${table}.handle as handle`,
-        `${table}.displayName as displayName`,
-        `${table}.type as type`,
-        `${usersTable}.createdAt as createdAt`,
-        `${usersTable}.updatedAt as updatedAt`
-      ])
-      .where(`${table}.id`, "=", account.id)
-      .executeTakeFirst();
-  } else {
-    return await db
-      .selectFrom(organizationsTable)
-      .innerJoin(table, `${table}.id`, `${organizationsTable}.id`)
-      .select([
-        `${organizationsTable}.id as id`,
-        `${table}.handle as handle`,
-        `${table}.displayName as displayName`,
-        `${table}.type as type`,
-        `${organizationsTable}.createdAt as createdAt`,
-        `${organizationsTable}.updatedAt as updatedAt`
-      ])
-      .where(`${table}.id`, "=", account.id)
-      .executeTakeFirst();
-  }
+  const sourceTable = account.type === "USER" ? usersTable : organizationsTable;
+  const columns = [
+    `${sourceTable}.id as id`,
+    `${table}.handle as handle`,
+    `${table}.displayName as displayName`,
+    `${table}.type as type`,
+    `${sourceTable}.createdAt as createdAt`,
+    `${sourceTable}.updatedAt as updatedAt`,
+    ...(account.type === "USER" ? [`${usersTable}.email as email`] : [])
+  ];
+  return await db
+    .selectFrom(sourceTable)
+    .innerJoin(table, `${table}.id`, `${sourceTable}.id`)
+    .select(columns)
+    .where(`${table}.id`, "=", account.id)
+    .executeTakeFirst();
 };
 
 export const getAccount = async (db: Database, handle: string): Promise<User | Organization | undefined> => {
