@@ -6,12 +6,25 @@ import * as toml from "@iarna/toml";
 import type { DatabaseConfig } from "db";
 import type { StorageConfig } from "storage";
 
+export interface LogBufferConfig {
+  maxSegmentBytes: number;
+  maxSegmentAgeMs: number;
+  flushIntervalMs: number;
+}
+
+export const DEFAULT_LOG_BUFFER_CONFIG: LogBufferConfig = {
+  maxSegmentBytes: 256 * 1024,
+  maxSegmentAgeMs: 30_000,
+  flushIntervalMs: 1_000
+};
+
 export interface AppConfig {
   server: {
     port: number;
   };
   db: DatabaseConfig;
   storage: StorageConfig;
+  logBuffer: LogBufferConfig;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -29,7 +42,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     file: {
       baseDir: "artifacts"
     }
-  }
+  },
+  logBuffer: DEFAULT_LOG_BUFFER_CONFIG
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -44,6 +58,7 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
   const serverConfig = isRecord(parsed.server) ? parsed.server : {};
   const dbConfig = isRecord(parsed.db) ? parsed.db : {};
   const storageConfig = isRecord(parsed.storage) ? parsed.storage : {};
+  const logBufferConfig = isRecord(parsed.logBuffer) ? parsed.logBuffer : {};
   const sqliteConfig = isRecord(dbConfig.sqlite) ? dbConfig.sqlite : {};
   const fileConfig = isRecord(storageConfig.file) ? storageConfig.file : {};
 
@@ -97,12 +112,49 @@ export const parseAppConfig = (rawConfig: string): AppConfig => {
     file: { baseDir: baseDirValue }
   };
 
+  const maxSegmentBytesValue = logBufferConfig.maxSegmentBytes ?? DEFAULT_CONFIG.logBuffer.maxSegmentBytes;
+  const maxSegmentAgeMsValue = logBufferConfig.maxSegmentAgeMs ?? DEFAULT_CONFIG.logBuffer.maxSegmentAgeMs;
+  const flushIntervalMsValue = logBufferConfig.flushIntervalMs ?? DEFAULT_CONFIG.logBuffer.flushIntervalMs;
+  const values = [
+    { key: "logBuffer.maxSegmentBytes", value: maxSegmentBytesValue },
+    { key: "logBuffer.maxSegmentAgeMs", value: maxSegmentAgeMsValue },
+    { key: "logBuffer.flushIntervalMs", value: flushIntervalMsValue }
+  ];
+
+  for (const { key, value } of values) {
+    if (typeof value !== "number" && typeof value !== "string") {
+      throw new Error(`Invalid ${key} type: ${typeof value}`);
+    }
+  }
+
+  const maxSegmentBytesRaw = maxSegmentBytesValue as string | number;
+  const maxSegmentAgeMsRaw = maxSegmentAgeMsValue as string | number;
+  const flushIntervalMsRaw = flushIntervalMsValue as string | number;
+  const maxSegmentBytes = Number(maxSegmentBytesValue);
+  const maxSegmentAgeMs = Number(maxSegmentAgeMsValue);
+  const flushIntervalMs = Number(flushIntervalMsValue);
+
+  if (!Number.isFinite(maxSegmentBytes) || maxSegmentBytes <= 0) {
+    throw new Error(`Invalid logBuffer.maxSegmentBytes value: ${String(maxSegmentBytesRaw)}`);
+  }
+  if (!Number.isFinite(maxSegmentAgeMs) || maxSegmentAgeMs <= 0) {
+    throw new Error(`Invalid logBuffer.maxSegmentAgeMs value: ${String(maxSegmentAgeMsRaw)}`);
+  }
+  if (!Number.isFinite(flushIntervalMs) || flushIntervalMs <= 0) {
+    throw new Error(`Invalid logBuffer.flushIntervalMs value: ${String(flushIntervalMsRaw)}`);
+  }
+
   return {
     server: {
       port
     },
     db,
-    storage
+    storage,
+    logBuffer: {
+      maxSegmentBytes,
+      maxSegmentAgeMs,
+      flushIntervalMs
+    }
   };
 };
 

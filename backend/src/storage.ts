@@ -17,6 +17,7 @@ export interface StorageConfig {
 export interface StorageBackend {
   writeArtifact: (runId: ID, artifactId: ID, content: Buffer) => Promise<string>;
   readArtifact: (runId: ID, artifactId: ID) => Promise<Buffer>;
+  writeLogSegment: (runId: ID, workerId: string, segmentIndex: number, content: Buffer) => Promise<string>;
 }
 
 class FileStorageBackend implements StorageBackend {
@@ -37,6 +38,14 @@ class FileStorageBackend implements StorageBackend {
   async readArtifact(runId: ID, artifactId: ID): Promise<Buffer> {
     const artifactPath = path.join(this.baseDir, runId, artifactId);
     return await fs.readFile(artifactPath);
+  }
+
+  async writeLogSegment(runId: ID, workerId: string, segmentIndex: number, content: Buffer): Promise<string> {
+    const logsDir = path.join(this.baseDir, runId, "logs", workerId);
+    const logPath = path.join(logsDir, `${String(segmentIndex)}.log`);
+    await fs.mkdir(logsDir, { recursive: true });
+    await fs.writeFile(logPath, content);
+    return logPath;
   }
 }
 

@@ -96,6 +96,19 @@ export interface Scalar {
   timestamp: Timestamp;
 }
 
+export interface LogSegment {
+  id: ID;
+  runId: ID;
+  workerId: string;
+  segmentIndex: number;
+  startAt: Timestamp;
+  endAt: Timestamp;
+  lineCount: number;
+  byteCount: number;
+  storageKey: string;
+  createdAt: Timestamp;
+}
+
 export interface ApiKey {
   id: ID;
   userId: ID;

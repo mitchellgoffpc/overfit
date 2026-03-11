@@ -9,6 +9,7 @@ import { buildRunKey, useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
 
 interface ChartSeries { readonly id: string; readonly points: { x: number; y: number }[]; readonly color: string; readonly lineWidth: number }
+type RunDetailTab = "charts" | "logs" | "artifacts";
 
 const xFormatter = (value: number) => value.toFixed(0);
 const yFormatter = (value: number) => value.toFixed(2);
@@ -39,6 +40,7 @@ export default function RunDetailRoute(): ReactElement {
   const fetchScalars = useScalarStore((state) => state.fetchScalars);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
+  const [activeTab, setActiveTab] = useState<RunDetailTab>("charts");
 
   useEffect(() => {
     if (!run) { void fetchRun(handle, projectName, runName); }
@@ -143,16 +145,38 @@ export default function RunDetailRoute(): ReactElement {
           <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{projectName}</p>
-              <h1 className="mt-1 font-display text-3xl">{runName}</h1>
-              <p className="mt-1 text-sm text-brand-textMuted">Live metrics and training history.</p>
+              <h1 className="mt-1 font-display text-2xl">{runName}</h1>
             </div>
           </header>
+
+          <div className="mb-5 border-b border-brand-border">
+            <nav className="flex items-center gap-7" aria-label="Run detail tabs">
+              {[
+                { id: "charts", label: "Charts" },
+                { id: "logs", label: "Logs" },
+                { id: "artifacts", label: "Artifacts" }
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => { setActiveTab(tab.id as RunDetailTab); }}
+                    className={`relative -mb-px border-b-2 px-0 py-2 text-[15px] font-medium transition-colors ${isActive ? "border-[#1a7b7d] text-brand-text" : "border-transparent text-brand-textMuted hover:text-brand-text"}`}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
           {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
           {run && runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
 
-          {sections.map(({ prefix, series }) =>
+          {activeTab === "charts" ? sections.map(({ prefix, series }) =>
             <section className="mb-6 last:mb-0" key={prefix}>
               <header className="mb-3 flex items-center justify-between gap-2">
                 <button
@@ -177,7 +201,7 @@ export default function RunDetailRoute(): ReactElement {
                 </div>
               )}
             </section>
-          )}
+          ) : null}
         </main>
       </div>
     </div>

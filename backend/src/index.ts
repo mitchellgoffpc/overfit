@@ -9,7 +9,7 @@ const overrides = configPath ? args.slice(1) : args;
 const config = loadConfig(configPath, overrides);
 const db = await createDatabase(config.db);
 const storage = createStorage(config.storage);
-const app = createApp(db, storage);
+const app = createApp(db, storage, config.logBuffer);
 
 app.listen(config.server.port, () => {
   console.log(`Backend listening on http://localhost:${String(config.server.port)}`);
