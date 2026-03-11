@@ -7,6 +7,7 @@ import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
 import { upsertRun } from "repositories/runs";
+import { insertScalar } from "repositories/scalars";
 import { upsertUser } from "repositories/users";
 
 const testTimestamp = "2025-01-01T00:00:00.000Z";
@@ -36,6 +37,19 @@ describe("scalar routes", () => {
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/scalars`).expect(200);
     expect(response.body as unknown[]).toHaveLength(2);
     expect(response.body).toMatchObject([{ step: 1 }, { step: 2 }]);
+  });
+
+  it("fetches scalars by account handle, project name, and run name", async () => {
+    await upsertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
+    await insertScalar(db, { id: "scalar-1", runId: "run-2", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
+    await insertScalar(db, { id: "scalar-2", runId: "run-2", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
+
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/baseline/scalars`).expect(200);
+    expect(response.body as unknown[]).toHaveLength(2);
+    expect(response.body).toMatchObject([{ step: 1 }, { step: 2 }]);
+
+    const missing = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/missing/scalars`).expect(404);
+    expect(missing.body).toMatchObject({ error: "Run not found" });
   });
 
   it("supports scalars without a step", async () => {

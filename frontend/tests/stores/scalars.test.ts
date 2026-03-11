@@ -2,7 +2,6 @@ import { API_VERSION } from "@underfit/types";
 import type { Scalar } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useAuthStore } from "stores/auth";
 import { useScalarStore } from "stores/scalars";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -27,15 +26,14 @@ describe("scalar store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useAuthStore.setState({ user: null, status: "idle" });
     useScalarStore.setState({ scalars: [], isLoading: false, error: null });
     vi.restoreAllMocks();
   });
 
-  it("fetches scalars with cookie credentials when authenticated", async () => {
+  it("fetches scalars with cookie credentials", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([scalar]));
 
-    await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
+    await useScalarStore.getState().fetchScalars("ada", "demo", "run-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${apiBase}/accounts/ada/projects/demo/runs/run-1/scalars`,
@@ -46,21 +44,10 @@ describe("scalar store", () => {
     expect(useScalarStore.getState().error).toBeNull();
   });
 
-  it("fetches scalars with cookie credentials when no session token is present", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse([scalar]));
-
-    await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${apiBase}/accounts/ada/projects/demo/runs/run-1/scalars`,
-      { credentials: "include" }
-    );
-  });
-
   it("stores the error when the request fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 500 }));
 
-    await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
+    await useScalarStore.getState().fetchScalars("ada", "demo", "run-1");
 
     expect(useScalarStore.getState().error).toBe("Request failed with status 500");
     expect(useScalarStore.getState().isLoading).toBe(false);
@@ -69,9 +56,20 @@ describe("scalar store", () => {
   it("stores the error when the request throws", async () => {
     fetchMock.mockRejectedValueOnce(new Error("network error"));
 
-    await useScalarStore.getState().fetchScalarsByHandle("ada", "demo", "run-1");
+    await useScalarStore.getState().fetchScalars("ada", "demo", "run-1");
 
     expect(useScalarStore.getState().error).toBe("network error");
     expect(useScalarStore.getState().isLoading).toBe(false);
+  });
+
+  it("replaces scalars and clears stale errors on success", async () => {
+    const existingScalar: Scalar = { ...scalar, id: "scalar-2", step: 0 };
+    useScalarStore.setState({ scalars: [existingScalar], isLoading: false, error: "stale error" });
+    fetchMock.mockResolvedValueOnce(createResponse([scalar]));
+
+    await useScalarStore.getState().fetchScalars("ada", "demo", "run-1");
+
+    expect(useScalarStore.getState().scalars).toEqual([scalar]);
+    expect(useScalarStore.getState().error).toBeNull();
   });
 });

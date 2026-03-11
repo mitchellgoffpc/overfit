@@ -79,7 +79,7 @@ const clearSessionCookie = (res: Response) => {
 const getSessionToken = (headers: Record<string, string | string[] | undefined>, cookies: Record<string, string>) => {
   const headerValue = Array.isArray(headers.authorization) ? headers.authorization[0] : headers.authorization;
   const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
-  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader) ?? cookies[SESSION_COOKIE_NAME]
+  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader) ?? cookies[SESSION_COOKIE_NAME];
   return raw?.trim();
 };
 
@@ -88,7 +88,7 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
   if (!token) {
     clearSessionCookie(res);
     res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
-    return
+    return;
   }
 
   const session = await getSession(db, token);

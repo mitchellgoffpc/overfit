@@ -93,6 +93,12 @@ describe("auth store", () => {
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/emails/exists?email=ada%40underfit.local`, { credentials: "include" });
   });
 
+  it("returns early when email is blank or invalid", async () => {
+    expect(await checkEmailValid("   ")).toBeNull();
+    expect(await checkEmailValid("not-an-email")).toBe("Invalid email address");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("returns an error when handle availability checks fail", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 500 }));
 
@@ -108,6 +114,14 @@ describe("auth store", () => {
 
     expect(result).toBe(USERNAME_IN_USE_ERROR);
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/ada/exists`, { credentials: "include" });
+  });
+
+  it("returns early when handle is blank or invalid", async () => {
+    expect(await checkHandleValid("   ")).toBeNull();
+    expect(await checkHandleValid("-ada")).toBe(
+      "Username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen."
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("sets unauthenticated when the user request fails", async () => {
@@ -130,6 +144,15 @@ describe("auth store", () => {
     expect(useAuthStore.getState().status).toBe("idle");
   });
 
+  it("skips logout request when not authenticated", async () => {
+    useAuthStore.setState({ user: null, status: "unauthenticated" });
+
+    await useAuthStore.getState().logout();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().status).toBe("idle");
+  });
+
   it("updates the user profile", async () => {
     const updated = { ...user, name: "Ada", bio: "Math pioneer" };
     useAuthStore.setState({ user, status: "authenticated" });
@@ -145,5 +168,16 @@ describe("auth store", () => {
       body: JSON.stringify({ name: "Ada", bio: "Math pioneer" })
     });
     expect(useAuthStore.getState().user).toEqual(updated);
+  });
+
+  it("returns an error when updating the profile fails", async () => {
+    useAuthStore.setState({ user, status: "authenticated" });
+    fetchMock.mockResolvedValueOnce(createResponse({ error: "Invalid profile" }, { ok: false, status: 400 }));
+
+    const result = await useAuthStore.getState().updateUserProfile("", "Math pioneer");
+
+    expect(result).toEqual({ ok: false, error: "Invalid profile" });
+    expect(useAuthStore.getState().user).toEqual(user);
+    expect(useAuthStore.getState().status).toBe("authenticated");
   });
 });

@@ -27,6 +27,12 @@ describe("projects routes", () => {
     expect(response.body).toMatchObject({ id: "project-1", account: "ada", name: "underfit", description: "Tracking runs" });
   });
 
+  it("fetches a project by account handle and name case-insensitively", async () => {
+    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit`).expect(200);
+    expect(response.body).toMatchObject({ id: "project-1", account: "ada", name: "underfit", description: "Tracking runs" });
+  });
+
   it("rejects unknown projects", async () => {
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/missing`).expect(404);
     expect(response.body).toMatchObject({ error: "Project not found" });

@@ -50,6 +50,16 @@ describe("runs routes", () => {
     expect(response.body).toMatchObject({ error: SLUG_HINT });
   });
 
+  it("fetches a run by account handle, project name, and run name", async () => {
+    await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
+
+    const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/baseline`).expect(200);
+    expect(response.body).toMatchObject({ id: "run-1", projectId: "project-1", userId: "user-1", name: "baseline", status: "running" });
+
+    const missing = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/missing`).expect(404);
+    expect(missing.body).toMatchObject({ error: "Run not found" });
+  });
+
   it("lists runs for a user handle by created date", async () => {
     await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
     await upsertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });

@@ -18,7 +18,7 @@ export default function RunDetailRoute(): ReactElement {
   const scalars = useScalarStore((state) => state.scalars);
   const scalarError = useScalarStore((state) => state.error);
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
-  const fetchScalarsByHandle = useScalarStore((state) => state.fetchScalarsByHandle);
+  const fetchScalars = useScalarStore((state) => state.fetchScalars);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
 
@@ -30,8 +30,8 @@ export default function RunDetailRoute(): ReactElement {
   }, [fetchRun, handle, projectName, run, runName]);
 
   useEffect(() => {
-    void fetchScalarsByHandle(handle, projectName, runName);
-  }, [fetchScalarsByHandle, handle, projectName, runName]);
+    void fetchScalars(handle, projectName, runName);
+  }, [fetchScalars, handle, projectName, runName]);
 
   const chartSeries = useMemo(() => {
     const keys = new Set<string>();

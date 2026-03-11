@@ -62,6 +62,7 @@ const additionalRules = {
   "no-trailing-spaces": "error",
   "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0 }],
   "object-curly-spacing": ["error", "always"],
+  "semi": ["error", "always"],
   "react/jsx-boolean-value": ["error", "never"],
   "react/jsx-no-constructed-context-values": "error",
   "react/jsx-no-useless-fragment": "error",
@@ -89,7 +90,7 @@ const overrideRules = {
       "destructuredArrayIgnorePattern": "^_"
     }
   ],
-}
+};
 
 const duplicateRules = Object.keys(additionalRules).filter((rule) => Object.prototype.hasOwnProperty.call(baseRules, rule));
 

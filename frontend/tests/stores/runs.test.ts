@@ -1,22 +1,9 @@
-import type { Project, Run, User } from "@underfit/types";
+import type { Project, Run } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiBase } from "helpers";
-import { useAuthStore } from "stores/auth";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { buildRunKey, useRunStore } from "stores/runs";
-
-const user: User = {
-  id: "user-1",
-  handle: "ada",
-  displayName: "Ada Lovelace",
-  type: "USER",
-  email: "ada@underfit.local",
-  name: "Ada Lovelace",
-  bio: null,
-  createdAt: "2025-01-01T00:00:00.000Z",
-  updatedAt: "2025-01-01T00:00:00.000Z"
-};
 
 const project: Project = {
   id: "project-1",
@@ -50,7 +37,6 @@ describe("run store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useAuthStore.setState({ user: null, status: "idle" });
     useProjectStore.setState({ projectsByKey: {}, isLoading: false, error: null });
     useRunStore.setState({ runsByKey: {}, isLoading: false, error: null });
     vi.restoreAllMocks();
@@ -61,7 +47,6 @@ describe("run store", () => {
   });
 
   it("stores runs keyed by handle and project name when fetching succeeds", async () => {
-    useAuthStore.setState({ user, status: "authenticated" });
     useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "demo")]: project } });
     const otherRun: Run = { ...run, id: "run-2", projectId: "project-2", name: "run-b" };
     fetchMock.mockResolvedValueOnce(createResponse([run, otherRun]));
@@ -110,6 +95,21 @@ describe("run store", () => {
     expect(result).toEqual(run);
     expect(useRunStore.getState().runsByKey).toEqual({ [buildRunKey("ada", "demo", "run-a")]: run });
     expect(useRunStore.getState().isLoading).toBe(false);
+    expect(useRunStore.getState().error).toBeNull();
+  });
+
+  it("merges fetched runs with existing entries", async () => {
+    const existingRun: Run = { ...run, id: "run-2", name: "baseline", projectId: "project-1" };
+    useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "demo")]: project } });
+    useRunStore.setState({ runsByKey: { [buildRunKey("ada", "demo", "baseline")]: existingRun }, isLoading: false, error: "stale error" });
+    fetchMock.mockResolvedValueOnce(createResponse([run]));
+
+    await useRunStore.getState().fetchRuns("ada");
+
+    expect(useRunStore.getState().runsByKey).toEqual({
+      [buildRunKey("ada", "demo", "baseline")]: existingRun,
+      [buildRunKey("ada", "demo", "run-a")]: run
+    });
     expect(useRunStore.getState().error).toBeNull();
   });
 });

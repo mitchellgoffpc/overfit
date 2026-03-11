@@ -1,21 +1,8 @@
-import type { Project, User } from "@underfit/types";
+import type { Project } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiBase } from "helpers";
-import { useAuthStore } from "stores/auth";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-
-const user: User = {
-  id: "user-1",
-  handle: "ada",
-  displayName: "Ada Lovelace",
-  type: "USER",
-  email: "ada@underfit.local",
-  name: "Ada Lovelace",
-  bio: null,
-  createdAt: "2025-01-01T00:00:00.000Z",
-  updatedAt: "2025-01-01T00:00:00.000Z"
-};
 
 const project: Project = {
   id: "project-1",
@@ -38,7 +25,6 @@ describe("project store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useAuthStore.setState({ user: null, status: "idle" });
     useProjectStore.setState({ projectsByKey: {}, isLoading: false, error: null });
     vi.restoreAllMocks();
   });
@@ -48,7 +34,6 @@ describe("project store", () => {
   });
 
   it("fetches projects for a handle with cookie credentials", async () => {
-    useAuthStore.setState({ user, status: "authenticated" });
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
     await useProjectStore.getState().fetchProjects("ada");
@@ -57,15 +42,6 @@ describe("project store", () => {
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
     expect(useProjectStore.getState().error).toBeNull();
-  });
-
-  it("fetches public projects with cookie credentials", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse([project]));
-
-    await useProjectStore.getState().fetchProjects("ada");
-
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/ada/projects`, { credentials: "include" });
-    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
   });
 
   it("stores the error when the project list request fails", async () => {
@@ -104,6 +80,20 @@ describe("project store", () => {
     expect(result).toEqual(project);
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
+    expect(useProjectStore.getState().error).toBeNull();
+  });
+
+  it("merges fetched project lists with existing entries", async () => {
+    const existing: Project = { ...project, id: "project-2", name: "baseline" };
+    useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "baseline")]: existing }, isLoading: false, error: "stale error" });
+    fetchMock.mockResolvedValueOnce(createResponse([project]));
+
+    await useProjectStore.getState().fetchProjects("ada");
+
+    expect(useProjectStore.getState().projectsByKey).toEqual({
+      [buildProjectKey("ada", "baseline")]: existing,
+      [buildProjectKey("ada", "demo")]: project
+    });
     expect(useProjectStore.getState().error).toBeNull();
   });
 });
