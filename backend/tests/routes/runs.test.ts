@@ -35,6 +35,7 @@ describe("runs routes", () => {
     expect(insertResponse.body).toMatchObject({ projectId: "project-1", user: "ada", status: "running", metadata: { lr: 0.001 } });
     expect(typeof inserted.name).toBe("string");
     expect(inserted.name).not.toHaveLength(0);
+    expect(inserted.name).toMatch(/^[a-z]+-[a-z]+$/);
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/${inserted.name}`).expect(200);
     expect(response.body).toMatchObject({ id: inserted.id, projectId: "project-1", user: "ada", status: "running", metadata: { lr: 0.001 } });

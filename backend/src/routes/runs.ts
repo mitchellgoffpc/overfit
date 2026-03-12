@@ -1,4 +1,6 @@
-import { randomBytes } from "crypto";
+import { randomBytes, randomInt } from "crypto";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import { API_BASE } from "@underfit/types";
 import type { Run } from "@underfit/types";
@@ -12,6 +14,15 @@ import type { RouteApp, RouteHandler } from "routes/helpers";
 
 type InsertRunPayload = Partial<Pick<Run, "status" | "metadata">>;
 type UpdateRunPayload = Partial<Pick<Run, "status" | "metadata">>;
+
+const parseWordList = (relativePath: string): string[] => fs.readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf-8").split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
+const adjectives = parseWordList("../../src/wordlists/adjectives.txt");
+const nouns = parseWordList("../../src/wordlists/nouns.txt");
+const randomWord = (words: string[]): string => {
+  if (!words.length) { throw new Error("Word list is empty"); }
+  return words[randomInt(words.length)] ?? words[0];
+};
+const randomRunName = (): string => `${randomWord(adjectives)}-${randomWord(nouns)}`;
 
 export function registerRunRoutes(app: RouteApp, db: Database): void {
   const listUserRunsHandler: RouteHandler<{ handle: string }, Run[]> = async (req, res) => {
@@ -56,15 +67,27 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     } else if (!status) {
       res.status(400).json({ error: `Run fields are required: status` });
     } else {
-      const run = await insertRun(db, {
-        id: randomBytes(16).toString("hex"),
-        projectId: project.id,
-        userId: req.user.id,
-        name: randomBytes(6).toString("hex"),
-        status,
-        metadata: req.body.metadata ?? null
-      });
-      res.json(run);
+      let runName = "";
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const candidate = randomRunName();
+        if (!await getRun(db, handle, projectName, candidate)) {
+          runName = candidate;
+          break;
+        }
+      }
+      if (!runName) {
+        res.status(500).json({ error: "Unable to allocate run name" });
+      } else {
+        const run = await insertRun(db, {
+          id: randomBytes(16).toString("hex"),
+          projectId: project.id,
+          userId: req.user.id,
+          name: runName,
+          status,
+          metadata: req.body.metadata ?? null
+        });
+        res.json(run);
+      }
     }
   };
 
