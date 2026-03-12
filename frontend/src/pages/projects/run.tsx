@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "wouter";
 
 import Navbar from "components/Navbar";
-import RunChartsTab from "components/run/RunChartsTab";
-import RunLogsTab from "components/run/RunLogsTab";
+import ChartsTab from "components/run/ChartsTab";
+import LogsTab from "components/run/LogsTab";
 import { buildRunKey, useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
 
@@ -78,8 +78,8 @@ export default function RunDetailRoute(): ReactElement {
           {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
 
           <div className={activeTab === "logs" ? "min-h-0 flex-1" : ""}>
-            {activeTab === "charts" ? <RunChartsTab scalars={scalars} runName={runName} isLoading={isScalarsLoading} /> : null}
-            {activeTab === "logs" ? <RunLogsTab handle={handle} projectName={projectName} runName={runName} /> : null}
+            {activeTab === "charts" ? <ChartsTab scalars={scalars} runName={runName} isLoading={isScalarsLoading} /> : null}
+            {activeTab === "logs" ? <LogsTab handle={handle} projectName={projectName} runName={runName} /> : null}
             {activeTab === "artifacts" ? <section className="rounded-[16px] border border-brand-border bg-brand-surface p-4 text-[13px] text-brand-textMuted shadow-soft">Artifacts coming soon.</section> : null}
           </div>
         </main>

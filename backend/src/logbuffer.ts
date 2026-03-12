@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 
-import type { ID } from "@underfit/types";
+import type { ID, LogEntry } from "@underfit/types";
 
 import type { LogBufferConfig } from "config";
 import type { Database } from "db";
@@ -24,15 +24,6 @@ export interface LogChunk {
   workerId: string;
   timestamp: string;
   content: string;
-}
-
-export interface LogReadEntry {
-  startLine: number;
-  endLine: number;
-  content: string;
-  startAt: string;
-  endAt: string;
-  source: "buffer" | "segment";
 }
 
 const getKey = (runId: ID, workerId: string): string => `${runId}:${workerId}`;
@@ -138,7 +129,7 @@ export class LogBuffer {
     }));
   }
 
-  getBufferedEntries(runId: ID, workerId: string, cursor: number, limit: number): LogReadEntry[] {
+  getBufferedEntries(runId: ID, workerId: string, cursor: number, limit: number): LogEntry[] {
     if (limit < 1) {
       return [];
     }
@@ -156,7 +147,7 @@ export class LogBuffer {
 
     let nextStart = cursor;
     let remaining = limit;
-    const entries: LogReadEntry[] = [];
+    const entries: LogEntry[] = [];
     for (const state of states.sort((a, b) => a.startLine - b.startLine)) {
       if (state.endLine <= nextStart || remaining < 1) {
         continue;
@@ -169,7 +160,7 @@ export class LogBuffer {
         continue;
       }
 
-      entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: state.startAt, endAt: state.endAt, source: "buffer" });
+      entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: state.startAt, endAt: state.endAt });
       remaining -= entryEnd - entryStart;
       nextStart = entryEnd;
     }

@@ -109,6 +109,20 @@ export interface LogSegment {
   createdAt: Timestamp;
 }
 
+export interface LogEntry {
+  startLine: number;
+  endLine: number;
+  content: string;
+  startAt: Timestamp;
+  endAt: Timestamp;
+}
+
+export interface LogPage {
+  entries: LogEntry[];
+  nextCursor: number;
+  hasMore: boolean;
+}
+
 export interface ApiKey {
   id: ID;
   userId: ID;

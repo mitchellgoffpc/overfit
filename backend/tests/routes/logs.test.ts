@@ -59,8 +59,7 @@ describe("logs routes", () => {
       entries: [{
         startLine: 0,
         endLine: 2,
-        content: "hello\nworld",
-        source: "buffer"
+        content: "hello\nworld"
       }],
       nextCursor: 2,
       hasMore: true
@@ -71,8 +70,7 @@ describe("logs routes", () => {
       entries: [{
         startLine: 2,
         endLine: 3,
-        content: "next block",
-        source: "buffer"
+        content: "next block"
       }],
       nextCursor: 3,
       hasMore: false
@@ -92,8 +90,7 @@ describe("logs routes", () => {
       entries: [{
         startLine: 2,
         endLine: 4,
-        content: "c\nd",
-        source: "segment"
+        content: "c\nd"
       }],
       nextCursor: 4,
       hasMore: false
@@ -116,8 +113,8 @@ describe("logs routes", () => {
     const merged = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", cursor: "1", limit: "3" }).expect(200);
     expect(merged.body).toMatchObject({
       entries: [
-        { startLine: 1, endLine: 2, content: "line-1", source: "segment" },
-        { startLine: 2, endLine: 4, content: "line-2\nline-3", source: "buffer" }
+        { startLine: 1, endLine: 2, content: "line-1" },
+        { startLine: 2, endLine: 4, content: "line-2\nline-3" }
       ],
       nextCursor: 4,
       hasMore: false

@@ -1,7 +1,8 @@
 import { API_BASE } from "@underfit/types";
+import type { LogEntry, LogPage } from "@underfit/types";
 
 import type { Database } from "db";
-import type { LogBuffer, LogChunk, LogReadEntry } from "logbuffer";
+import type { LogBuffer, LogChunk } from "logbuffer";
 import { hasLogSegmentsAfterCursor, listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
 import type { RouteApp, RouteHandler } from "routes/helpers";
@@ -11,11 +12,6 @@ type InsertLogChunkPayload = Partial<Pick<LogChunk, "workerId" | "timestamp" | "
 type FlushLogBufferPayload = Partial<Pick<LogChunk, "workerId">>;
 interface InsertLogChunkResponse { status: "buffered" };
 interface FlushLogBufferResponse { status: "flushed" };
-interface ListLogEntriesResponse {
-  entries: LogReadEntry[];
-  nextCursor: number;
-  hasMore: boolean;
-}
 
 interface ListLogEntriesQuery {
   workerId?: string;
@@ -88,7 +84,7 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     }
   };
 
-  const listLogEntriesHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, ListLogEntriesResponse, unknown, ListLogEntriesQuery> = async (req, res) => {
+  const listLogEntriesHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, LogPage, unknown, ListLogEntriesQuery> = async (req, res) => {
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
     const runName = req.params.runName.trim().toLowerCase();
@@ -109,7 +105,7 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     } else if (req.query.limit && (limit === null || limit < 1)) {
       res.status(400).json({ error: "Log query param limit must be a positive integer" });
     } else {
-      const entries: LogReadEntry[] = [];
+      const entries: LogEntry[] = [];
       let nextCursor = cursor ?? 0;
       let remaining = pageLimit;
       let hasMore = false;
@@ -128,7 +124,7 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
         const entryEnd = Math.min(segment.endLine, entryStart + remaining);
         const content = await readLogSegmentLines(storage, segment.storageKey, entryStart - segment.startLine, entryEnd - segment.startLine);
         if (content.length > 0) {
-          entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: segment.startAt, endAt: segment.endAt, source: "segment" });
+          entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: segment.startAt, endAt: segment.endAt });
           remaining -= entryEnd - entryStart;
           nextCursor = entryEnd;
         }

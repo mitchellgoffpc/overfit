@@ -12,7 +12,7 @@ interface ChartSeries {
   readonly lineWidth: number;
 }
 
-interface RunChartsTabProps {
+interface ChartsTabProps {
   readonly scalars: Scalar[];
   readonly runName: string;
   readonly isLoading: boolean;
@@ -34,7 +34,7 @@ const getClosestPoint = (series: ChartSeries, targetX: number): { x: number; y: 
   return closest;
 };
 
-export default function RunChartsTab({ scalars, runName, isLoading }: RunChartsTabProps): ReactElement {
+export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProps): ReactElement {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
 
