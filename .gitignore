@@ -45,3 +45,6 @@ Thumbs.db
 
 # Claude
 .claude
+
+# Scripts
+scripts/generate_wordlists.py
