@@ -2,6 +2,8 @@
 set -euo pipefail
 
 base_url="${UNDERFIT_API_BASE:-http://localhost:4000/api/v1}"
+cookie_jar="$(mktemp -t underfit-seed-cookie.XXXXXX)"
+trap 'rm -f "$cookie_jar"' EXIT
 
 wait_for_server() {
   local timeout_ms=30000
@@ -25,7 +27,11 @@ raw_request() {
   local method="$1"
   local path="$2"
   local body="$3"
-  curl -sS -w "\n%{http_code}" -H "content-type: application/json" -X "$method" --data "$body" "$base_url$path"
+  if [[ -n "$body" ]]; then
+    curl -sS -w "\n%{http_code}" -H "content-type: application/json" -X "$method" -b "$cookie_jar" -c "$cookie_jar" --data "$body" "$base_url$path"
+  else
+    curl -sS -w "\n%{http_code}" -H "content-type: application/json" -X "$method" -b "$cookie_jar" -c "$cookie_jar" "$base_url$path"
+  fi
 }
 
 json_request() {
@@ -43,6 +49,81 @@ json_request() {
   echo "$payload"
 }
 
+post_log_chunk() {
+  local project_name="$1"
+  local run_name="$2"
+  local worker_id="$3"
+  local timestamp="$4"
+  local content="$5"
+  local payload
+  if [[ -n "$content" && "${content: -1}" != $'\n' ]]; then
+    content+=$'\n'
+  fi
+  payload="$(jq -cn --arg workerId "$worker_id" --arg timestamp "$timestamp" --arg content "$content" '{workerId:$workerId,timestamp:$timestamp,content:$content}')"
+  json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/logs" "$payload" >/dev/null
+}
+
+seed_logs_for_worker() {
+  local project_name="$1"
+  local run_name="$2"
+  local worker_id="$3"
+  local row timestamp content
+
+  while IFS= read -r row; do
+    timestamp="$(jq -r '.timestamp' <<<"$row")"
+    content="$(jq -r '.content' <<<"$row")"
+    post_log_chunk "$project_name" "$run_name" "$worker_id" "$timestamp" "$content"
+  done < <(node <<'NODE'
+const start = new Date("2025-01-10T12:00:00.000Z").getTime();
+const chunkCount = 14;
+const linesPerChunk = 8;
+
+for (let chunk = 0; chunk < chunkCount; chunk += 1) {
+  const chunkStart = start + chunk * 15_000;
+  const lines = [];
+  for (let index = 0; index < linesPerChunk; index += 1) {
+    const step = chunk * linesPerChunk + index;
+    const loss = Math.max(0.06, 2.1 * Math.exp(-step / 90) + Math.sin(step / 5) * 0.03).toFixed(4);
+    const lr = (0.0003 - step * 0.0000015).toFixed(6);
+    const now = new Date(chunkStart + index * 1_500).toISOString();
+    lines.push(`${now} step=${String(step)} loss=${loss} lr=${lr} tokens=${String(2048 + step * 16)}`);
+  }
+  process.stdout.write(`${JSON.stringify({ timestamp: new Date(chunkStart).toISOString(), content: `${lines.join("\n")}\n` })}\n`);
+}
+NODE
+)
+
+  json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/logs/flush" "{\"workerId\":\"$worker_id\"}" >/dev/null
+}
+
+ensure_run() {
+  local project_name="$1"
+  local desired_name="$2"
+  local status_value="$3"
+  local metadata_json="$4"
+  local get_response get_status created actual_name
+
+  get_response="$(raw_request "GET" "/accounts/$user_handle/projects/$project_name/runs/$desired_name" "")"
+  get_status="${get_response##*$'\n'}"
+  if [[ "$get_status" -eq 200 ]]; then
+    json_request "PUT" "/accounts/$user_handle/projects/$project_name/runs/$desired_name" "{\"status\":\"$status_value\",\"metadata\":$metadata_json}" >/dev/null
+    echo "$desired_name"
+    return 0
+  fi
+  if [[ "$get_status" -ne 404 ]]; then
+    echo "Seed request failed ($get_status): ${get_response%$'\n'*}" >&2
+    return 1
+  fi
+
+  created="$(json_request "POST" "/accounts/$user_handle/projects/$project_name/runs" "{\"status\":\"$status_value\",\"metadata\":$metadata_json}")"
+  actual_name="$(jq -r '.name' <<<"$created")"
+  if [[ -z "$actual_name" || "$actual_name" == "null" ]]; then
+    echo "Seed request failed: run creation returned empty name for $project_name" >&2
+    return 1
+  fi
+  echo "$actual_name"
+}
+
 wait_for_server
 
 auth_payload='{"email":"test@test.com","handle":"test","password":"test1234"}'
@@ -57,7 +138,6 @@ elif [[ "$auth_status" -lt 200 || "$auth_status" -ge 300 ]]; then
   exit 1
 fi
 
-user_id="$(jq -r '.user.id' <<<"$auth_body")"
 user_handle="$(jq -r '.user.handle' <<<"$auth_body")"
 
 organization_handle="acme-labs"
@@ -67,14 +147,12 @@ project_two_name="orbit"
 json_request "PUT" "/organizations/$organization_handle" '{"displayName":"Acme Labs"}' >/dev/null
 json_request "PUT" "/organizations/$organization_handle/members/$user_handle" '{"role":"ADMIN"}' >/dev/null
 
-project_one_response="$(json_request "PUT" "/accounts/$user_handle/projects/$project_one_name" '{"description":"Computer vision experiments for aerial imagery classification."}')"
-project_two_response="$(json_request "PUT" "/accounts/$user_handle/projects/$project_two_name" '{"description":"Language model evaluation runs for support ticket triage."}')"
-project_one_id="$(jq -r '.id' <<<"$project_one_response")"
-project_two_id="$(jq -r '.id' <<<"$project_two_response")"
+json_request "PUT" "/accounts/$user_handle/projects/$project_one_name" '{"description":"Computer vision experiments for aerial imagery classification."}' >/dev/null
+json_request "PUT" "/accounts/$user_handle/projects/$project_two_name" '{"description":"Language model evaluation runs for support ticket triage."}' >/dev/null
 
-json_request "PUT" "/runs/run_solaris_001" "{\"projectId\":\"$project_one_id\",\"user\":\"$user_handle\",\"name\":\"baseline-resnet\",\"status\":\"finished\",\"metadata\":{\"accuracy\":0.91,\"epochs\":40,\"dataset\":\"sat-imagery-v2\"}}" >/dev/null
-json_request "PUT" "/runs/run_orbit_001" "{\"projectId\":\"$project_two_id\",\"user\":\"$user_handle\",\"name\":\"distilbert-finetune\",\"status\":\"running\",\"metadata\":{\"f1\":0.84,\"dataset\":\"support-tickets\",\"batchSize\":32}}" >/dev/null
-json_request "PUT" "/runs/run_orbit_002" "{\"projectId\":\"$project_two_id\",\"user\":\"$user_handle\",\"name\":\"llama3-eval\",\"status\":\"failed\",\"metadata\":{\"reason\":\"oom\",\"maxTokens\":2048,\"samples\":1200}}" >/dev/null
+baseline_run_name="$(ensure_run "$project_one_name" "baseline-resnet" "finished" '{"accuracy":0.91,"epochs":40,"dataset":"sat-imagery-v2"}')"
+distilbert_run_name="$(ensure_run "$project_two_name" "distilbert-finetune" "running" '{"f1":0.84,"dataset":"support-tickets","batchSize":32}')"
+llama_eval_run_name="$(ensure_run "$project_two_name" "llama3-eval" "failed" '{"reason":"oom","maxTokens":2048,"samples":1200}')"
 
 scalar_rows="$(
   node <<'NODE'
@@ -94,12 +172,16 @@ for (let index = 0; index < 140; index += 1) {
 NODE
 )"
 
-for run_name in baseline-resnet distilbert-finetune llama3-eval; do
-  project_name="$project_two_name"
-  if [[ "$run_name" == "baseline-resnet" ]]; then
-    project_name="$project_one_name"
-  fi
+for run_target in "$project_one_name:$baseline_run_name" "$project_two_name:$distilbert_run_name" "$project_two_name:$llama_eval_run_name"; do
+  project_name="${run_target%%:*}"
+  run_name="${run_target#*:}"
   while IFS=$'\t' read -r scalar_suffix scalar_step scalar_train_loss scalar_train_acc scalar_val_loss scalar_val_acc scalar_timestamp; do
     json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/scalars" "{\"step\":$scalar_step,\"values\":{\"train/loss\":$scalar_train_loss,\"train/acc\":$scalar_train_acc,\"val/loss\":$scalar_val_loss,\"val/acc\":$scalar_val_acc},\"timestamp\":\"$scalar_timestamp\"}" >/dev/null
   done <<<"$scalar_rows"
 done
+
+seed_logs_for_worker "$project_one_name" "$baseline_run_name" "worker-0"
+seed_logs_for_worker "$project_one_name" "$baseline_run_name" "worker-1"
+seed_logs_for_worker "$project_two_name" "$distilbert_run_name" "worker-0"
+seed_logs_for_worker "$project_two_name" "$distilbert_run_name" "worker-1"
+seed_logs_for_worker "$project_two_name" "$llama_eval_run_name" "worker-0"

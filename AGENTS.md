@@ -35,3 +35,4 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 - Run the linter with `npm run lint`.
 - Use single-line commit messages in plain English.
 - Do not use conventional commit prefixes or add signatures (e.g. Co-Authored By)
+- Run `git add` and `git commit` sequentially (or in one chained command), not in parallel, to avoid `.git/index.lock` conflicts.
