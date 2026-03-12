@@ -100,10 +100,10 @@ export interface LogSegment {
   id: ID;
   runId: ID;
   workerId: string;
-  segmentIndex: number;
+  startLine: number;
+  endLine: number;
   startAt: Timestamp;
   endAt: Timestamp;
-  lineCount: number;
   byteCount: number;
   storageKey: string;
   createdAt: Timestamp;

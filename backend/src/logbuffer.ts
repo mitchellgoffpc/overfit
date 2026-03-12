@@ -10,6 +10,8 @@ import type { StorageBackend } from "storage";
 interface LogBufferState {
   runId: ID;
   workerId: string;
+  startLine: number;
+  endLine: number;
   startAt: string;
   endAt: string;
   chunks: string[];
@@ -24,10 +26,35 @@ export interface LogChunk {
   content: string;
 }
 
+export interface LogReadEntry {
+  startLine: number;
+  endLine: number;
+  content: string;
+  startAt: string;
+  endAt: string;
+  source: "buffer" | "segment";
+}
+
 const getKey = (runId: ID, workerId: string): string => `${runId}:${workerId}`;
+const splitLines = (content: string): string[] => {
+  if (content.length === 0) {
+    return [];
+  }
+  const lines = content.split("\n");
+  if (lines[lines.length - 1] === "") {
+    lines.pop();
+  }
+  return lines;
+};
+const countLines = (content: string): number => splitLines(content).length;
+const sliceContentByLineRange = (content: string, startLine: number, endLine: number): string => (
+  splitLines(content).slice(startLine, endLine).join("\n")
+);
 
 export class LogBuffer {
   private readonly buffers = new Map<string, LogBufferState>();
+  private readonly flushingBuffers = new Map<string, LogBufferState>();
+  private readonly nextLineByKey = new Map<string, number>();
   private readonly inFlightFlushes = new Map<string, Promise<void>>();
   private readonly config: LogBufferConfig;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
@@ -62,12 +89,23 @@ export class LogBuffer {
 
     const now = Date.now();
     const key = getKey(chunk.runId, chunk.workerId);
+    if (!this.nextLineByKey.has(key)) {
+      const latestSegment = await getLatestLogSegment(this.db, chunk.runId, chunk.workerId);
+      this.nextLineByKey.set(key, latestSegment?.endLine ?? 0);
+    }
+
+    const chunkLineCount = countLines(chunk.content);
     const existing = this.buffers.get(key);
 
     if (!existing) {
+      const startLine = this.nextLineByKey.get(key) ?? 0;
+      const endLine = startLine + chunkLineCount;
+      this.nextLineByKey.set(key, endLine);
       this.buffers.set(key, {
         runId: chunk.runId,
         workerId: chunk.workerId,
+        startLine,
+        endLine,
         startAt: chunk.timestamp,
         endAt: chunk.timestamp,
         chunks: [chunk.content],
@@ -75,8 +113,11 @@ export class LogBuffer {
         firstBufferedAt: now
       });
     } else {
+      const endLine = existing.startLine + countLines(existing.chunks.join("") + chunk.content);
+      this.nextLineByKey.set(key, endLine);
       existing.startAt = chunk.timestamp < existing.startAt ? chunk.timestamp : existing.startAt;
       existing.endAt = chunk.timestamp > existing.endAt ? chunk.timestamp : existing.endAt;
+      existing.endLine = endLine;
       existing.chunks.push(chunk.content);
       existing.byteCount += Buffer.byteLength(chunk.content, "utf8");
     }
@@ -92,9 +133,55 @@ export class LogBuffer {
   }
 
   async flushAll(): Promise<void> {
-    await Promise.all([...this.buffers.keys()].map(async (key) => {
+    await Promise.all([...this.buffers.keys(), ...this.flushingBuffers.keys()].map(async (key) => {
       await this.flushKey(key);
     }));
+  }
+
+  getBufferedEntries(runId: ID, workerId: string, cursor: number, limit: number): LogReadEntry[] {
+    if (limit < 1) {
+      return [];
+    }
+
+    const key = getKey(runId, workerId);
+    const states: LogBufferState[] = [];
+    const flushing = this.flushingBuffers.get(key);
+    const active = this.buffers.get(key);
+    if (flushing) {
+      states.push(flushing);
+    }
+    if (active) {
+      states.push(active);
+    }
+
+    let nextStart = cursor;
+    let remaining = limit;
+    const entries: LogReadEntry[] = [];
+    for (const state of states.sort((a, b) => a.startLine - b.startLine)) {
+      if (state.endLine <= nextStart || remaining < 1) {
+        continue;
+      }
+
+      const entryStart = Math.max(state.startLine, nextStart);
+      const entryEnd = Math.min(state.endLine, entryStart + remaining);
+      const content = sliceContentByLineRange(state.chunks.join(""), entryStart - state.startLine, entryEnd - state.startLine);
+      if (content.length === 0) {
+        continue;
+      }
+
+      entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: state.startAt, endAt: state.endAt, source: "buffer" });
+      remaining -= entryEnd - entryStart;
+      nextStart = entryEnd;
+    }
+
+    return entries;
+  }
+
+  hasBufferedLinesAfter(runId: ID, workerId: string, cursor: number): boolean {
+    const key = getKey(runId, workerId);
+    const flushing = this.flushingBuffers.get(key);
+    const active = this.buffers.get(key);
+    return (flushing?.endLine ?? -1) > cursor || (active?.endLine ?? -1) > cursor;
   }
 
   private async flushExpired(): Promise<void> {
@@ -118,10 +205,12 @@ export class LogBuffer {
     const state = this.buffers.get(key);
     if (state) {
       this.buffers.delete(key);
+      this.flushingBuffers.set(key, state);
       this.inFlightFlushes.set(key, this.writeLogSegment(state));
       try {
         await this.inFlightFlushes.get(key);
       } finally {
+        this.flushingBuffers.delete(key);
         this.inFlightFlushes.delete(key);
       }
     }
@@ -129,18 +218,15 @@ export class LogBuffer {
 
   private async writeLogSegment(state: LogBufferState): Promise<void> {
     const content = state.chunks.join("");
-    const lineCount = content.length > 0 ? content.split("\n").length : 0;
-    const latestSegment = await getLatestLogSegment(this.db, state.runId, state.workerId);
-    const segmentIndex = latestSegment ? latestSegment.segmentIndex + 1 : 0;
-    const storageKey = await this.storage.writeLogSegment(state.runId, state.workerId, segmentIndex, Buffer.from(content, "utf8"));
+    const storageKey = await this.storage.writeLogSegment(state.runId, state.workerId, state.startLine, Buffer.from(content, "utf8"));
     await insertLogSegment(this.db, {
       id: randomBytes(12).toString("hex"),
       runId: state.runId,
       workerId: state.workerId,
-      segmentIndex,
+      startLine: state.startLine,
+      endLine: state.endLine,
       startAt: state.startAt,
       endAt: state.endAt,
-      lineCount,
       byteCount: state.byteCount,
       storageKey
     });

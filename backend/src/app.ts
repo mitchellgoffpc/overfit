@@ -43,7 +43,7 @@ export function createApp(db: Database, storage: StorageBackend | null = null, l
   registerOrganizationRoutes(app, db);
   registerProjectRoutes(app, db);
   registerRunRoutes(app, db);
-  registerLogRoutes(app, db, logBuffer);
+  registerLogRoutes(app, db, logBuffer, storage);
   registerArtifactRoutes(app, db, storage);
   registerScalarRoutes(app, db);
 

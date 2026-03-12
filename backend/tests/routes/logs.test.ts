@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "app";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { listLogSegmentsForCursor } from "repositories/logs";
 import { upsertProject } from "repositories/projects";
 import { insertRun } from "repositories/runs";
 import { upsertUser } from "repositories/users";
@@ -35,16 +36,16 @@ describe("logs routes", () => {
     await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "run-1", status: "running", metadata: null });
   });
 
-  it("inserts and lists log segments", async () => {
+  it("reads buffered log deltas with cursor polling", async () => {
     const payloadA = {
       workerId: "worker-1",
       timestamp: "2025-01-01T00:00:00.000Z",
-      content: "hello\nworld"
+      content: "hello\nworld\n"
     };
     const payloadB = {
       workerId: "worker-1",
       timestamp: "2025-01-01T00:00:10.000Z",
-      content: "next block"
+      content: "next block\n"
     };
 
     const insertedA = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send(payloadA).expect(200);
@@ -53,28 +54,89 @@ describe("logs routes", () => {
     const insertedB = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send(payloadB).expect(200);
     expect(insertedB.body).toMatchObject({ status: "buffered" });
 
+    const firstPage = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", limit: "2" }).expect(200);
+    expect(firstPage.body).toMatchObject({
+      entries: [{
+        startLine: 0,
+        endLine: 2,
+        content: "hello\nworld",
+        source: "buffer"
+      }],
+      nextCursor: 2,
+      hasMore: true
+    });
+
+    const secondPage = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", cursor: "2" }).expect(200);
+    expect(secondPage.body).toMatchObject({
+      entries: [{
+        startLine: 2,
+        endLine: 3,
+        content: "next block",
+        source: "buffer"
+      }],
+      nextCursor: 3,
+      hasMore: false
+    });
+  });
+
+  it("reads persisted logs and supports cursor in the middle of a segment", async () => {
+    await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
+      workerId: "worker-1",
+      timestamp: "2025-01-01T00:00:00.000Z",
+      content: "a\nb\nc\nd"
+    }).expect(200);
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs/flush`).send({ workerId: "worker-1" }).expect(200);
 
-    const all = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1" }).expect(200);
-    const allSegments = all.body as { segmentIndex: number; lineCount: number; startAt: string; endAt: string }[];
-    expect(allSegments).toHaveLength(1);
-    expect(allSegments[0]).toMatchObject({ segmentIndex: 0, lineCount: 2, startAt: "2025-01-01T00:00:00.000Z", endAt: "2025-01-01T00:00:10.000Z" });
+    const middle = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", cursor: "2" }).expect(200);
+    expect(middle.body).toMatchObject({
+      entries: [{
+        startLine: 2,
+        endLine: 4,
+        content: "c\nd",
+        source: "segment"
+      }],
+      nextCursor: 4,
+      hasMore: false
+    });
+  });
 
-    const paged = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", start: "0", limit: "1" }).expect(200);
-    const pagedSegments = paged.body as { segmentIndex: number }[];
-    expect(pagedSegments).toHaveLength(1);
-    expect(pagedSegments[0]).toMatchObject({ segmentIndex: 0 });
+  it("merges persisted segments with buffered tail entries", async () => {
+    await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
+      workerId: "worker-1",
+      timestamp: "2025-01-01T00:00:00.000Z",
+      content: "line-0\nline-1"
+    }).expect(200);
+    await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs/flush`).send({ workerId: "worker-1" }).expect(200);
+    await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
+      workerId: "worker-1",
+      timestamp: "2025-01-01T00:00:01.000Z",
+      content: "line-2\nline-3"
+    }).expect(200);
+
+    const merged = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", cursor: "1", limit: "3" }).expect(200);
+    expect(merged.body).toMatchObject({
+      entries: [
+        { startLine: 1, endLine: 2, content: "line-1", source: "segment" },
+        { startLine: 2, endLine: 4, content: "line-2\nline-3", source: "buffer" }
+      ],
+      nextCursor: 4,
+      hasMore: false
+    });
+
+    const persisted = await listLogSegmentsForCursor(db, "run-1", "worker-1", { cursor: 0 });
+    expect(persisted).toHaveLength(1);
+    expect(persisted[0]).toMatchObject({ startLine: 0, endLine: 2 });
   });
 
   it("rejects missing worker and invalid query params", async () => {
     const missingWorker = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).expect(400);
-    expect(missingWorker.body).toMatchObject({ error: "Log segment query param workerId is required" });
+    expect(missingWorker.body).toMatchObject({ error: "Log query param workerId is required" });
 
-    const badStart = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", start: "-1" }).expect(400);
-    expect(badStart.body).toMatchObject({ error: "Log segment query param start must be a non-negative integer" });
+    const badCursor = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", cursor: "-1" }).expect(400);
+    expect(badCursor.body).toMatchObject({ error: "Log query param cursor must be a non-negative integer" });
 
     const badLimit = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", limit: "0" }).expect(400);
-    expect(badLimit.body).toMatchObject({ error: "Log segment query param limit must be a positive integer" });
+    expect(badLimit.body).toMatchObject({ error: "Log query param limit must be a positive integer" });
   });
 
   it("returns run not found for missing runs", async () => {
@@ -95,5 +157,11 @@ describe("logs routes", () => {
       .send({ workerId: "worker-1", timestamp: "2025-01-01T00:00:00.000Z", content: "hello" })
       .expect(404);
     expect(response.body).toMatchObject({ error: "Log uploads are disabled" });
+
+    const readResponse = await request(appWithoutStorage)
+      .get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`)
+      .query({ workerId: "worker-1" })
+      .expect(404);
+    expect(readResponse.body).toMatchObject({ error: "Log reads are disabled" });
   });
 });

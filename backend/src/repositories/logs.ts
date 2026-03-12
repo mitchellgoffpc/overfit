@@ -12,14 +12,14 @@ export const createLogSegmentsTable = async (db: Database): Promise<void> => {
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("runId", "text", (col) => col.references("runs.id").onDelete("cascade").onUpdate("cascade").notNull())
     .addColumn("workerId", "text", (col) => col.notNull())
-    .addColumn("segmentIndex", "integer", (col) => col.notNull())
+    .addColumn("startLine", "integer", (col) => col.notNull())
+    .addColumn("endLine", "integer", (col) => col.notNull())
     .addColumn("startAt", "text", (col) => col.notNull())
     .addColumn("endAt", "text", (col) => col.notNull())
-    .addColumn("lineCount", "integer", (col) => col.notNull())
     .addColumn("byteCount", "integer", (col) => col.notNull())
     .addColumn("storageKey", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())
-    .addUniqueConstraint("log_segments_run_worker_segment_index_unique", ["runId", "workerId", "segmentIndex"])
+    .addUniqueConstraint("log_segments_run_worker_start_line_unique", ["runId", "workerId", "startLine"])
     .execute();
 };
 
@@ -29,31 +29,41 @@ export const insertLogSegment = async (db: Database, segment: Omit<LogSegment, "
   return payload;
 };
 
-export const getLogSegment = async (db: Database, id: ID): Promise<LogSegment | undefined> => {
-  return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-};
-
 export const getLatestLogSegment = async (db: Database, runId: ID, workerId: string): Promise<LogSegment | undefined> => {
   return await db
     .selectFrom(table)
     .selectAll()
     .where("runId", "=", runId)
     .where("workerId", "=", workerId)
-    .orderBy("segmentIndex", "desc")
+    .orderBy("endLine", "desc")
     .executeTakeFirst();
 };
 
-export const listLogSegments = async (db: Database, runId: ID, workerId: string, options: { start?: number; limit?: number } = {}): Promise<LogSegment[]> => {
-  const limit = options.limit ?? 256;
-  let query = db.selectFrom(table).selectAll().where("runId", "=", runId).where("workerId", "=", workerId);
-  if (options.start !== undefined) {
-    query = query.where("segmentIndex", ">=", options.start);
-  }
-
-  return await query.orderBy("segmentIndex", "asc").limit(limit).execute();
+export const listLogSegmentsForCursor = async (
+  db: Database,
+  runId: ID,
+  workerId: string,
+  options: { cursor: number; limit?: number }): Promise<LogSegment[]> => {
+  const limit = options.limit ?? 1024;
+  return await db
+    .selectFrom(table)
+    .selectAll()
+    .where("runId", "=", runId)
+    .where("workerId", "=", workerId)
+    .where("endLine", ">", options.cursor)
+    .orderBy("startLine", "asc")
+    .limit(limit)
+    .execute();
 };
 
-export const listLogWorkers = async (db: Database, runId: ID): Promise<string[]> => {
-  const rows = await db.selectFrom(table).select("workerId").distinct().where("runId", "=", runId).orderBy("workerId", "asc").execute();
-  return rows.map((row) => row.workerId);
+export const hasLogSegmentsAfterCursor = async (db: Database, runId: ID, workerId: string, cursor: number): Promise<boolean> => {
+  const segment = await db
+    .selectFrom(table)
+    .select("id")
+    .where("runId", "=", runId)
+    .where("workerId", "=", workerId)
+    .where("endLine", ">", cursor)
+    .orderBy("startLine", "asc")
+    .executeTakeFirst();
+  return Boolean(segment);
 };
