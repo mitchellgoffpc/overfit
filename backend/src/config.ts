@@ -4,19 +4,8 @@ import path from "node:path";
 import * as toml from "@iarna/toml";
 
 import type { DatabaseConfig } from "db";
+import type { LogBufferConfig } from "logbuffer";
 import type { StorageConfig } from "storage";
-
-export interface LogBufferConfig {
-  maxSegmentBytes: number;
-  maxSegmentAgeMs: number;
-  flushIntervalMs: number;
-}
-
-export const DEFAULT_LOG_BUFFER_CONFIG: LogBufferConfig = {
-  maxSegmentBytes: 256 * 1024,
-  maxSegmentAgeMs: 30_000,
-  flushIntervalMs: 1_000
-};
 
 export interface AppConfig {
   server: {
@@ -40,10 +29,14 @@ export const DEFAULT_CONFIG: AppConfig = {
   storage: {
     type: "file",
     file: {
-      baseDir: "artifacts"
+      baseDir: "storage"
     }
   },
-  logBuffer: DEFAULT_LOG_BUFFER_CONFIG
+  logBuffer: {
+    maxSegmentBytes: 256 * 1024,
+    maxSegmentAgeMs: 30_000,
+    flushIntervalMs: 1_000
+  }
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);

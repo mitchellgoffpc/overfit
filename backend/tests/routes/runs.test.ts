@@ -5,6 +5,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "app";
+import { DEFAULT_CONFIG } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
@@ -23,7 +24,7 @@ describe("runs routes", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
-    app = createApp(db);
+    app = createApp(DEFAULT_CONFIG, db);
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertSession(db, { id: "token-1", userId: "user-1", expiresAt: "2099-01-01T00:00:00.000Z" });

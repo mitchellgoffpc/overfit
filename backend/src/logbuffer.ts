@@ -2,11 +2,16 @@ import { randomBytes } from "crypto";
 
 import type { ID, LogEntry } from "@underfit/types";
 
-import type { LogBufferConfig } from "config";
 import type { Database } from "db";
 import { getLatestLogSegment, insertLogSegment } from "repositories/logs";
 import { getLogSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";
+
+export interface LogBufferConfig {
+  maxSegmentBytes: number;
+  maxSegmentAgeMs: number;
+  flushIntervalMs: number;
+}
 
 interface LogBufferState {
   runId: ID;

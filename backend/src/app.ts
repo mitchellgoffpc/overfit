@@ -4,8 +4,7 @@ import cors from "cors";
 import express from "express";
 import type { Express, Request, Response } from "express";
 
-import { DEFAULT_LOG_BUFFER_CONFIG } from "config";
-import type { LogBufferConfig } from "config";
+import type { AppConfig } from "config";
 import type { Database } from "db";
 import { LogBuffer } from "logbuffer";
 import { registerAccountRoutes } from "routes/accounts";
@@ -17,12 +16,13 @@ import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
 import { registerScalarRoutes } from "routes/scalars";
 import { registerUserRoutes } from "routes/users";
-import type { StorageBackend } from "storage";
+import { createStorage } from "storage";
 
-export function createApp(db: Database, storage: StorageBackend | null = null, logBufferConfig: LogBufferConfig = DEFAULT_LOG_BUFFER_CONFIG): Express {
+export function createApp(config: AppConfig, db: Database): Express {
   const app = express();
-  const logBuffer = storage ? new LogBuffer(db, storage, logBufferConfig) : null;
-  logBuffer?.start();
+  const storage = createStorage(config.storage);
+  const logBuffer = new LogBuffer(db, storage, config.logBuffer);
+  logBuffer.start();
 
   app.use(cors({ origin: true, credentials: true }));
   app.use(cookieParser());

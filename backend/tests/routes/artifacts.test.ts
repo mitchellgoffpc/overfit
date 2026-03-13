@@ -7,12 +7,12 @@ import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "app";
+import { DEFAULT_CONFIG } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
 import { insertRun } from "repositories/runs";
 import { upsertUser } from "repositories/users";
-import { createStorage } from "storage";
 
 describe("artifacts routes", () => {
   let db: Database;
@@ -29,7 +29,7 @@ describe("artifacts routes", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
-    app = createApp(db, createStorage({ type: "file", file: { baseDir: storageBaseDir } }));
+    app = createApp({ ...DEFAULT_CONFIG, storage: { type: "file", file: { baseDir: storageBaseDir } } }, db);
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });

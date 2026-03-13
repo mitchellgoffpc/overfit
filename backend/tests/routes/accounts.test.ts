@@ -3,6 +3,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "app";
+import { DEFAULT_CONFIG } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertOrganization } from "repositories/organizations";
@@ -14,7 +15,7 @@ describe("accounts routes", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
-    app = createApp(db);
+    app = createApp(DEFAULT_CONFIG, db);
   });
 
   it("checks whether a handle exists", async () => {

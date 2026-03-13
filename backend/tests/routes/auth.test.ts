@@ -12,6 +12,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "app";
+import { DEFAULT_CONFIG } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import type { RouteApp } from "routes/helpers";
@@ -56,7 +57,7 @@ describe("auth routes", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
-    app = createApp(db);
+    app = createApp(DEFAULT_CONFIG, db);
   });
 
   it("registers, logs in, and returns current user", async () => {
