@@ -10,7 +10,7 @@ interface ProfileSettingsCardProps {
 }
 
 function ProfileSettingsCard({ user, updateUserProfile }: ProfileSettingsCardProps): ReactElement {
-  const [name, setName] = useState(() => user.name ?? user.displayName);
+  const [name, setName] = useState(() => user.name);
   const [bio, setBio] = useState(() => user.bio ?? "");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);

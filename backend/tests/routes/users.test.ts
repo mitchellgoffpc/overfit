@@ -28,14 +28,14 @@ describe("users routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse(), db);
-    await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertOrganization(db, { id: "org-1", handle: "core", name: "Core", type: "ORGANIZATION" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertOrganizationMember(db, { organizationId: "org-1", userId: "user-1", role: "ADMIN" });
   });
 
   it("lists user organizations", async () => {
     const response = await request(app).get(`${API_BASE}/users/ada/memberships`).expect(200);
-    expect(response.body).toMatchObject([{ id: "org-1", handle: "core", displayName: "Core", role: "ADMIN" }]);
+    expect(response.body).toMatchObject([{ id: "org-1", handle: "core", name: "Core", role: "ADMIN" }]);
   });
 
   it("rejects unknown users when listing memberships", async () => {

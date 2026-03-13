@@ -14,7 +14,7 @@ const tabs = [
 export default function SettingsPage(): ReactElement {
   const user = useAuthStore((state) => state.user);
   const [location] = useLocation();
-  const displayName = user?.name ?? user?.displayName ?? "workspace";
+  const name = user?.name ?? "workspace";
   const handle = user?.handle ?? "workspace";
   const activeTab = tabs.find((tab) => tab.path === location) ?? tabs[0];
 
@@ -26,7 +26,7 @@ export default function SettingsPage(): ReactElement {
         <aside className="flex flex-col gap-6 border-b border-brand-border bg-[#f0f6f7] px-5 py-6 lg:border-b-0 lg:border-r">
           <div className="grid gap-1">
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-textMuted">Settings</p>
-            <p className="text-sm font-semibold">{displayName}</p>
+            <p className="text-sm font-semibold">{name}</p>
             <p className="text-xs text-brand-textMuted">@{handle}</p>
           </div>
           <div className="grid gap-2">

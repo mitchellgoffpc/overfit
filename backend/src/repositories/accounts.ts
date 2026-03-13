@@ -13,7 +13,7 @@ export const createAccountsTable = async (db: Database): Promise<void> => {
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("handle", "text", (col) => col.notNull())
-    .addColumn("displayName", "text", (col) => col.notNull())
+    .addColumn("name", "text", (col) => col.notNull())
     .addColumn("type", "text", (col) => col.notNull().defaultTo("USER"))
     .addUniqueConstraint(handleUniqueIndex, ["handle"])
     .execute();
@@ -24,7 +24,7 @@ const hydrateAccount = async (db: Database, account: { id: ID; type: AccountType
   const columns = [
     `${sourceTable}.id as id`,
     `${table}.handle as handle`,
-    `${table}.displayName as displayName`,
+    `${table}.name as name`,
     `${table}.type as type`,
     `${sourceTable}.createdAt as createdAt`,
     `${sourceTable}.updatedAt as updatedAt`,

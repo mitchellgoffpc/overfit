@@ -19,8 +19,8 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
     );
   }
 
-  const displayName = user.name ?? user.displayName;
-  const initials = displayName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const name = user.name;
+  const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
 
   return (
@@ -33,7 +33,7 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
         </div>
         <div className="grid gap-2 text-center">
           <div>
-            <p className="text-lg font-semibold">{displayName}</p>
+            <p className="text-lg font-semibold">{name}</p>
             <p className="text-xs text-brand-textMuted">@{user.handle}</p>
           </div>
           <p className="text-[13px] text-brand-textMuted">{bio}</p>

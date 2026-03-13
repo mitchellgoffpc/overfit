@@ -19,7 +19,7 @@ describe("accounts routes", () => {
   });
 
   it("checks whether a handle exists", async () => {
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada lovelace", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/%20/exists`).expect(400);
     expect(missing.body).toMatchObject({ error: "Handle is required" });
@@ -32,14 +32,14 @@ describe("accounts routes", () => {
   });
 
   it("fetches an account by handle", async () => {
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertOrganization(db, { id: "org-1", handle: "core", name: "Core", type: "ORGANIZATION" });
 
     const userResponse = await request(app).get(`${API_BASE}/accounts/ada`).expect(200);
-    expect(userResponse.body).toMatchObject({ id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", type: "USER" });
+    expect(userResponse.body).toMatchObject({ id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", type: "USER" });
 
     const orgResponse = await request(app).get(`${API_BASE}/accounts/core`).expect(200);
-    expect(orgResponse.body).toMatchObject({ id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
+    expect(orgResponse.body).toMatchObject({ id: "org-1", handle: "core", name: "Core", type: "ORGANIZATION" });
 
     const missing = await request(app).get(`${API_BASE}/accounts/unknown`).expect(404);
     expect(missing.body).toMatchObject({ error: "Account not found" });

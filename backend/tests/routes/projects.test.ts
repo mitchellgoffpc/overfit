@@ -19,7 +19,7 @@ describe("projects routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse(), db);
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
   });
 
   it("fetches projects by account handle and project name", async () => {
@@ -58,7 +58,7 @@ describe("projects routes", () => {
   });
 
   it("lists most active projects for the current user", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertProject(db, { id: "project-2", accountId: "user-1", name: "telemetry", description: null });
     await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
@@ -72,7 +72,7 @@ describe("projects routes", () => {
   });
 
   it("lists projects by account handle", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertProject(db, { id: "project-2", accountId: "user-2", name: "compiler", description: null });
 

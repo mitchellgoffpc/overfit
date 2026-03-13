@@ -25,7 +25,7 @@ describe("runs routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse(), db);
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await upsertSession(db, { id: "token-1", userId: "user-1", expiresAt: "2099-01-01T00:00:00.000Z" });
   });
@@ -87,7 +87,7 @@ describe("runs routes", () => {
   });
 
   it("lists runs for a project", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null, type: "USER" });
     await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "a", status: "running", metadata: null });
     await delay(5);
     await insertRun(db, { id: "run-2", projectId: "project-1", userId: "user-2", name: "b", status: "finished", metadata: null });
@@ -102,7 +102,7 @@ describe("runs routes", () => {
   });
 
   it("lists runs for a user handle by created date", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", displayName: "Grace Hopper", name: "Grace Hopper", bio: null, type: "USER" });
+    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null, type: "USER" });
     await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "run-1", status: "running", metadata: null });
     await delay(5);
     await insertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "run-2", status: "finished", metadata: null });

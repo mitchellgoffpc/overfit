@@ -17,7 +17,6 @@ const EmailExistsQuerySchema = z.strictObject({
 });
 const UpdateProfilePayloadSchema = z.strictObject({
   name: z.string().trim().min(1).optional(),
-  displayName: z.string().trim().min(1).optional(),
   bio: z.string().trim().min(1).optional()
 });
 const ApiKeyPayloadSchema = z.strictObject({

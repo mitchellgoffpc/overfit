@@ -18,7 +18,7 @@ import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const UpsertOrganizationPayloadSchema = z.object({
-  displayName: z.string().optional()
+  name: z.string().optional()
 });
 const OrganizationMemberPayloadSchema = z.object({
   role: z.enum(organizationRoles).optional()
@@ -46,7 +46,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
   };
 
   const upsertOrganizationHandler: RouteHandler<{ handle: string }, Organization, UpsertOrganizationPayload> = async (req, res) => {
-    const { success, error, data: { displayName } = {} } = UpsertOrganizationPayloadSchema.safeParse(req.body);
+    const { success, error, data: { name } = {} } = UpsertOrganizationPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -57,7 +57,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     const organization = await upsertOrganization(db, {
       id: existing?.id ?? randomBytes(16).toString("hex"),
       handle,
-      displayName: displayName ?? existing?.displayName ?? handle,
+      name: name ?? existing?.name ?? handle,
       type: "ORGANIZATION"
     });
     res.json(organization);

@@ -127,7 +127,6 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
         id: randomBytes(16).toString("hex"),
         email,
         handle,
-        displayName: handle,
         name: handle,
         bio: null,
         type: "USER"

@@ -16,26 +16,26 @@ describe("organizations routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse(), db);
-    await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
+    await upsertOrganization(db, { id: "org-1", handle: "core", name: "Core", type: "ORGANIZATION" });
+    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
   });
 
   it("upserts an organization by handle", async () => {
-    const response = await request(app).put(`${API_BASE}/organizations/core2`).send({ displayName: "Core2" }).expect(200);
-    expect(response.body).toMatchObject({ handle: "core2", displayName: "Core2" });
+    const response = await request(app).put(`${API_BASE}/organizations/core2`).send({ name: "Core2" }).expect(200);
+    expect(response.body).toMatchObject({ handle: "core2", name: "Core2" });
   });
 
   it("upserts organizations by handle and preserves ids", async () => {
     const originalId = "org-1";
-    const updated = await request(app).put(`${API_BASE}/organizations/core`).send({ displayName: "Core Team" }).expect(200);
-    expect(updated.body).toMatchObject({ id: originalId, handle: "core", displayName: "Core Team" });
+    const updated = await request(app).put(`${API_BASE}/organizations/core`).send({ name: "Core Team" }).expect(200);
+    expect(updated.body).toMatchObject({ id: originalId, handle: "core", name: "Core Team" });
   });
 
   it("lists organization members", async () => {
     await request(app).put(`${API_BASE}/organizations/core/members/ada`).expect(200);
     const response = await request(app).get(`${API_BASE}/organizations/core/members`).expect(200);
     expect(response.body).toMatchObject([
-      { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", role: "MEMBER" }
+      { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", role: "MEMBER" }
     ]);
   });
 

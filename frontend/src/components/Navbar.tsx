@@ -15,7 +15,7 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const ownerLabel = user?.handle ?? "workspace";
-  const displayName = user?.name ?? user?.displayName ?? "";
+  const name = user?.name ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -101,11 +101,11 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
             }}
           >
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold">{displayName}</p>
+              <p className="text-sm font-semibold">{name}</p>
               <p className="mt-1 text-xs text-brand-textMuted">{user.email}</p>
             </div>
             <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
-              {displayName.slice(0, 2).toUpperCase()}
+              {name.slice(0, 2).toUpperCase()}
             </div>
           </button>
           {isMenuOpen ? (

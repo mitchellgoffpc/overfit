@@ -4,7 +4,7 @@ import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 
-export type OrganizationRow = Omit<Organization, "handle" | "displayName" | "type">;
+export type OrganizationRow = Omit<Organization, "handle" | "name" | "type">;
 
 export const table = "organizations";
 
@@ -25,7 +25,7 @@ export const getOrganization = async (db: Database, handle: string): Promise<Org
     .select([
       `${table}.id as id`,
       `${accountsTable}.handle as handle`,
-      `${accountsTable}.displayName as displayName`,
+      `${accountsTable}.name as name`,
       `${accountsTable}.type as type`,
       `${table}.createdAt as createdAt`,
       `${table}.updatedAt as updatedAt`
@@ -36,11 +36,11 @@ export const getOrganization = async (db: Database, handle: string): Promise<Org
 
 export const upsertOrganization = async (db: Database, organization: Omit<Organization, "createdAt" | "updatedAt">): Promise<Organization> => {
   const payload: Organization = { ...organization, createdAt: nowIso(), updatedAt: nowIso() };
-  const { type: _type, handle, displayName, ...organizationRow } = payload;
+  const { type: _type, handle, name, ...organizationRow } = payload;
   await db
     .insertInto(accountsTable)
-    .values({ id: organization.id, handle, displayName, type: "ORGANIZATION" })
-    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, displayName, type: "ORGANIZATION" }))
+    .values({ id: organization.id, handle, name, type: "ORGANIZATION" })
+    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, name, type: "ORGANIZATION" }))
     .execute();
 
   const { id: _id, createdAt: __, ...updates } = organizationRow;
