@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 
 import { API_BASE, organizationRoles } from "@underfit/types";
 import type { Organization, OrganizationMember, OrganizationRole, User } from "@underfit/types";
+import { z } from "zod";
 
 import type { Database } from "db";
 import {
@@ -13,20 +14,24 @@ import {
 } from "repositories/organization-members";
 import { getOrganization, upsertOrganization } from "repositories/organizations";
 import { getUserByHandle } from "repositories/users";
+import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
+
+const UpsertOrganizationPayloadSchema = z.object({
+  displayName: z.string().optional()
+});
+const OrganizationMemberPayloadSchema = z.object({
+  role: z.enum(organizationRoles).optional()
+});
 
 interface MemberRouteParams {
   handle: string;
   userHandle: string;
 }
 
-interface OrganizationMemberPayload {
-  role?: OrganizationRole;
-}
-
 type OrganizationMembersResponse = (User & { role: OrganizationRole })[];
-
-type UpsertOrganizationPayload = Partial<Omit<Organization, "id" | "createdAt" | "updatedAt">>;
+type UpsertOrganizationPayload = z.infer<typeof UpsertOrganizationPayloadSchema>;
+type OrganizationMemberPayload = z.infer<typeof OrganizationMemberPayloadSchema>;
 
 export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
   const listOrganizationMembersHandler: RouteHandler<{ handle: string }, OrganizationMembersResponse> = async (req, res) => {
@@ -41,36 +46,47 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
   };
 
   const upsertOrganizationHandler: RouteHandler<{ handle: string }, Organization, UpsertOrganizationPayload> = async (req, res) => {
+    const { success, error, data: { displayName } = {} } = UpsertOrganizationPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+
     const handle = req.params.handle.trim().toLowerCase();
     const existing = await getOrganization(db, handle);
     const organization = await upsertOrganization(db, {
       id: existing?.id ?? randomBytes(16).toString("hex"),
       handle,
-      displayName: req.body.displayName ?? existing?.displayName ?? handle,
+      displayName: displayName ?? existing?.displayName ?? handle,
       type: "ORGANIZATION"
     });
     res.json(organization);
   };
 
   const upsertOrganizationMemberHandler: RouteHandler<MemberRouteParams, OrganizationMember, OrganizationMemberPayload> = async (req, res) => {
-    const organization = await getOrganization(db, req.params.handle.trim().toLowerCase());
-    const user = await getUserByHandle(db, req.params.userHandle.trim().toLowerCase());
-    const membershipId = `${organization?.id ?? ""}:${user?.id ?? ""}`;
-    const existing = await getOrganizationMember(db, membershipId);
-    const role = req.body.role ?? existing?.role ?? "MEMBER";
+    const { success, error, data: { role } = {} } = OrganizationMemberPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+
+    const handle = req.params.handle.trim().toLowerCase();
+    const userHandle = req.params.userHandle.trim().toLowerCase();
+    const organization = await getOrganization(db, handle);
+    const user = await getUserByHandle(db, userHandle);
 
     if (!organization) {
       res.status(404).json({ error: "Organization not found" });
     } else if (!user) {
       res.status(404).json({ error: "User not found" });
-    } else if (!organizationRoles.includes(role)) {
-      res.status(400).json({ error: "Organization role is invalid" });
     } else {
+      const membershipId = `${organization.id}:${user.id}`;
+      const existing = await getOrganizationMember(db, membershipId);
       const member = await upsertOrganizationMember(db, {
         id: membershipId,
         organizationId: organization.id,
         userId: user.id,
-        role
+        role: role ?? existing?.role ?? "MEMBER",
       });
       res.json(member);
     }

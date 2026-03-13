@@ -61,7 +61,7 @@ describe("scalar routes", () => {
 
   it("rejects missing required fields", async () => {
     const missingTimestamp = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/scalars`).send({ values: { loss: 0.1 } }).expect(400);
-    expect(missingTimestamp.body).toMatchObject({ error: "Scalar fields are required: timestamp" });
+    expect(missingTimestamp.body).toMatchObject({ error: "timestamp: Invalid input: expected string, received undefined" });
   });
 
   it("rejects invalid run references", async () => {
@@ -71,9 +71,9 @@ describe("scalar routes", () => {
 
   it("rejects invalid values", async () => {
     const notObject = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/scalars`).send({ values: "bad", timestamp: testTimestamp }).expect(400);
-    expect(notObject.body).toMatchObject({ error: "Scalar values must be an object mapping names to numbers" });
+    expect(notObject.body).toMatchObject({ error: "values: Invalid input: expected record, received string" });
 
     const nonNumeric = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/scalars`).send({ values: { loss: "bad" }, timestamp: testTimestamp }).expect(400);
-    expect(nonNumeric.body).toMatchObject({ error: "Scalar values must be an object mapping names to numbers" });
+    expect(nonNumeric.body).toMatchObject({ error: "values.loss: Invalid input: expected number, received string" });
   });
 });

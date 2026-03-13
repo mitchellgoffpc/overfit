@@ -1,11 +1,8 @@
 import {
   API_BASE,
   EMAIL_IN_USE_ERROR,
-  EMAIL_INVALID_ERROR,
   CREDENTIALS_INVALID_ERROR,
   SESSION_INVALID_ERROR,
-  testPassword,
-  USERNAME_HINT,
   USERNAME_IN_USE_ERROR
 } from "@underfit/types";
 import request from "supertest";
@@ -121,17 +118,15 @@ describe("auth routes", () => {
 
     for (const email of badEmails) {
       const badEmail = await post(app, "auth/register", { email, handle: "valid-user", password: "password123" }, 400);
-      expect(badEmail.body).toMatchObject({ error: EMAIL_INVALID_ERROR });
+      expect(badEmail.body).toMatchObject({ error: "email: Invalid input" });
     }
     for (const handle of badUsernames) {
       const badHandle = await post(app, "auth/register", { email: "bad@example.com", handle, password: "password123" }, 400);
-      expect(badHandle.body).toMatchObject({ error: USERNAME_HINT });
+      expect(badHandle.body).toMatchObject({ error: "handle: Invalid input" });
     }
     for (const password of badPasswords) {
       const badPassword = await post(app, "auth/register", { email: "pw@example.com", handle: "valid-user", password }, 400);
-      const passwordError = testPassword(password);
-      expect(passwordError).toBeTruthy();
-      expect(badPassword.body).toMatchObject({ error: passwordError });
+      expect(badPassword.body).toMatchObject({ error: "password: Invalid input" });
     }
   });
 

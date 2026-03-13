@@ -1,4 +1,4 @@
-import { API_BASE, SLUG_HINT } from "@underfit/types";
+import { API_BASE } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -49,7 +49,7 @@ describe("projects routes", () => {
 
   it("rejects invalid project names", async () => {
     const response = await request(app).put(`${API_BASE}/accounts/ada/projects/Underfit%20Labs`).send({ description: null }).expect(400);
-    expect(response.body).toMatchObject({ error: SLUG_HINT });
+    expect(response.body).toMatchObject({ error: "projectName: Invalid input" });
   });
 
   it("rejects upserting projects for unknown accounts", async () => {

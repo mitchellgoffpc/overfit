@@ -164,13 +164,13 @@ describe("logs routes", () => {
 
   it("rejects missing worker and invalid query params", async () => {
     const missingWorker = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).expect(400);
-    expect(missingWorker.body).toMatchObject({ error: "Log query param workerId is required" });
+    expect(missingWorker.body).toMatchObject({ error: "workerId: Invalid input: expected string, received undefined" });
 
     const badCursor = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", cursor: "-1" }).expect(400);
-    expect(badCursor.body).toMatchObject({ error: "Log query param cursor must be a non-negative integer" });
+    expect(badCursor.body).toMatchObject({ error: "cursor: Too small: expected number to be >=0" });
 
     const badCount = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).query({ workerId: "worker-1", count: "0" }).expect(400);
-    expect(badCount.body).toMatchObject({ error: "Log query param count must be a positive integer" });
+    expect(badCount.body).toMatchObject({ error: "count: Too small: expected number to be >0" });
   });
 
   it("returns run not found for missing runs", async () => {

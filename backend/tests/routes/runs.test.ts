@@ -54,7 +54,7 @@ describe("runs routes", () => {
 
   it("rejects missing required fields", async () => {
     const missingStatus = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs`).set("x-session-token", "token-1").send({}).expect(400);
-    expect(missingStatus.body).toMatchObject({ error: "Run fields are required: status" });
+    expect(missingStatus.body).toMatchObject({ error: "status: Run fields are required: status" });
   });
 
   it("requires auth to insert runs", async () => {

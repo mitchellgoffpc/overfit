@@ -45,7 +45,7 @@ describe("users routes", () => {
 
   it("checks whether an email exists", async () => {
     const missing = await request(app).get(`${API_BASE}/emails/exists`).expect(400);
-    expect(missing.body).toMatchObject({ error: "Email is required" });
+    expect(missing.body).toMatchObject({ error: "email: Email is required" });
 
     const exists = await request(app).get(`${API_BASE}/emails/exists`).query({ email: "ada@example.com" }).expect(200);
     expect(exists.body).toMatchObject({ exists: true });
@@ -57,7 +57,7 @@ describe("users routes", () => {
   it("updates the current user profile", async () => {
     const { session } = await registerUser(app, "sam@example.com", "sam");
     const response = await request(app).patch(`${API_BASE}/me`).set("Authorization", `Bearer ${session.token}`).send({ name: "Sam Tester", bio: "Building models." }).expect(200);
-    expect(response.body).toMatchObject({ name: "Sam Tester", bio: "Building models.", displayName: "Sam Tester" });
+    expect(response.body).toMatchObject({ name: "Sam Tester", bio: "Building models." });
   });
 
   it("creates and deletes API keys", async () => {

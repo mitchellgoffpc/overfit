@@ -4,16 +4,27 @@ import { fileURLToPath } from "node:url";
 
 import { API_BASE } from "@underfit/types";
 import type { Run } from "@underfit/types";
+import { z } from "zod";
 
 import type { Database } from "db";
 import { getProject } from "repositories/projects";
 import { getRun, insertRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
 import { getUserByHandle } from "repositories/users";
 import { requireAuth } from "routes/auth";
+import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
-type InsertRunPayload = Partial<Pick<Run, "status" | "metadata">>;
-type UpdateRunPayload = Partial<Pick<Run, "status" | "metadata">>;
+const InsertRunPayloadSchema = z.strictObject({
+  status: z.string().min(1, "Run fields are required: status").prefault(""),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional()
+});
+const UpdateRunPayloadSchema = z.strictObject({
+  status: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional()
+});
+
+type InsertRunPayload = z.infer<typeof InsertRunPayloadSchema>;
+type UpdateRunPayload = z.infer<typeof UpdateRunPayloadSchema>;
 
 const parseWordList = (relativePath: string): string[] => fs.readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf-8").split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
 const adjectives = parseWordList("../../src/wordlists/adjectives.txt");
@@ -58,14 +69,17 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
   };
 
   const insertRunHandler: RouteHandler<{ handle: string; projectName: string }, Run, InsertRunPayload> = async (req, res) => {
-    const status = req.body.status;
+    const { success, error, data: { status, metadata } = {} } = InsertRunPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
     const project = await getProject(db, handle, projectName);
     if (!project) {
       res.status(404).json({ error: "Project not found" });
-    } else if (!status) {
-      res.status(400).json({ error: `Run fields are required: status` });
     } else {
       let runName = "";
       for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -84,7 +98,7 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
           userId: req.user.id,
           name: runName,
           status,
-          metadata: req.body.metadata ?? null
+          metadata: metadata ?? null
         });
         res.json(run);
       }
@@ -92,7 +106,12 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
   };
 
   const updateRunHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Run, UpdateRunPayload> = async (req, res) => {
-    const { status, metadata } = req.body;
+    const { success, error, data: { status, metadata } = {} } = UpdateRunPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
     const runName = req.params.runName.trim().toLowerCase();

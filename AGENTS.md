@@ -9,7 +9,7 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 - Keep code clean and concise. Do not add comments unless the logic is non-obvious.
 - Avoid splitting statements across multiple lines without a readability benefit. If it fits under 160 characters, keep it on one line.
 - Prefer minimal, clear abstractions over clever ones.
-- When practical, prefer `if/else if/else` blocks to multiple `if` blocks with early returns.
+- Nested `if/else` blocks are ugly, but a single chain of `if/else if/else` blocks is better than multiple `if` blocks with early returns.
 - Avoid short docstrings. Use docstrings only when detailed multi-line documentation is required.
 - Tests are located in a top-level `tests` folder next to the `src` folder in each subproject.
 - Optimize for code that is immediately understandable, even if it does less defensive checking.

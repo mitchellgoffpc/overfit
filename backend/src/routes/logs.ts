@@ -1,30 +1,40 @@
 import { API_BASE } from "@underfit/types";
 import type { LogPage } from "@underfit/types";
+import { z } from "zod";
 
 import type { Database } from "db";
 import type { LogBuffer, LogLine } from "logbuffer";
 import { listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
+import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 import type { StorageBackend } from "storage";
 
-type InsertLogLinesPayload = Partial<{ workerId: string; lines: LogLine[] }>;
-type FlushLogBufferPayload = Partial<{ workerId: string }>;
-interface RunPathParams { handle: string; projectName: string; runName: string; }
-interface InsertLogLinesResponse { status: "buffered" };
-interface FlushLogBufferResponse { status: "flushed" };
-
-interface ListLogEntriesQuery {
-  workerId?: string;
-  cursor?: string;
-  count?: string;
-}
 const DEFAULT_LOG_LINE_COUNT = 10000;
 
-const parseInteger = (value: string): number | null => {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? null : parsed;
-};
+const InsertLogLineSchema = z.strictObject({
+  timestamp: z.string().min(1),
+  content: z.string()
+});
+const InsertLogLinesBodySchema = z.strictObject({
+  workerId: z.string().min(1),
+  lines: z.array(InsertLogLineSchema).min(1)
+});
+const FlushLogBufferBodySchema = z.strictObject({
+  workerId: z.string().min(1)
+});
+const ListLogEntriesQuerySchema = z.strictObject({
+  workerId: z.string().min(1),
+  cursor: z.coerce.number().int().min(0).default(0),
+  count: z.coerce.number().int().positive().optional()
+});
+
+type InsertLogLinesPayload = z.infer<typeof InsertLogLinesBodySchema>;
+type FlushLogBufferPayload = z.infer<typeof FlushLogBufferBodySchema>;
+type ListLogEntriesQuery = z.infer<typeof ListLogEntriesQuerySchema>;
+
+interface RunPathParams { handle: string; projectName: string; runName: string; }
+
 const normalizeLogLines = (lines: LogLine[]): LogLine[] => lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
 
 const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, startLine: number, endLine: number): Promise<string> => {
@@ -41,28 +51,26 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     return await getRun(db, params.handle.trim().toLowerCase(), params.projectName.trim().toLowerCase(), params.runName.trim().toLowerCase());
   };
 
-  const insertLogLinesHandler: RouteHandler<RunPathParams, InsertLogLinesResponse, InsertLogLinesPayload> = async (req, res) => {
+  const insertLogLinesHandler: RouteHandler<RunPathParams, { status: "buffered" }, InsertLogLinesPayload> = async (req, res) => {
+    const { success, error, data: { workerId, lines } = {} } = InsertLogLinesBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
-    const { workerId, lines } = req.body;
-
-    if (!run) {
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+    } else if (!run) {
       res.status(404).json({ error: "Run not found" });
-    } else if (!workerId || !Array.isArray(lines) || lines.length === 0 || lines.some((line) => !line.timestamp || typeof line.content !== "string")) {
-      res.status(400).json({ error: "Log line fields are required: workerId, lines[{timestamp, content}]" });
     } else {
       await logBuffer.appendLines(run.id, workerId, normalizeLogLines(lines));
       res.json({ status: "buffered" });
     }
   };
 
-  const flushLogBufferHandler: RouteHandler<RunPathParams, FlushLogBufferResponse, FlushLogBufferPayload> = async (req, res) => {
+  const flushLogBufferHandler: RouteHandler<RunPathParams, { status: "flushed" }, FlushLogBufferPayload> = async (req, res) => {
+    const { success, error, data: { workerId } = {} } = FlushLogBufferBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
-    const workerId = req.body.workerId;
-
-    if (!run) {
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+    } else if (!run) {
       res.status(404).json({ error: "Run not found" });
-    } else if (!workerId) {
-      res.status(400).json({ error: "Log flush fields are required: workerId" });
     } else {
       await logBuffer.flush(run.id, workerId);
       res.json({ status: "flushed" });
@@ -70,21 +78,18 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
   };
 
   const listLogEntriesHandler: RouteHandler<RunPathParams, LogPage, unknown, ListLogEntriesQuery> = async (req, res) => {
-    const run = await getPathRun(req.params);
-    const cursor = parseInteger(req.query.cursor ?? "0");
-    const count = parseInteger(req.query.count ?? "");
-    const workerId = req.query.workerId;
-    const lineCount = count ?? DEFAULT_LOG_LINE_COUNT;
+    const parsedQuery = ListLogEntriesQuerySchema.safeParse(req.query);
+    if (!parsedQuery.success) {
+      res.status(400).json({ error: formatZodError(parsedQuery.error) });
+      return;
+    }
 
+    const { workerId, cursor, count } = parsedQuery.data;
+    const run = await getPathRun(req.params);
     if (!run) {
       res.status(404).json({ error: "Run not found" });
-    } else if (!workerId) {
-      res.status(400).json({ error: "Log query param workerId is required" });
-    } else if (cursor === null || cursor < 0) {
-      res.status(400).json({ error: "Log query param cursor must be a non-negative integer" });
-    } else if (req.query.count && (count === null || count < 1)) {
-      res.status(400).json({ error: "Log query param count must be a positive integer" });
     } else {
+      const lineCount = count ?? DEFAULT_LOG_LINE_COUNT;
       const persistedSegments = await listLogSegmentsForCursor(db, run.id, workerId, cursor, lineCount);
       if (persistedSegments.length > 0) {
         const entries = await Promise.all(persistedSegments.map(async ({ storageKey, startLine, endLine, startAt, endAt }) => {

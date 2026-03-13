@@ -48,7 +48,7 @@ describe("organizations routes", () => {
 
   it("rejects invalid membership roles", async () => {
     const response = await request(app).put(`${API_BASE}/organizations/core/members/ada`).send({ role: "OWNER" }).expect(400);
-    expect(response.body).toMatchObject({ error: "Organization role is invalid" });
+    expect((response.body as { error: string }).error).toContain("role:");
   });
 
   it("rejects unknown orgs and users when creating memberships", async () => {

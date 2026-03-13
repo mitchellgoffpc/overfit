@@ -13,12 +13,14 @@ import {
 } from "@underfit/types";
 import type { User, UserAuth } from "@underfit/types";
 import type { RequestHandler, Response } from "express";
+import { z } from "zod";
 
 import type { Database } from "db";
 import { getAccount } from "repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
 import { getUserByEmail, getUser, upsertUser } from "repositories/users";
+import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const PASSWORD_ITERATIONS = 310000;
@@ -28,6 +30,17 @@ const SALT_BYTES = 16;
 const SESSION_BYTES = 32;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_COOKIE_NAME = "underfit_session";
+
+const RegisterPayloadSchema = z.strictObject({
+  email: z.string().trim().toLowerCase().min(1).refine(value => !testEmail(value)),
+  handle: z.string().trim().toLowerCase().min(1).refine(value => !testHandle(value)),
+  password: z.string().min(1).refine(value => !testPassword(value))
+});
+
+const LoginPayloadSchema = z.strictObject({
+  email: z.string().trim().toLowerCase().min(1),
+  password: z.string().min(1)
+});
 
 interface AuthSession {
   token: string;
@@ -40,16 +53,8 @@ interface AuthResponse {
   session: AuthSession;
 }
 
-interface RegisterPayload {
-  email?: string;
-  handle?: string;
-  password?: string;
-}
-
-interface LoginPayload {
-  email?: string;
-  password?: string;
-}
+type RegisterPayload = z.infer<typeof RegisterPayloadSchema>;
+type LoginPayload = z.infer<typeof LoginPayloadSchema>;
 
 const hashPassword = (password: string, salt: string, iterations: number, digest: string) => (
   pbkdf2Sync(password, salt, iterations, PASSWORD_BYTES, digest).toString("hex")
@@ -110,26 +115,9 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
 
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
   const register: RouteHandler<Record<string, string>, AuthResponse, RegisterPayload> = async (req, res) => {
-    const email = req.body.email?.trim().toLowerCase() ?? "";
-    const handle = (req.body.handle ?? "").trim().toLowerCase();
-    const password = req.body.password ?? "";
-
-    const missingFields = Object.entries({ email, handle, password }).filter(([, value]) => !value).map(([label]) => label);
-    if (missingFields.length > 0) {
-      res.status(400).json({ error: `Registration fields are required: ${missingFields.join(", ")}` });
-      return;
-    }
-
-    const emailError = testEmail(email);
-    const handleError = testHandle(handle);
-    const passwordError = testPassword(password);
-
-    if (emailError) {
-      res.status(400).json({ error: emailError });
-    } else if (handleError) {
-      res.status(400).json({ error: handleError });
-    } else if (passwordError) {
-      res.status(400).json({ error: passwordError });
+    const { success, error, data: { email, handle, password } = {} } = RegisterPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
     } else if (await getAccount(db, handle)) {
       res.status(409).json({ error: USERNAME_IN_USE_ERROR });
     } else if (await getUserByEmail(db, email)) {
@@ -165,11 +153,9 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
   };
 
   const login: RouteHandler<Record<string, string>, AuthResponse, LoginPayload> = async (req, res) => {
-    const email = req.body.email?.trim().toLowerCase() ?? "";
-    const password = req.body.password ?? "";
-
-    if (!email || !password) {
-      res.status(400).json({ error: "Email and password are required" });
+    const { success, error, data: { email, password } = {} } = LoginPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
       return;
     }
 
@@ -199,12 +185,14 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
       res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
       return;
     }
+
     const session = await getSession(db, token);
     if (!session) {
       clearSessionCookie(res);
       res.status(401).json({ error: SESSION_INVALID_ERROR });
       return;
     }
+
     await deleteSession(db, token);
     clearSessionCookie(res);
     res.json({ status: "ok" });

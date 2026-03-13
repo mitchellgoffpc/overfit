@@ -2,26 +2,38 @@ import { randomBytes } from "crypto";
 
 import { API_BASE } from "@underfit/types";
 import type { ApiKey, Organization, OrganizationRole, User } from "@underfit/types";
+import { z } from "zod";
 
 import type { Database } from "db";
 import { createApiKey, deleteApiKey, listApiKeysByUser } from "repositories/api-keys.js";
 import { listOrganizationMembershipsByUserId } from "repositories/organization-members";
 import { getUserByEmail, getUserByHandle, updateUserProfile } from "repositories/users";
 import { requireAuth } from "routes/auth";
+import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
-interface EmailExistsQuery { email?: string }
-interface ExistsResponse { exists: boolean }
+const EmailExistsQuerySchema = z.strictObject({
+  email: z.string().trim().min(1, "Email is required").prefault("")
+});
+const UpdateProfilePayloadSchema = z.strictObject({
+  name: z.string().trim().min(1).optional(),
+  displayName: z.string().trim().min(1).optional(),
+  bio: z.string().trim().min(1).optional()
+});
+const ApiKeyPayloadSchema = z.strictObject({
+  label: z.string().trim().optional()
+});
+
+type EmailExistsQuery = z.infer<typeof EmailExistsQuerySchema>;
+type UpdateProfilePayload = z.infer<typeof UpdateProfilePayloadSchema>;
+type ApiKeyPayload = z.infer<typeof ApiKeyPayloadSchema>;
 type UserMembershipsResponse = (Organization & { role: OrganizationRole })[];
-interface UpdateProfilePayload { name?: string; bio?: string }
-interface ApiKeyPayload { label?: string }
-interface StatusResponse { status: "ok" }
 
 export function registerUserRoutes(app: RouteApp, db: Database): void {
-  const emailExistsHandler: RouteHandler<Record<string, string>, ExistsResponse, undefined, EmailExistsQuery> = async (req, res) => {
-    const email = req.query.email?.trim() ?? "";
-    if (!email) {
-      res.status(400).json({ error: "Email is required" });
+  const emailExistsHandler: RouteHandler<Record<string, string>, { exists: boolean }, undefined, EmailExistsQuery> = async (req, res) => {
+    const { success, error, data: { email } = {} } = EmailExistsQuerySchema.safeParse(req.query);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
     } else {
       res.json({ exists: Boolean(await getUserByEmail(db, email)) });
     }
@@ -41,22 +53,13 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
   };
 
   const updateProfileHandler: RouteHandler<Record<string, string>, User, UpdateProfilePayload> = async (req, res) => {
-    const nameInput = typeof req.body.name === "string" ? req.body.name.trim() : undefined;
-    const bioInput = typeof req.body.bio === "string" ? req.body.bio.trim() : undefined;
-    const updates: { name?: string | null; bio?: string | null; displayName?: string } = {};
-
-    if (nameInput !== undefined) {
-      updates.name = nameInput.length > 0 ? nameInput : null;
-      if (updates.name) { updates.displayName = updates.name; }
-    }
-    if (bioInput !== undefined) { updates.bio = bioInput.length > 0 ? bioInput : null; }
-
-    if (Object.keys(updates).length === 0) {
-      res.json(req.user);
+    const { success, error, data } = UpdateProfilePayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
       return;
     }
 
-    const updated = await updateUserProfile(db, req.user.id, updates);
+    const updated = await updateUserProfile(db, req.user.id, data);
     if (!updated) {
       res.status(404).json({ error: "User not found" });
     } else {
@@ -73,17 +76,22 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
   };
 
   const createApiKeyHandler: RouteHandler<Record<string, string>, ApiKey, ApiKeyPayload> = async (req, res) => {
-    const rawLabel = typeof req.body.label === "string" ? req.body.label.trim() : "";
+    const { success, error, data: { label = "" } = {} } = ApiKeyPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+
     const key = await createApiKey(db, {
       id: randomBytes(12).toString("hex"),
       userId: req.user.id,
-      label: rawLabel.length > 0 ? rawLabel : null,
+      label: label.length > 0 ? label : null,
       token: randomBytes(24).toString("base64url")
     });
     res.json(key);
   };
 
-  const deleteApiKeyHandler: RouteHandler<{ id: string }, StatusResponse> = async (req, res) => {
+  const deleteApiKeyHandler: RouteHandler<{ id: string }, { status: "ok" }> = async (req, res) => {
     await deleteApiKey(db, req.params.id, req.user.id);
     res.json({ status: "ok" });
   };
