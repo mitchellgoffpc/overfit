@@ -2,17 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import type { ID } from "@underfit/types";
+import { z } from "zod";
 
-export type StorageType = "file";
-
-export interface FileStorageConfig {
-  baseDir: string;
-}
-
-export interface StorageConfig {
-  type: StorageType;
-  file?: FileStorageConfig;
-}
+export const StorageConfigSchema = z.discriminatedUnion("type", [
+  z.strictObject({
+    type: z.literal("file"),
+    baseDir: z.string().trim().min(1).default("storage"),
+  })
+]).prefault({ type: "file" });
+export type StorageConfig = z.infer<typeof StorageConfigSchema>;
 
 export interface StorageBackend {
   write: (storageKey: string, content: Buffer) => Promise<string>;
@@ -28,13 +26,13 @@ class FileStorageBackend implements StorageBackend {
 
   private resolveStoragePath(storageKey: string): string {
     if (path.isAbsolute(storageKey)) {
-      throw new Error("storageKey must be relative to storage.file.baseDir");
+      throw new Error("storageKey must be relative to storage.baseDir");
     }
     const resolvedPath = path.resolve(this.baseDir, storageKey);
     if (resolvedPath === this.baseDir || resolvedPath.startsWith(`${this.baseDir}${path.sep}`)) {
       return resolvedPath;
     }
-    throw new Error("storageKey must stay within storage.file.baseDir");
+    throw new Error("storageKey must stay within storage.baseDir");
   }
 
   async write(storageKey: string, content: Buffer): Promise<string> {
@@ -53,6 +51,5 @@ export const getArtifactStorageKey = (runId: ID, artifactId: ID): string => path
 export const getLogSegmentStorageKey = (runId: ID, workerId: string, startLine: number): string => path.join(runId, "logs", workerId, `${String(startLine)}.log`);
 
 export const createStorage = (config: StorageConfig): StorageBackend => {
-  const baseDir = config.file?.baseDir ?? "artifacts";
-  return new FileStorageBackend(baseDir);
+  return new FileStorageBackend(config.baseDir);
 };

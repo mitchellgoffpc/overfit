@@ -1,17 +1,19 @@
 import { randomBytes } from "crypto";
 
 import type { ID, LogEntry } from "@underfit/types";
+import { z } from "zod";
 
 import type { Database } from "db";
 import { getLatestLogSegment, insertLogSegment } from "repositories/logs";
 import { getLogSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
-export interface LogBufferConfig {
-  maxSegmentBytes: number;
-  maxSegmentAgeMs: number;
-  flushIntervalMs: number;
-}
+export const LogBufferConfigSchema = z.strictObject({
+  maxSegmentBytes: z.coerce.number().positive().default(256 * 1024),
+  maxSegmentAgeMs: z.coerce.number().positive().default(30_000),
+  flushIntervalMs: z.coerce.number().positive().default(1_000)
+}).prefault({});
+export type LogBufferConfig = z.infer<typeof LogBufferConfigSchema>;
 
 interface LogBufferState {
   runId: ID;

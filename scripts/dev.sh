@@ -30,8 +30,19 @@ fi
 
 data_path="$repo_path/.underfit"
 mkdir -p "$data_path"
+config_path="$data_path/dev.toml"
 
-tmux new-session -d -s "$session" -c "$repo_path" "npm run dev:backend -- db.sqlite.path=$data_path/dev.db storage.file.baseDir=$data_path/storage"
+cat > "$config_path" <<EOF
+[db]
+type = "sqlite"
+path = "$data_path/dev.db"
+
+[storage]
+type = "file"
+baseDir = "$data_path/storage"
+EOF
+
+tmux new-session -d -s "$session" -c "$repo_path" "npm run dev:backend -- \"$config_path\""
 tmux split-window -h -t "$session" -c "$repo_path" "npm run dev:frontend"
 tmux select-layout -t "$session" even-horizontal
 bash "$repo_path/scripts/seed.sh"

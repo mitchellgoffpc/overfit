@@ -1,6 +1,7 @@
 import type { Account, ApiKey, LogSegment, OrganizationMember, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
+import { z } from "zod";
 
 import { createAccountsTable } from "repositories/accounts.js";
 import { createApiKeysTable } from "repositories/api-keys.js";
@@ -21,18 +22,20 @@ import { createUserAuthTable } from "repositories/user-auth.js";
 import type { UserRow } from "repositories/users.js";
 import { createUsersTable } from "repositories/users.js";
 
-export type DatabaseType = "sqlite" | "postgresql";
+export const DatabaseConfigSchema = z.discriminatedUnion("type", [
+  z.strictObject({
+    type: z.literal("sqlite"),
+    path: z.string().trim().min(1).default(":memory:")
+  }),
+  z.strictObject({
+    type: z.literal("postgresql"),
+    hostname: z.string().trim().min(1),
+    port: z.coerce.number().int().min(1).max(65535)
+  })
+]).prefault({ type: "sqlite" });
+export type DatabaseConfig = z.infer<typeof DatabaseConfigSchema>;
 
-export interface SqliteConfig {
-  path: string;
-}
-
-export interface DatabaseConfig {
-  type?: DatabaseType;
-  sqlite?: SqliteConfig;
-}
-
-export interface DatabaseSchema {
+interface DatabaseSchema {
   accounts: Account;
   users: UserRow;
   api_keys: ApiKey;
@@ -64,15 +67,12 @@ const initDatabase = async (db: Database): Promise<void> => {
   await createScalarsTable(db);
 };
 
-export const createDatabase = async (config: DatabaseConfig = {}): Promise<Database> => {
-  const type: DatabaseType = config.type ?? "sqlite";
-
-  if (type === "postgresql") {
+export const createDatabase = async (config: DatabaseConfig): Promise<Database> => {
+  if (config.type === "postgresql") {
     throw new Error("PostgreSQL database is not implemented yet.");
   }
 
-  const sqlitePath = config.sqlite?.path ?? "underfit.db";
-  const sqlite = new BetterSqlite3(sqlitePath);
+  const sqlite = new BetterSqlite3(config.path);
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("foreign_keys = ON");
 

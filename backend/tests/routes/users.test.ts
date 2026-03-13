@@ -4,7 +4,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "app";
-import { DEFAULT_CONFIG } from "config";
+import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { upsertOrganizationMember } from "repositories/organization-members.js";
@@ -26,8 +26,8 @@ describe("users routes", () => {
   let app: ReturnType<typeof createApp>;
 
   beforeEach(async () => {
-    db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
-    app = createApp(DEFAULT_CONFIG, db);
+    db = await createDatabase({ type: "sqlite", path: ":memory:" });
+    app = createApp(AppConfigSchema.parse(), db);
     await upsertOrganization(db, { id: "org-1", handle: "core", displayName: "Core", type: "ORGANIZATION" });
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertOrganizationMember(db, { organizationId: "org-1", userId: "user-1", role: "ADMIN" });

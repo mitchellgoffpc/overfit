@@ -36,14 +36,14 @@ describe("logbuffer", () => {
   });
 
   beforeEach(async () => {
-    db = await createDatabase({ type: "sqlite", sqlite: { path: ":memory:" } });
+    db = await createDatabase({ type: "sqlite", path: ":memory:" });
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", displayName: "Ada Lovelace", name: "Ada Lovelace", bio: null, type: "USER" });
     await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
     await insertRun(db, run);
   });
 
   it("buffers chunks and flushes explicitly", async () => {
-    const storage = createStorage({ type: "file", file: { baseDir: storageBaseDir } });
+    const storage = createStorage({ type: "file", baseDir: storageBaseDir });
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 1024 * 1024, maxSegmentAgeMs: 60_000, flushIntervalMs: 10_000 });
 
     await logbuffer.appendChunk({ runId: "run-1", workerId: "worker-1", timestamp: "2025-01-01T00:00:00.000Z", content: "hello\n" });
@@ -62,7 +62,7 @@ describe("logbuffer", () => {
   });
 
   it("flushes when max bytes is reached", async () => {
-    const storage = createStorage({ type: "file", file: { baseDir: storageBaseDir } });
+    const storage = createStorage({ type: "file", baseDir: storageBaseDir });
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 4, maxSegmentAgeMs: 60_000, flushIntervalMs: 10_000 });
 
     await logbuffer.appendChunk({ runId: "run-1", workerId: "worker-1", timestamp: "2025-01-01T00:00:00.000Z", content: "abcd" });
@@ -74,7 +74,7 @@ describe("logbuffer", () => {
   });
 
   it("flushes old buffers on interval", async () => {
-    const storage = createStorage({ type: "file", file: { baseDir: storageBaseDir } });
+    const storage = createStorage({ type: "file", baseDir: storageBaseDir });
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 1024 * 1024, maxSegmentAgeMs: 25, flushIntervalMs: 10 });
     logbuffer.start();
 
