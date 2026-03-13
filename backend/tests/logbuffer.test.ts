@@ -55,7 +55,7 @@ describe("logbuffer", () => {
     expect(segments).toHaveLength(1);
     expect(segments[0]).toMatchObject({ startLine: 0, endLine: 2, byteCount: Buffer.byteLength("hello\nworld", "utf8") });
 
-    const content = await fs.readFile(segments[0].storageKey, "utf8");
+    const content = await fs.readFile(path.join(storageBaseDir, segments[0].storageKey), "utf8");
     expect(content).toBe("hello\nworld");
 
     await logbuffer.stop();

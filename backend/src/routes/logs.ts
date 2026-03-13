@@ -36,7 +36,7 @@ const splitLines = (content: string): string[] => {
 };
 
 const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, startLine: number, endLine: number): Promise<string> => {
-  const content = (await storage.readLogSegment(storageKey)).toString("utf8");
+  const content = (await storage.read(storageKey)).toString("utf8");
   return splitLines(content).slice(startLine, endLine).join("\n");
 };
 

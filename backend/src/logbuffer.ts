@@ -5,6 +5,7 @@ import type { ID, LogEntry } from "@underfit/types";
 import type { LogBufferConfig } from "config";
 import type { Database } from "db";
 import { getLatestLogSegment, insertLogSegment } from "repositories/logs";
+import { getLogSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
 interface LogBufferState {
@@ -209,7 +210,7 @@ export class LogBuffer {
 
   private async writeLogSegment(state: LogBufferState): Promise<void> {
     const content = state.chunks.join("");
-    const storageKey = await this.storage.writeLogSegment(state.runId, state.workerId, state.startLine, Buffer.from(content, "utf8"));
+    const storageKey = await this.storage.write(getLogSegmentStorageKey(state.runId, state.workerId, state.startLine), Buffer.from(content, "utf8"));
     await insertLogSegment(this.db, {
       id: randomBytes(12).toString("hex"),
       runId: state.runId,

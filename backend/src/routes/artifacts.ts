@@ -6,6 +6,7 @@ import type { Database } from "db";
 import { getArtifact, listArtifacts, upsertArtifact } from "repositories/artifacts";
 import { hasRun } from "repositories/runs";
 import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
+import { getArtifactStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
 type UpsertArtifactPayload = Partial<Omit<Artifact, "id" | "createdAt" | "updatedAt">>;
@@ -72,7 +73,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
       return;
     }
 
-    const artifactPath = await storage.writeArtifact(artifact.runId, artifact.id, req.body);
+    const artifactPath = await storage.write(getArtifactStorageKey(artifact.runId, artifact.id), req.body);
     const updated = await upsertArtifact(db, {
       ...artifact,
       uri: `file://${artifactPath}`
@@ -92,7 +93,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
       res.status(404).json({ error: "Artifact not found" });
     } else {
       try {
-        const content = await storage.readArtifact(artifact.runId, artifact.id);
+        const content = await storage.read(getArtifactStorageKey(artifact.runId, artifact.id));
         res.setHeader("Content-Type", "application/octet-stream");
         res.send(content);
       } catch (error) {

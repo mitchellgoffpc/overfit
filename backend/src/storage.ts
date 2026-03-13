@@ -15,10 +15,8 @@ export interface StorageConfig {
 }
 
 export interface StorageBackend {
-  writeArtifact: (runId: ID, artifactId: ID, content: Buffer) => Promise<string>;
-  readArtifact: (runId: ID, artifactId: ID) => Promise<Buffer>;
-  writeLogSegment: (runId: ID, workerId: string, startLine: number, content: Buffer) => Promise<string>;
-  readLogSegment: (storageKey: string) => Promise<Buffer>;
+  write: (storageKey: string, content: Buffer) => Promise<string>;
+  read: (storageKey: string) => Promise<Buffer>;
 }
 
 class FileStorageBackend implements StorageBackend {
@@ -28,31 +26,31 @@ class FileStorageBackend implements StorageBackend {
     this.baseDir = path.resolve(baseDir);
   }
 
-  async writeArtifact(runId: ID, artifactId: ID, content: Buffer): Promise<string> {
-    const artifactDir = path.join(this.baseDir, runId);
-    const artifactPath = path.join(artifactDir, artifactId);
-    await fs.mkdir(artifactDir, { recursive: true });
-    await fs.writeFile(artifactPath, content);
-    return artifactPath;
+  private resolveStoragePath(storageKey: string): string {
+    if (path.isAbsolute(storageKey)) {
+      throw new Error("storageKey must be relative to storage.file.baseDir");
+    }
+    const resolvedPath = path.resolve(this.baseDir, storageKey);
+    if (resolvedPath === this.baseDir || resolvedPath.startsWith(`${this.baseDir}${path.sep}`)) {
+      return resolvedPath;
+    }
+    throw new Error("storageKey must stay within storage.file.baseDir");
   }
 
-  async readArtifact(runId: ID, artifactId: ID): Promise<Buffer> {
-    const artifactPath = path.join(this.baseDir, runId, artifactId);
-    return await fs.readFile(artifactPath);
+  async write(storageKey: string, content: Buffer): Promise<string> {
+    const storagePath = this.resolveStoragePath(storageKey);
+    await fs.mkdir(path.dirname(storagePath), { recursive: true });
+    await fs.writeFile(storagePath, content);
+    return path.relative(this.baseDir, storagePath);
   }
 
-  async writeLogSegment(runId: ID, workerId: string, startLine: number, content: Buffer): Promise<string> {
-    const logsDir = path.join(this.baseDir, runId, "logs", workerId);
-    const logPath = path.join(logsDir, `${String(startLine)}.log`);
-    await fs.mkdir(logsDir, { recursive: true });
-    await fs.writeFile(logPath, content);
-    return logPath;
-  }
-
-  async readLogSegment(storageKey: string): Promise<Buffer> {
-    return await fs.readFile(storageKey);
+  async read(storageKey: string): Promise<Buffer> {
+    return await fs.readFile(this.resolveStoragePath(storageKey));
   }
 }
+
+export const getArtifactStorageKey = (runId: ID, artifactId: ID): string => path.join(runId, artifactId);
+export const getLogSegmentStorageKey = (runId: ID, workerId: string, startLine: number): string => path.join(runId, "logs", workerId, `${String(startLine)}.log`);
 
 export const createStorage = (config: StorageConfig): StorageBackend => {
   const baseDir = config.file?.baseDir ?? "artifacts";
