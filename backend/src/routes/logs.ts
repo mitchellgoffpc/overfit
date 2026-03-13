@@ -1,80 +1,65 @@
 import { API_BASE } from "@underfit/types";
-import type { LogEntry, LogPage } from "@underfit/types";
+import type { LogPage } from "@underfit/types";
 
 import type { Database } from "db";
-import type { LogBuffer, LogChunk } from "logbuffer";
-import { hasLogSegmentsAfterCursor, listLogSegmentsForCursor } from "repositories/logs";
+import type { LogBuffer, LogLine } from "logbuffer";
+import { listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 import type { StorageBackend } from "storage";
 
-type InsertLogChunkPayload = Partial<Pick<LogChunk, "workerId" | "timestamp" | "content">>;
-type FlushLogBufferPayload = Partial<Pick<LogChunk, "workerId">>;
-interface InsertLogChunkResponse { status: "buffered" };
+type InsertLogLinesPayload = Partial<{ workerId: string; lines: LogLine[] }>;
+type FlushLogBufferPayload = Partial<{ workerId: string }>;
+interface RunPathParams { handle: string; projectName: string; runName: string; }
+interface InsertLogLinesResponse { status: "buffered" };
 interface FlushLogBufferResponse { status: "flushed" };
 
 interface ListLogEntriesQuery {
   workerId?: string;
   cursor?: string;
-  limit?: string;
+  count?: string;
 }
+const DEFAULT_LOG_LINE_COUNT = 10000;
 
 const parseInteger = (value: string): number | null => {
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? null : parsed;
 };
+const normalizeLogLines = (lines: LogLine[]): LogLine[] => lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
 
-const splitLines = (content: string): string[] => {
-  if (content.length === 0) {
-    return [];
-  }
+const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, startLine: number, endLine: number): Promise<string> => {
+  const content = (await storage.read(storageKey)).toString("utf8");
   const lines = content.split("\n");
   if (lines[lines.length - 1] === "") {
     lines.pop();
   }
-  return lines;
+  return lines.slice(startLine, endLine).join("\n");
 };
 
-const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, startLine: number, endLine: number): Promise<string> => {
-  const content = (await storage.read(storageKey)).toString("utf8");
-  return splitLines(content).slice(startLine, endLine).join("\n");
-};
+export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuffer, storage: StorageBackend): void {
+  const getPathRun = async (params: RunPathParams) => {
+    return await getRun(db, params.handle.trim().toLowerCase(), params.projectName.trim().toLowerCase(), params.runName.trim().toLowerCase());
+  };
 
-export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuffer | null, storage: StorageBackend | null): void {
-  const insertLogChunkHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, InsertLogChunkResponse, InsertLogChunkPayload> = async (req, res) => {
-    const handle = req.params.handle.trim().toLowerCase();
-    const projectName = req.params.projectName.trim().toLowerCase();
-    const runName = req.params.runName.trim().toLowerCase();
-    const run = await getRun(db, handle, projectName, runName);
-    const { workerId, timestamp, content } = req.body;
+  const insertLogLinesHandler: RouteHandler<RunPathParams, InsertLogLinesResponse, InsertLogLinesPayload> = async (req, res) => {
+    const run = await getPathRun(req.params);
+    const { workerId, lines } = req.body;
 
-    if (!logBuffer) {
-      res.status(404).json({ error: "Log uploads are disabled" });
-    } else if (!run) {
+    if (!run) {
       res.status(404).json({ error: "Run not found" });
-    } else if (!workerId || !timestamp || !content) {
-      res.status(400).json({ error: "Log chunk fields are required: workerId, timestamp, content" });
+    } else if (!workerId || !Array.isArray(lines) || lines.length === 0 || lines.some((line) => !line.timestamp || typeof line.content !== "string")) {
+      res.status(400).json({ error: "Log line fields are required: workerId, lines[{timestamp, content}]" });
     } else {
-      await logBuffer.appendChunk({
-        runId: run.id,
-        workerId,
-        timestamp,
-        content
-      });
+      await logBuffer.appendLines(run.id, workerId, normalizeLogLines(lines));
       res.json({ status: "buffered" });
     }
   };
 
-  const flushLogBufferHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, FlushLogBufferResponse, FlushLogBufferPayload> = async (req, res) => {
-    const handle = req.params.handle.trim().toLowerCase();
-    const projectName = req.params.projectName.trim().toLowerCase();
-    const runName = req.params.runName.trim().toLowerCase();
-    const run = await getRun(db, handle, projectName, runName);
+  const flushLogBufferHandler: RouteHandler<RunPathParams, FlushLogBufferResponse, FlushLogBufferPayload> = async (req, res) => {
+    const run = await getPathRun(req.params);
     const workerId = req.body.workerId;
 
-    if (!logBuffer) {
-      res.status(404).json({ error: "Log uploads are disabled" });
-    } else if (!run) {
+    if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else if (!workerId) {
       res.status(400).json({ error: "Log flush fields are required: workerId" });
@@ -84,78 +69,54 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     }
   };
 
-  const listLogEntriesHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, LogPage, unknown, ListLogEntriesQuery> = async (req, res) => {
-    const handle = req.params.handle.trim().toLowerCase();
-    const projectName = req.params.projectName.trim().toLowerCase();
-    const runName = req.params.runName.trim().toLowerCase();
-    const run = await getRun(db, handle, projectName, runName);
-    const cursor = parseInteger(req.query.cursor ?? "");
-    const limit = parseInteger(req.query.limit ?? "");
+  const listLogEntriesHandler: RouteHandler<RunPathParams, LogPage, unknown, ListLogEntriesQuery> = async (req, res) => {
+    const run = await getPathRun(req.params);
+    const cursor = parseInteger(req.query.cursor ?? "0");
+    const count = parseInteger(req.query.count ?? "");
     const workerId = req.query.workerId;
-    const pageLimit = limit ?? 2000;
+    const lineCount = count ?? DEFAULT_LOG_LINE_COUNT;
 
     if (!run) {
       res.status(404).json({ error: "Run not found" });
-    } else if (!storage) {
-      res.status(404).json({ error: "Log reads are disabled" });
     } else if (!workerId) {
       res.status(400).json({ error: "Log query param workerId is required" });
-    } else if (req.query.cursor && (cursor === null || cursor < 0)) {
+    } else if (cursor === null || cursor < 0) {
       res.status(400).json({ error: "Log query param cursor must be a non-negative integer" });
-    } else if (req.query.limit && (limit === null || limit < 1)) {
-      res.status(400).json({ error: "Log query param limit must be a positive integer" });
+    } else if (req.query.count && (count === null || count < 1)) {
+      res.status(400).json({ error: "Log query param count must be a positive integer" });
     } else {
-      const entries: LogEntry[] = [];
-      let nextCursor = cursor ?? 0;
-      let remaining = pageLimit;
-      let hasMore = false;
-      const persistedSegments = await listLogSegmentsForCursor(db, run.id, workerId, { cursor: nextCursor, limit: 1024 });
-      for (const segment of persistedSegments) {
-        if (remaining < 1) {
-          hasMore = true;
-          break;
-        }
-
-        const entryStart = Math.max(segment.startLine, nextCursor);
-        if (entryStart >= segment.endLine) {
-          continue;
-        }
-
-        const entryEnd = Math.min(segment.endLine, entryStart + remaining);
-        const content = await readLogSegmentLines(storage, segment.storageKey, entryStart - segment.startLine, entryEnd - segment.startLine);
-        if (content.length > 0) {
-          entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: segment.startAt, endAt: segment.endAt });
-          remaining -= entryEnd - entryStart;
-          nextCursor = entryEnd;
-        }
-
-        if (entryEnd < segment.endLine) {
-          hasMore = true;
-          break;
-        }
+      const persistedSegments = await listLogSegmentsForCursor(db, run.id, workerId, cursor, lineCount);
+      if (persistedSegments.length > 0) {
+        const entries = await Promise.all(persistedSegments.map(async ({ storageKey, startLine, endLine, startAt, endAt }) => {
+          const clippedStartLine = Math.max(startLine, cursor);
+          const content = await readLogSegmentLines(storage, storageKey, clippedStartLine - startLine, endLine - startLine);
+          return { startLine: clippedStartLine, endLine, content, startAt, endAt };
+        }));
+        const nextCursor = entries[entries.length - 1].endLine;
+        const hasMore = persistedSegments[persistedSegments.length - 1].endLine >= cursor;
+        res.json({ entries, nextCursor, hasMore });
+        return;
       }
 
-      if (remaining > 0 && logBuffer) {
-        const bufferedEntries = logBuffer.getBufferedEntries(run.id, workerId, nextCursor, remaining);
-        for (const entry of bufferedEntries) {
-          entries.push(entry);
-          nextCursor = entry.endLine;
-          remaining -= entry.endLine - entry.startLine;
-          if (remaining < 1) {
-            break;
-          }
-        }
+      const bufferedLines = logBuffer.getLines(run.id, workerId, cursor, lineCount + 1);
+      const visibleLines = bufferedLines.slice(0, lineCount);
+      if (bufferedLines.length > 0) {
+        const entry = {
+          startLine: cursor,
+          endLine: cursor + visibleLines.length,
+          startAt: visibleLines[0].timestamp,
+          endAt: visibleLines[visibleLines.length - 1].timestamp,
+          content: visibleLines.map(({ content: lineContent }) => lineContent).join("\n")
+        };
+        res.json({ entries: [entry], nextCursor: cursor + visibleLines.length, hasMore: bufferedLines.length > lineCount });
+        return;
       }
 
-      if (!hasMore) {
-        hasMore = await hasLogSegmentsAfterCursor(db, run.id, workerId, nextCursor) || Boolean(logBuffer?.hasBufferedLinesAfter(run.id, workerId, nextCursor));
-      }
-
-      res.json({ entries, nextCursor, hasMore });
+      res.json({ entries: [], nextCursor: cursor, hasMore: false });
     }
   };
 
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, listLogEntriesHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, insertLogChunkHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, insertLogLinesHandler);
   app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs/flush`, flushLogBufferHandler);
 }

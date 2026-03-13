@@ -12,7 +12,7 @@ import type { StorageBackend } from "storage";
 type UpsertArtifactPayload = Partial<Omit<Artifact, "id" | "createdAt" | "updatedAt">>;
 type UploadArtifactPayload = Buffer;
 
-export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend | null): void {
+export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend): void {
   const listArtifactsHandler: RouteHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
@@ -56,11 +56,6 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
   };
 
   const uploadArtifactHandler: RouteHandler<RouteParams, Artifact, UploadArtifactPayload> = async (req, res) => {
-    if (!storage) {
-      res.status(404).json({ error: "Artifact uploads are disabled" });
-      return;
-    }
-
     const artifact = await getArtifact(db, req.params.id);
 
     if (!artifact) {
@@ -82,11 +77,6 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
   };
 
   const downloadArtifactHandler: RouteHandler<RouteParams, Buffer> = async (req, res) => {
-    if (!storage) {
-      res.status(404).json({ error: "Artifact downloads are disabled" });
-      return;
-    }
-
     const artifact = await getArtifact(db, req.params.id);
 
     if (!artifact) {
@@ -109,8 +99,6 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
   app.get(`${API_BASE}/artifacts`, listArtifactsHandler);
   app.get(`${API_BASE}/artifacts/:id`, getArtifactHandler);
   app.put(`${API_BASE}/artifacts/:id`, upsertArtifactHandler);
-  if (storage) {
-    app.put(`${API_BASE}/artifacts/:id/file`, express.raw({ type: "*/*", limit: "250mb" }), uploadArtifactHandler);
-    app.get(`${API_BASE}/artifacts/:id/file`, downloadArtifactHandler);
-  }
+  app.put(`${API_BASE}/artifacts/:id/file`, express.raw({ type: "*/*", limit: "250mb" }), uploadArtifactHandler);
+  app.get(`${API_BASE}/artifacts/:id/file`, downloadArtifactHandler);
 }

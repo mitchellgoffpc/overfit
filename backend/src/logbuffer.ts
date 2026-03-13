@@ -1,6 +1,4 @@
-import { randomBytes } from "crypto";
-
-import type { ID, LogEntry } from "@underfit/types";
+import type { ID } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
@@ -20,42 +18,23 @@ interface LogBufferState {
   workerId: string;
   startLine: number;
   endLine: number;
-  startAt: string;
-  endAt: string;
-  chunks: string[];
+  lines: LogLine[];
   byteCount: number;
   firstBufferedAt: number;
 }
 
-export interface LogChunk {
-  runId: ID;
-  workerId: string;
+export interface LogLine {
   timestamp: string;
   content: string;
 }
 
 const getKey = (runId: ID, workerId: string): string => `${runId}:${workerId}`;
-const splitLines = (content: string): string[] => {
-  if (content.length === 0) {
-    return [];
-  }
-  const lines = content.split("\n");
-  if (lines[lines.length - 1] === "") {
-    lines.pop();
-  }
-  return lines;
-};
-const countLines = (content: string): number => splitLines(content).length;
-const sliceContentByLineRange = (content: string, startLine: number, endLine: number): string => (
-  splitLines(content).slice(startLine, endLine).join("\n")
-);
+const getLineContent = (lines: LogLine[]): string => lines.map(({ content }) => content).join("\n");
+const getByteCount = (lines: LogLine[]): number => Buffer.byteLength(getLineContent(lines), "utf8");
 
 export class LogBuffer {
   private readonly buffers = new Map<string, LogBufferState>();
-  private readonly flushingBuffers = new Map<string, LogBufferState>();
-  private readonly nextLineByKey = new Map<string, number>();
   private readonly inFlightFlushes = new Map<string, Promise<void>>();
-  private readonly config: LogBufferConfig;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -81,106 +60,41 @@ export class LogBuffer {
     await this.flushAll();
   }
 
-  async appendChunk(chunk: LogChunk): Promise<void> {
-    if (!chunk.content) {
+  async appendLines(runId: ID, workerId: string, lines: LogLine[]): Promise<void> {
+    if (lines.length === 0) {
       return;
     }
 
-    const now = Date.now();
-    const key = getKey(chunk.runId, chunk.workerId);
-    if (!this.nextLineByKey.has(key)) {
-      const latestSegment = await getLatestLogSegment(this.db, chunk.runId, chunk.workerId);
-      this.nextLineByKey.set(key, latestSegment?.endLine ?? 0);
+    const key = getKey(runId, workerId);
+    let startLine = 0;
+    if (!this.buffers.has(key)) {
+      startLine = (await getLatestLogSegment(this.db, runId, workerId))?.endLine ?? 0;
     }
 
-    const chunkLineCount = countLines(chunk.content);
-    const existing = this.buffers.get(key);
-
-    if (!existing) {
-      const startLine = this.nextLineByKey.get(key) ?? 0;
-      const endLine = startLine + chunkLineCount;
-      this.nextLineByKey.set(key, endLine);
-      this.buffers.set(key, {
-        runId: chunk.runId,
-        workerId: chunk.workerId,
-        startLine,
-        endLine,
-        startAt: chunk.timestamp,
-        endAt: chunk.timestamp,
-        chunks: [chunk.content],
-        byteCount: Buffer.byteLength(chunk.content, "utf8"),
-        firstBufferedAt: now
-      });
-    } else {
-      const endLine = existing.startLine + countLines(existing.chunks.join("") + chunk.content);
-      this.nextLineByKey.set(key, endLine);
-      existing.startAt = chunk.timestamp < existing.startAt ? chunk.timestamp : existing.startAt;
-      existing.endAt = chunk.timestamp > existing.endAt ? chunk.timestamp : existing.endAt;
-      existing.endLine = endLine;
-      existing.chunks.push(chunk.content);
-      existing.byteCount += Buffer.byteLength(chunk.content, "utf8");
+    // another append could have happend in the meantime, so...
+    let state = this.buffers.get(key);
+    if (!state) {
+      state = { runId, workerId, startLine, endLine: startLine, lines: [], byteCount: 0, firstBufferedAt: Date.now() };
+      this.buffers.set(key, state);
     }
 
-    const state = this.buffers.get(key);
-    if (state && state.byteCount >= this.config.maxSegmentBytes) {
+    state.lines.push(...lines);
+    state.endLine += lines.length;
+    state.byteCount += getByteCount(lines) + (state.byteCount > 0 ? 1 : 0); // +1 for the extra newline
+    if (state.byteCount >= this.config.maxSegmentBytes) {
       await this.flushKey(key);
     }
   }
 
-  async flush(runId: ID, workerId: string): Promise<void> {
-    await this.flushKey(getKey(runId, workerId));
-  }
-
-  async flushAll(): Promise<void> {
-    await Promise.all([...this.buffers.keys(), ...this.flushingBuffers.keys()].map(async (key) => {
-      await this.flushKey(key);
-    }));
-  }
-
-  getBufferedEntries(runId: ID, workerId: string, cursor: number, limit: number): LogEntry[] {
-    if (limit < 1) {
+  getLines(runId: ID, workerId: string, cursor: number, limit: number): LogLine[] {
+    const buffer = this.buffers.get(getKey(runId, workerId));
+    if (!buffer || buffer.endLine <= cursor || limit < 1) {
       return [];
     }
 
-    const key = getKey(runId, workerId);
-    const states: LogBufferState[] = [];
-    const flushing = this.flushingBuffers.get(key);
-    const active = this.buffers.get(key);
-    if (flushing) {
-      states.push(flushing);
-    }
-    if (active) {
-      states.push(active);
-    }
-
-    let nextStart = cursor;
-    let remaining = limit;
-    const entries: LogEntry[] = [];
-    for (const state of states.sort((a, b) => a.startLine - b.startLine)) {
-      if (state.endLine <= nextStart || remaining < 1) {
-        continue;
-      }
-
-      const entryStart = Math.max(state.startLine, nextStart);
-      const entryEnd = Math.min(state.endLine, entryStart + remaining);
-      const content = sliceContentByLineRange(state.chunks.join(""), entryStart - state.startLine, entryEnd - state.startLine);
-      if (content.length === 0) {
-        continue;
-      }
-
-      entries.push({ startLine: entryStart, endLine: entryEnd, content, startAt: state.startAt, endAt: state.endAt });
-      remaining -= entryEnd - entryStart;
-      nextStart = entryEnd;
-    }
-
-    return entries;
-  }
-
-  hasBufferedLinesAfter(runId: ID, workerId: string, cursor: number): boolean {
-    const key = getKey(runId, workerId);
-    const flushing = this.flushingBuffers.get(key);
-    const active = this.buffers.get(key);
-    return (flushing?.endLine ?? -1) > cursor || (active?.endLine ?? -1) > cursor;
+    const startLine = Math.max(buffer.startLine, cursor);
+    const endLine = Math.min(buffer.endLine, startLine + limit);
+    return buffer.lines.slice(startLine - buffer.startLine, endLine - buffer.startLine);
   }
 
   private async flushExpired(): Promise<void> {
@@ -194,6 +108,16 @@ export class LogBuffer {
     }));
   }
 
+  async flush(runId: ID, workerId: string): Promise<void> {
+    await this.flushKey(getKey(runId, workerId));
+  }
+
+  async flushAll(): Promise<void> {
+    await Promise.all([...this.buffers.keys()].map(async (key) => {
+      await this.flushKey(key);
+    }));
+  }
+
   private async flushKey(key: string): Promise<void> {
     const inFlight = this.inFlightFlushes.get(key);
     if (inFlight) {
@@ -202,32 +126,35 @@ export class LogBuffer {
     }
 
     const state = this.buffers.get(key);
-    if (state) {
-      this.buffers.delete(key);
-      this.flushingBuffers.set(key, state);
-      this.inFlightFlushes.set(key, this.writeLogSegment(state));
-      try {
-        await this.inFlightFlushes.get(key);
-      } finally {
-        this.flushingBuffers.delete(key);
-        this.inFlightFlushes.delete(key);
+    if (!state || state.lines.length === 0) {
+      return;
+    }
+
+    const flushLineCount = state.lines.length;
+    const snapshot = { ...state, lines: [...state.lines] };
+    this.inFlightFlushes.set(key, this.writeLogSegment(snapshot));
+    try {
+      await this.inFlightFlushes.get(key);
+      state.lines.splice(0, flushLineCount);
+      state.byteCount = getByteCount(state.lines);
+      state.startLine = snapshot.endLine;
+      state.endLine = state.startLine + state.lines.length;
+      if (state.lines.length === 0) {
+        this.buffers.delete(key);
+      } else {
+        state.firstBufferedAt = Date.now();
       }
+    } finally {
+      this.inFlightFlushes.delete(key);
     }
   }
 
   private async writeLogSegment(state: LogBufferState): Promise<void> {
-    const content = state.chunks.join("");
+    const startAt = state.lines[0].timestamp;
+    const endAt = state.lines[state.lines.length - 1].timestamp;
+    const content = getLineContent(state.lines);
     const storageKey = await this.storage.write(getLogSegmentStorageKey(state.runId, state.workerId, state.startLine), Buffer.from(content, "utf8"));
-    await insertLogSegment(this.db, {
-      id: randomBytes(12).toString("hex"),
-      runId: state.runId,
-      workerId: state.workerId,
-      startLine: state.startLine,
-      endLine: state.endLine,
-      startAt: state.startAt,
-      endAt: state.endAt,
-      byteCount: state.byteCount,
-      storageKey
-    });
+    const { lines: _, firstBufferedAt: __, ...row } = state;
+    await insertLogSegment(this.db, { ...row, startAt, endAt, storageKey });
   }
 }

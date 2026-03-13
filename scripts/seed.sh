@@ -49,17 +49,14 @@ json_request() {
   echo "$payload"
 }
 
-post_log_chunk() {
+post_log_lines() {
   local project_name="$1"
   local run_name="$2"
   local worker_id="$3"
   local timestamp="$4"
   local content="$5"
   local payload
-  if [[ -n "$content" && "${content: -1}" != $'\n' ]]; then
-    content+=$'\n'
-  fi
-  payload="$(jq -cn --arg workerId "$worker_id" --arg timestamp "$timestamp" --arg content "$content" '{workerId:$workerId,timestamp:$timestamp,content:$content}')"
+  payload="$(jq -cn --arg workerId "$worker_id" --arg timestamp "$timestamp" --arg content "$content" '{workerId:$workerId,lines:($content|split("\n")|map(select(length > 0)|{timestamp:$timestamp,content:.}))}')"
   json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/logs" "$payload" >/dev/null
 }
 
@@ -72,7 +69,7 @@ seed_logs_for_worker() {
   while IFS= read -r row; do
     timestamp="$(jq -r '.timestamp' <<<"$row")"
     content="$(jq -r '.content' <<<"$row")"
-    post_log_chunk "$project_name" "$run_name" "$worker_id" "$timestamp" "$content"
+    post_log_lines "$project_name" "$run_name" "$worker_id" "$timestamp" "$content"
   done < <(node <<'NODE'
 const start = new Date("2025-01-10T12:00:00.000Z").getTime();
 const chunkCount = 14;

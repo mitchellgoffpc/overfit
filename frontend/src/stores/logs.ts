@@ -40,7 +40,7 @@ export const useLogStore = create<LogState>((set, get) => ({
     const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
     const requestedCursor = get().logsByScope[scopeKey]?.cursor ?? 0;
 
-    const query = new URLSearchParams({ workerId, cursor: String(requestedCursor), limit: "10000" });
+    const query = new URLSearchParams({ workerId, cursor: String(requestedCursor) });
     const { ok, body, error } = await request<LogPage>(`accounts/${handle}/projects/${projectName}/runs/${runName}/logs?${query.toString()}`);
     const scope = get().logsByScope[scopeKey] ?? { lines: [], cursor: 0, error: null };
     if (ok) {

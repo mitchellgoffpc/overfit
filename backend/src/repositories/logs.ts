@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 import type { ID, LogSegment } from "@underfit/types";
 
 import type { Database } from "db";
@@ -23,8 +25,8 @@ export const createLogSegmentsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const insertLogSegment = async (db: Database, segment: Omit<LogSegment, "createdAt">): Promise<LogSegment> => {
-  const payload = { ...segment, createdAt: nowIso() };
+export const insertLogSegment = async (db: Database, segment: Omit<LogSegment, "id" | "createdAt">): Promise<LogSegment> => {
+  const payload = { ...segment, id: randomBytes(12).toString("hex"), createdAt: nowIso() };
   await db.insertInto(table).values(payload).execute();
   return payload;
 };
@@ -39,31 +41,14 @@ export const getLatestLogSegment = async (db: Database, runId: ID, workerId: str
     .executeTakeFirst();
 };
 
-export const listLogSegmentsForCursor = async (
-  db: Database,
-  runId: ID,
-  workerId: string,
-  options: { cursor: number; limit?: number }): Promise<LogSegment[]> => {
-  const limit = options.limit ?? 1024;
+export const listLogSegmentsForCursor = async (db: Database, runId: ID, workerId: string, cursor: number, count = Number.MAX_SAFE_INTEGER): Promise<LogSegment[]> => {
   return await db
     .selectFrom(table)
     .selectAll()
     .where("runId", "=", runId)
     .where("workerId", "=", workerId)
-    .where("endLine", ">", options.cursor)
-    .orderBy("startLine", "asc")
-    .limit(limit)
-    .execute();
-};
-
-export const hasLogSegmentsAfterCursor = async (db: Database, runId: ID, workerId: string, cursor: number): Promise<boolean> => {
-  const segment = await db
-    .selectFrom(table)
-    .select("id")
-    .where("runId", "=", runId)
-    .where("workerId", "=", workerId)
     .where("endLine", ">", cursor)
+    .where("startLine", "<", cursor + count)
     .orderBy("startLine", "asc")
-    .executeTakeFirst();
-  return Boolean(segment);
+    .execute();
 };

@@ -42,16 +42,16 @@ describe("logbuffer", () => {
     await insertRun(db, run);
   });
 
-  it("buffers chunks and flushes explicitly", async () => {
+  it("buffers lines and flushes explicitly", async () => {
     const storage = createStorage({ type: "file", baseDir: storageBaseDir });
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 1024 * 1024, maxSegmentAgeMs: 60_000, flushIntervalMs: 10_000 });
 
-    await logbuffer.appendChunk({ runId: "run-1", workerId: "worker-1", timestamp: "2025-01-01T00:00:00.000Z", content: "hello\n" });
-    await logbuffer.appendChunk({ runId: "run-1", workerId: "worker-1", timestamp: "2025-01-01T00:00:01.000Z", content: "world" });
-    expect(await listLogSegmentsForCursor(db, "run-1", "worker-1", { cursor: 0 })).toHaveLength(0);
+    await logbuffer.appendLines("run-1", "worker-1", [{ timestamp: "2025-01-01T00:00:00.000Z", content: "hello" }]);
+    await logbuffer.appendLines("run-1", "worker-1", [{ timestamp: "2025-01-01T00:00:01.000Z", content: "world" }]);
+    expect(await listLogSegmentsForCursor(db, "run-1", "worker-1", 0)).toHaveLength(0);
 
     await logbuffer.flush("run-1", "worker-1");
-    const segments = await listLogSegmentsForCursor(db, "run-1", "worker-1", { cursor: 0 });
+    const segments = await listLogSegmentsForCursor(db, "run-1", "worker-1", 0);
     expect(segments).toHaveLength(1);
     expect(segments[0]).toMatchObject({ startLine: 0, endLine: 2, byteCount: Buffer.byteLength("hello\nworld", "utf8") });
 
@@ -65,8 +65,8 @@ describe("logbuffer", () => {
     const storage = createStorage({ type: "file", baseDir: storageBaseDir });
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 4, maxSegmentAgeMs: 60_000, flushIntervalMs: 10_000 });
 
-    await logbuffer.appendChunk({ runId: "run-1", workerId: "worker-1", timestamp: "2025-01-01T00:00:00.000Z", content: "abcd" });
-    const segments = await listLogSegmentsForCursor(db, "run-1", "worker-1", { cursor: 0 });
+    await logbuffer.appendLines("run-1", "worker-1", [{ timestamp: "2025-01-01T00:00:00.000Z", content: "abcd" }]);
+    const segments = await listLogSegmentsForCursor(db, "run-1", "worker-1", 0);
     expect(segments).toHaveLength(1);
     expect(segments[0]).toMatchObject({ startLine: 0, endLine: 1, byteCount: 4 });
 
@@ -78,11 +78,11 @@ describe("logbuffer", () => {
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 1024 * 1024, maxSegmentAgeMs: 25, flushIntervalMs: 10 });
     logbuffer.start();
 
-    await logbuffer.appendChunk({ runId: "run-1", workerId: "worker-1", timestamp: "2025-01-01T00:00:00.000Z", content: "tick" });
-    expect(await listLogSegmentsForCursor(db, "run-1", "worker-1", { cursor: 0 })).toHaveLength(0);
+    await logbuffer.appendLines("run-1", "worker-1", [{ timestamp: "2025-01-01T00:00:00.000Z", content: "tick" }]);
+    expect(await listLogSegmentsForCursor(db, "run-1", "worker-1", 0)).toHaveLength(0);
 
     await delay(80);
-    expect(await listLogSegmentsForCursor(db, "run-1", "worker-1", { cursor: 0 })).toHaveLength(1);
+    expect(await listLogSegmentsForCursor(db, "run-1", "worker-1", 0)).toHaveLength(1);
 
     await logbuffer.stop();
   });
