@@ -9,26 +9,28 @@ import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
 import { insertRun } from "repositories/runs";
 import { insertScalar } from "repositories/scalars";
-import { upsertUser } from "repositories/users";
+import { createUser } from "repositories/users";
 
 const testTimestamp = "2025-01-01T00:00:00.000Z";
 
 describe("scalar routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
+  let userId: string;
+  let runId: string;
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
-    app = createApp(AppConfigSchema.parse(), db);
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
-    await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "run-1", status: "running", metadata: null });
+    app = createApp(AppConfigSchema.parse({}), db);
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
+    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: null });
+    runId = (await insertRun(db, { projectId: "project-1", userId, name: "run-1", status: "running", metadata: null })).id;
   });
 
   it("inserts a scalar", async () => {
     const payload = { step: 10, values: { accuracy: 0.98, loss: 0.12 }, timestamp: testTimestamp };
     const response = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/scalars`).send(payload).expect(200);
-    expect(response.body).toMatchObject({ runId: "run-1", step: 10, values: { accuracy: 0.98, loss: 0.12 }, timestamp: testTimestamp });
+    expect(response.body).toMatchObject({ runId, step: 10, values: { accuracy: 0.98, loss: 0.12 }, timestamp: testTimestamp });
     expect(typeof (response.body as { id: string }).id).toBe("string");
   });
 
@@ -41,9 +43,9 @@ describe("scalar routes", () => {
   });
 
   it("fetches scalars by account handle, project name, and run name", async () => {
-    await insertRun(db, { id: "run-2", projectId: "project-1", userId: "user-1", name: "baseline", status: "running", metadata: null });
-    await insertScalar(db, { id: "scalar-1", runId: "run-2", step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
-    await insertScalar(db, { id: "scalar-2", runId: "run-2", step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
+    const baselineRunId = (await insertRun(db, { projectId: "project-1", userId, name: "baseline", status: "running", metadata: null })).id;
+    await insertScalar(db, { runId: baselineRunId, step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
+    await insertScalar(db, { runId: baselineRunId, step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/baseline/scalars`).expect(200);
     expect(response.body as unknown[]).toHaveLength(2);

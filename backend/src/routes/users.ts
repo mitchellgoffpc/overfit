@@ -5,9 +5,9 @@ import type { ApiKey, Organization, OrganizationRole, User } from "@underfit/typ
 import { z } from "zod";
 
 import type { Database } from "db";
-import { createApiKey, deleteApiKey, listApiKeysByUser } from "repositories/api-keys.js";
+import { createApiKey, deleteApiKey, listApiKeysByUser } from "repositories/api-keys";
 import { listOrganizationMembershipsByUserId } from "repositories/organization-members";
-import { getUserByEmail, getUserByHandle, updateUserProfile } from "repositories/users";
+import { getUserByEmail, getUserByHandle, updateUser } from "repositories/users";
 import { requireAuth } from "routes/auth";
 import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
@@ -16,11 +16,11 @@ const EmailExistsQuerySchema = z.strictObject({
   email: z.string().trim().min(1, "Email is required").prefault("")
 });
 const UpdateProfilePayloadSchema = z.strictObject({
-  name: z.string().trim().min(1).optional(),
-  bio: z.string().trim().min(1).optional()
+  name: z.string().trim().min(1).exactOptional(),
+  bio: z.string().trim().min(1).exactOptional()
 });
 const ApiKeyPayloadSchema = z.strictObject({
-  label: z.string().trim().optional()
+  label: z.string().trim().min(1).exactOptional()
 });
 
 type EmailExistsQuery = z.infer<typeof EmailExistsQuerySchema>;
@@ -30,11 +30,11 @@ type UserMembershipsResponse = (Organization & { role: OrganizationRole })[];
 
 export function registerUserRoutes(app: RouteApp, db: Database): void {
   const emailExistsHandler: RouteHandler<Record<string, string>, { exists: boolean }, undefined, EmailExistsQuery> = async (req, res) => {
-    const { success, error, data: { email } = {} } = EmailExistsQuerySchema.safeParse(req.query);
+    const { success, error, data } = EmailExistsQuerySchema.safeParse(req.query);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
     } else {
-      res.json({ exists: Boolean(await getUserByEmail(db, email)) });
+      res.json({ exists: Boolean(await getUserByEmail(db, data.email)) });
     }
   };
 
@@ -57,13 +57,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
-
-    const updated = await updateUserProfile(db, req.user.id, data);
-    if (!updated) {
-      res.status(404).json({ error: "User not found" });
-    } else {
-      res.json(updated);
-    }
+    res.json(await updateUser(db, req.user.id, data));
   };
 
   const getCurrentUserHandler: RouteHandler<Record<string, string>, User> = (req, res) => {
@@ -75,7 +69,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
   };
 
   const createApiKeyHandler: RouteHandler<Record<string, string>, ApiKey, ApiKeyPayload> = async (req, res) => {
-    const { success, error, data: { label = "" } = {} } = ApiKeyPayloadSchema.safeParse(req.body);
+    const { success, error, data } = ApiKeyPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -84,7 +78,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     const key = await createApiKey(db, {
       id: randomBytes(12).toString("hex"),
       userId: req.user.id,
-      label: label.length > 0 ? label : null,
+      label: data.label ?? null,
       token: randomBytes(24).toString("base64url")
     });
     res.json(key);

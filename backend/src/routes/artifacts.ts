@@ -4,26 +4,49 @@ import express from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { getArtifact, listArtifacts, upsertArtifact } from "repositories/artifacts";
-import { hasRun } from "repositories/runs";
+import { getArtifact, insertArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
 import { getArtifactStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
-const UpsertArtifactPayloadSchema = z.strictObject({
-  runId: z.string().optional(),
-  name: z.string().optional(),
-  type: z.string().optional(),
-  version: z.string().optional(),
-  uri: z.string().nullable().optional(),
-  metadata: z.record(z.string(), z.unknown()).nullable().optional()
+const InsertArtifactPayloadSchema = z.strictObject({
+  runId: z.string(),
+  name: z.string(),
+  type: z.string(),
+  version: z.string(),
+  uri: z.string().nullable().exactOptional().prefault(null),
+  metadata: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
 });
-type UpsertArtifactPayload = z.infer<typeof UpsertArtifactPayloadSchema>;
+type InsertArtifactPayload = z.infer<typeof InsertArtifactPayloadSchema>;
+
+const isForeignKeyConstraintError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) { return false; }
+  const { code } = error as Error & { code?: string };
+  return code === "SQLITE_CONSTRAINT_FOREIGNKEY" || code === "23503";
+};
 
 export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend): void {
   const listArtifactsHandler: RouteHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
+  };
+
+  const insertArtifactHandler: RouteHandler<Record<string, string>, Artifact, InsertArtifactPayload> = async (req, res) => {
+    const { success, error, data } = InsertArtifactPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+
+    try {
+      res.json(await insertArtifact(db, data));
+    } catch (caught) {
+      if (isForeignKeyConstraintError(caught)) {
+        res.status(400).json({ error: "Artifact runId does not reference an existing run" });
+      } else {
+        throw caught;
+      }
+    }
   };
 
   const getArtifactHandler: RouteHandler<RouteParams, Artifact> = async (req, res) => {
@@ -36,27 +59,6 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     }
   };
 
-  const upsertArtifactHandler: RouteHandler<RouteParams, Artifact, UpsertArtifactPayload> = async (req, res) => {
-    const { success, error, data = {} } = UpsertArtifactPayloadSchema.safeParse(req.body);
-    if (!success) {
-      res.status(400).json({ error: formatZodError(error) });
-      return;
-    }
-
-    const id = req.params.id;
-    const existing = await getArtifact(db, id) ?? {};
-    const merged = { ...existing, ...data, id };
-
-    const missingFields = ["runId", "name", "type", "version"].filter((field) => !merged[field as keyof typeof merged]);
-    if (missingFields.length > 0) {
-      res.status(400).json({ error: `Artifact fields are required: ${missingFields.join(", ")}` });
-    } else if (!await hasRun(db, merged.runId)) {
-      res.status(400).json({ error: "Artifact runId does not reference an existing run" });
-    } else {
-      res.json(await upsertArtifact(db, merged));
-    }
-  };
-
   const uploadArtifactHandler: RouteHandler<RouteParams, Artifact, Buffer> = async (req, res) => {
     const artifact = await getArtifact(db, req.params.id);
     if (!artifact) {
@@ -65,11 +67,12 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
       res.status(400).json({ error: "Artifact upload must include raw bytes" });
     } else {
       const artifactPath = await storage.write(getArtifactStorageKey(artifact.runId, artifact.id), req.body);
-      const updated = await upsertArtifact(db, {
-        ...artifact,
-        uri: `file://${artifactPath}`
-      });
-      res.json(updated);
+      const updated = await updateArtifactUri(db, artifact.id, `file://${artifactPath}`);
+      if (!updated) {
+        res.status(404).json({ error: "Artifact not found" });
+      } else {
+        res.json(updated);
+      }
     }
   };
 
@@ -94,8 +97,8 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
   };
 
   app.get(`${API_BASE}/artifacts`, listArtifactsHandler);
+  app.put(`${API_BASE}/artifacts`, insertArtifactHandler);
   app.get(`${API_BASE}/artifacts/:id`, getArtifactHandler);
-  app.put(`${API_BASE}/artifacts/:id`, upsertArtifactHandler);
   app.put(`${API_BASE}/artifacts/:id/file`, express.raw({ type: "*/*", limit: "250mb" }), uploadArtifactHandler);
   app.get(`${API_BASE}/artifacts/:id/file`, downloadArtifactHandler);
 }

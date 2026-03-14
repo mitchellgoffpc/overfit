@@ -12,39 +12,37 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import type { RouteApp } from "routes/helpers";
 
-async function getWithToken(app: RouteApp, path: string, token: string, status = 200) {
+async function getWithToken(app: ReturnType<typeof createApp>, path: string, token: string, status = 200) {
   return request(app)
     .get(path)
     .set("Authorization", `Bearer ${token}`)
     .expect(status);
 }
 
-async function getWithCookie(app: RouteApp, path: string, cookie: string, status = 200) {
+async function getWithCookie(app: ReturnType<typeof createApp>, path: string, cookie: string, status = 200) {
   return request(app)
     .get(path)
     .set("Cookie", cookie)
     .expect(status);
 }
 
-async function postWithToken(app: RouteApp, path: string, token: string, status = 200) {
+async function postWithToken(app: ReturnType<typeof createApp>, path: string, token: string, status = 200) {
   return request(app)
     .post(path)
     .set("Authorization", `Bearer ${token}`)
     .expect(status);
 }
 
-async function post(app: RouteApp, path: string, payload: Record<string, unknown>, status = 200): Promise<Response> {
+async function post(app: ReturnType<typeof createApp>, path: string, payload: Record<string, unknown>, status = 200) {
   return request(app)
     .post(`${API_BASE}/${path}`)
     .send(payload)
     .expect(status);
 }
 
-const getSetCookie = (response: Response): string | undefined => {
-  const headers = response.headers as Record<string, string | string[] | undefined>;
-  const cookie = headers["set-cookie"];
+const getSetCookie = (response: { headers: Record<string, string | string[] | undefined> }): string | undefined => {
+  const cookie = response.headers["set-cookie"];
   return Array.isArray(cookie) ? cookie[0] : cookie;
 };
 
@@ -54,7 +52,7 @@ describe("auth routes", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
-    app = createApp(AppConfigSchema.parse(), db);
+    app = createApp(AppConfigSchema.parse({}), db);
   });
 
   it("registers, logs in, and returns current user", async () => {

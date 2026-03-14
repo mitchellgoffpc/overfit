@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 
-import { API_BASE, testHandle, testSlug } from "@underfit/types";
+import { API_BASE, testSlug } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import { z } from "zod";
 
@@ -11,12 +11,8 @@ import { requireAuth } from "routes/auth";
 import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
-const UpsertProjectParamsSchema = z.strictObject({
-  handle: z.string().trim().toLowerCase().refine(value => !testHandle(value)),
-  projectName: z.string().trim().toLowerCase().refine(value => !testSlug(value))
-});
 const UpsertProjectPayloadSchema = z.strictObject({
-  description: z.string().nullable().optional()
+  description: z.string().nullable().exactOptional()
 });
 
 type UpsertProjectPayload = z.infer<typeof UpsertProjectPayloadSchema>;
@@ -42,12 +38,12 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
   };
 
   const upsertProjectHandler: RouteHandler<{ handle: string; projectName: string }, Project, UpsertProjectPayload> = async (req, res) => {
-    const { success: paramsSuccess, error: paramsError, data: { handle, projectName } = {} } = UpsertProjectParamsSchema.safeParse(req.params);
-    const { success: payloadSuccess, error: payloadError, data: { description } = {} } = UpsertProjectPayloadSchema.safeParse(req.body);
-    if (!paramsSuccess) {
-      res.status(400).json({ error: formatZodError(paramsError) });
-    } else if (!payloadSuccess) {
-      res.status(400).json({ error: formatZodError(payloadError) });
+    const { handle, projectName } = req.params;
+    const { success, error, data } = UpsertProjectPayloadSchema.safeParse(req.body);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
+    } else if (testSlug(projectName)) {
+      res.status(400).json({ error: "Invalid project name" });
     } else {
       const account = await getAccount(db, handle);
       if (!account) {
@@ -60,7 +56,7 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
         id: existing?.id ?? randomBytes(16).toString("hex"),
         accountId: account.id,
         name: projectName,
-        description: description ?? existing?.description ?? null
+        description: data.description ?? existing?.description ?? null
       });
       res.json(project);
     }

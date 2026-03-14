@@ -1,8 +1,9 @@
+import { randomBytes } from "crypto";
+
 import type { Scalar } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
-import { decodeJson } from "repositories/helpers";
 import { table as projectsTable } from "repositories/projects";
 import { table as runsTable } from "repositories/runs";
 
@@ -34,11 +35,12 @@ export const getScalars = async (db: Database, handle: string, projectName: stri
     .where(`${runsTable}.name`, "=", runName)
     .orderBy(`${table}.step`, "asc")
     .execute();
-  return rows.map((row) => ({ ...row, values: decodeJson(row.values) }));
+  return rows.map((row) => ({ ...row, values: JSON.parse(row.values) as Record<string, number> }));
 };
 
-export const insertScalar = async (db: Database, scalar: Scalar): Promise<Scalar> => {
-  const row: ScalarRow = { ...scalar, values: JSON.stringify(scalar.values) };
+export const insertScalar = async (db: Database, scalar: Omit<Scalar, "id">): Promise<Scalar> => {
+  const insertedScalar: Scalar = { ...scalar, id: randomBytes(12).toString("hex") };
+  const row: ScalarRow = { ...insertedScalar, values: JSON.stringify(insertedScalar.values) };
   await db.insertInto(table).values(row).execute();
-  return scalar;
+  return insertedScalar;
 };

@@ -1,7 +1,9 @@
+import { randomBytes } from "crypto";
+
 import type { Artifact, ID } from "@underfit/types";
 
 import type { Database } from "db";
-import { decodeJson, encodeJson, nowIso } from "repositories/helpers.js";
+import { nowIso } from "repositories/helpers";
 
 export type ArtifactRow = Omit<Artifact, "metadata"> & { metadata: string | null };
 
@@ -25,18 +27,22 @@ export const createArtifactsTable = async (db: Database): Promise<void> => {
 
 export const listArtifacts = async (db: Database): Promise<Artifact[]> => {
   const rows = await db.selectFrom(table).selectAll().execute();
-  return rows.map((row) => ({ ...row, metadata: decodeJson(row.metadata) }));
+  return rows.map((row) => ({ ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null }));
 };
 
 export const getArtifact = async (db: Database, id: ID): Promise<Artifact | undefined> => {
   const row = await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
-  return row ? { ...row, metadata: decodeJson(row.metadata) } : undefined;
+  return row ? { ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null } : undefined;
 };
 
-export const upsertArtifact = async (db: Database, artifact: Omit<Artifact, "createdAt" | "updatedAt">): Promise<Artifact> => {
-  const payload: Artifact = { ...artifact, createdAt: nowIso(), updatedAt: nowIso() };
-  const row: ArtifactRow = { ...payload, metadata: encodeJson(payload.metadata) };
-  const { id: _, createdAt: __, ...updates } = row;
-  await db.insertInto(table).values(row).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getArtifact(db, artifact.id) ?? payload;
+export const insertArtifact = async (db: Database, artifact: Omit<Artifact, "id" | "createdAt" | "updatedAt">): Promise<Artifact> => {
+  const payload: Artifact = { ...artifact, id: randomBytes(16).toString("hex"), createdAt: nowIso(), updatedAt: nowIso() };
+  const row: ArtifactRow = { ...payload, metadata: payload.metadata ? JSON.stringify(payload.metadata) : null };
+  await db.insertInto(table).values(row).execute();
+  return payload;
+};
+
+export const updateArtifactUri = async (db: Database, id: ID, uri: string): Promise<Artifact | undefined> => {
+  const result = await db.updateTable(table).set({ uri, updatedAt: nowIso() }).where("id", "=", id).executeTakeFirst();
+  return result.numUpdatedRows ? await getArtifact(db, id) : undefined;
 };

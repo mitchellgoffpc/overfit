@@ -1,26 +1,26 @@
-import { randomBytes, randomInt } from "crypto";
+import { randomInt } from "crypto";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { API_BASE } from "@underfit/types";
+import { API_BASE, runStatus } from "@underfit/types";
 import type { Run } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
 import { getProject } from "repositories/projects";
-import { getRun, insertRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
+import { getRun, insertRun, listProjectRuns, listUserRuns, updateRunByName } from "repositories/runs";
 import { getUserByHandle } from "repositories/users";
 import { requireAuth } from "routes/auth";
 import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const InsertRunPayloadSchema = z.strictObject({
-  status: z.string().min(1, "Run fields are required: status").prefault(""),
-  metadata: z.record(z.string(), z.unknown()).nullable().optional()
+  status: z.enum(runStatus).exactOptional().prefault("queued"),
+  metadata: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
 });
 const UpdateRunPayloadSchema = z.strictObject({
-  status: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).nullable().optional()
+  status: z.enum(runStatus).exactOptional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().exactOptional()
 });
 
 type InsertRunPayload = z.infer<typeof InsertRunPayloadSchema>;
@@ -30,7 +30,7 @@ const parseWordList = (relativePath: string): string[] => fs.readFileSync(fileUR
 const adjectives = parseWordList("../../src/wordlists/adjectives.txt");
 const nouns = parseWordList("../../src/wordlists/nouns.txt");
 const randomWord = (words: string[]): string => {
-  if (!words.length) { throw new Error("Word list is empty"); }
+  if (!words[0]) { throw new Error("Word list is empty"); }
   return words[randomInt(words.length)] ?? words[0];
 };
 const randomRunName = (): string => `${randomWord(adjectives)}-${randomWord(nouns)}`;
@@ -69,7 +69,7 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
   };
 
   const insertRunHandler: RouteHandler<{ handle: string; projectName: string }, Run, InsertRunPayload> = async (req, res) => {
-    const { success, error, data: { status, metadata } = {} } = InsertRunPayloadSchema.safeParse(req.body);
+    const { success, error, data } = InsertRunPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -92,21 +92,13 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
       if (!runName) {
         res.status(500).json({ error: "Unable to allocate run name" });
       } else {
-        const run = await insertRun(db, {
-          id: randomBytes(16).toString("hex"),
-          projectId: project.id,
-          userId: req.user.id,
-          name: runName,
-          status,
-          metadata: metadata ?? null
-        });
-        res.json(run);
+        res.json(await insertRun(db, { projectId: project.id, userId: req.user.id, name: runName, ...data }));
       }
     }
   };
 
   const updateRunHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Run, UpdateRunPayload> = async (req, res) => {
-    const { success, error, data: { status, metadata } = {} } = UpdateRunPayloadSchema.safeParse(req.body);
+    const { success, error, data } = UpdateRunPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -115,12 +107,11 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
     const runName = req.params.runName.trim().toLowerCase();
-    const existing = await getRun(db, handle, projectName, runName);
-    if (!existing) {
+    const run = await updateRunByName(db, handle, projectName, runName, data);
+    if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      const run = await updateRun(db, existing.id, { status, metadata });
-      res.json(run ?? existing);
+      res.json(run);
     }
   };
 

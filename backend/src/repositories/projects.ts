@@ -65,7 +65,9 @@ export const upsertProject = async (db: Database, project: Omit<ProjectRow, "cre
   const payload: ProjectRow = { ...project, createdAt: nowIso(), updatedAt: nowIso() };
   const { id: _, createdAt: __, ...updates } = payload;
   await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getProjectById(db, project.id) ?? payload;
+  const result = await getProjectById(db, project.id);
+  if (!result) { throw new Error("RUH ROH"); }
+  return result;
 };
 
 export const listProjectsByUserActivity = async (db: Database, userId: ID): Promise<Project[]> => {

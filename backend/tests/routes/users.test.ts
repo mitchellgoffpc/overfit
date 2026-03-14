@@ -7,9 +7,9 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import { createOrganizationMember } from "repositories/organization-members.js";
+import { createOrganizationMember } from "repositories/organization-members";
 import { createOrganization } from "repositories/organizations";
-import { upsertUser } from "repositories/users";
+import { createUser } from "repositories/users";
 
 interface RegisterResponse {
   user: { id: string };
@@ -25,13 +25,14 @@ describe("users routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
   let organizationId: string;
+  let userId: string;
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
-    app = createApp(AppConfigSchema.parse(), db);
+    app = createApp(AppConfigSchema.parse({}), db);
     organizationId = (await createOrganization(db, { handle: "core", name: "Core" })).id;
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
-    await createOrganizationMember(db, organizationId, "user-1", "ADMIN");
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
+    await createOrganizationMember(db, organizationId, userId, "ADMIN");
   });
 
   it("lists user organizations", async () => {

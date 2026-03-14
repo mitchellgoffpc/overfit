@@ -31,7 +31,7 @@ describe("organizations routes", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
-    app = createApp(AppConfigSchema.parse(), db);
+    app = createApp(AppConfigSchema.parse({}), db);
     const owner = await register("owner@example.com", "owner");
     ownerToken = owner.session.token;
     ownerId = owner.user.id;

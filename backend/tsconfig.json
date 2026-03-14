@@ -8,11 +8,12 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "types": ["node"],
     "paths": {
-      "@underfit/types": ["../../packages/types/src"]
+      "@underfit/types": ["../../packages/types/src/index.ts"],
+      "*": ["*.ts"]
     }
   },
   "include": ["src/**/*", "tests/**/*"],

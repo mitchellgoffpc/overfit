@@ -1,26 +1,27 @@
-import type { Account, ApiKey, LogSegment, OrganizationMember, Session, UserAuth } from "@underfit/types";
+import type { ApiKey, LogSegment, OrganizationMember, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 import { z } from "zod";
 
-import { createAccountsTable } from "repositories/accounts.js";
-import { createApiKeysTable } from "repositories/api-keys.js";
-import type { ArtifactRow } from "repositories/artifacts.js";
-import { createArtifactsTable } from "repositories/artifacts.js";
-import { createLogSegmentsTable } from "repositories/logs.js";
-import { createOrganizationMembersTable } from "repositories/organization-members.js";
-import type { OrganizationRow } from "repositories/organizations.js";
-import { createOrganizationsTable } from "repositories/organizations.js";
-import { createProjectsTable } from "repositories/projects.js";
-import type { ProjectRow } from "repositories/projects.js";
-import type { RunRow } from "repositories/runs.js";
-import { createRunsTable } from "repositories/runs.js";
-import type { ScalarRow } from "repositories/scalars.js";
-import { createScalarsTable } from "repositories/scalars.js";
-import { createSessionsTable } from "repositories/sessions.js";
-import { createUserAuthTable } from "repositories/user-auth.js";
-import type { UserRow } from "repositories/users.js";
-import { createUsersTable } from "repositories/users.js";
+import type { AccountRow } from "repositories/accounts";
+import { createAccountsTable } from "repositories/accounts";
+import { createApiKeysTable } from "repositories/api-keys";
+import type { ArtifactRow } from "repositories/artifacts";
+import { createArtifactsTable } from "repositories/artifacts";
+import { createLogSegmentsTable } from "repositories/logs";
+import { createOrganizationMembersTable } from "repositories/organization-members";
+import type { OrganizationRow } from "repositories/organizations";
+import { createOrganizationsTable } from "repositories/organizations";
+import { createProjectsTable } from "repositories/projects";
+import type { ProjectRow } from "repositories/projects";
+import type { RunRow } from "repositories/runs";
+import { createRunsTable } from "repositories/runs";
+import type { ScalarRow } from "repositories/scalars";
+import { createScalarsTable } from "repositories/scalars";
+import { createSessionsTable } from "repositories/sessions";
+import { createUserAuthTable } from "repositories/user-auth";
+import type { UserRow } from "repositories/users";
+import { createUsersTable } from "repositories/users";
 
 export const DatabaseConfigSchema = z.discriminatedUnion("type", [
   z.strictObject({
@@ -36,7 +37,7 @@ export const DatabaseConfigSchema = z.discriminatedUnion("type", [
 export type DatabaseConfig = z.infer<typeof DatabaseConfigSchema>;
 
 interface DatabaseSchema {
-  accounts: Account;
+  accounts: AccountRow;
   users: UserRow;
   api_keys: ApiKey;
   user_auth: UserAuth;

@@ -58,8 +58,9 @@ export const listOrganizationUsersByOrganizationId = async (db: Database, organi
     .select([
       `${usersTable}.id as id`,
       `${usersTable}.email as email`,
+      `${usersTable}.bio as bio`,
       `${accountsTable}.handle as handle`,
-      `${accountsTable}.name as name`,
+      `${usersTable}.name as name`,
       `${accountsTable}.type as type`,
       `${usersTable}.createdAt as createdAt`,
       `${usersTable}.updatedAt as updatedAt`,
@@ -77,7 +78,7 @@ export const listOrganizationMembershipsByUserId = async (db: Database, userId: 
     .select([
       `${organizationsTable}.id as id`,
       `${accountsTable}.handle as handle`,
-      `${accountsTable}.name as name`,
+      `${organizationsTable}.name as name`,
       `${accountsTable}.type as type`,
       `${organizationsTable}.createdAt as createdAt`,
       `${organizationsTable}.updatedAt as updatedAt`,

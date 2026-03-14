@@ -1,20 +1,22 @@
-import type { ID, User } from "@underfit/types";
+import { randomBytes } from "crypto";
+
+import type { ID, User, Account } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 
-export type UserRow = Omit<User, "handle" | "name" | "type">;
+export type UserRow = Omit<User, "handle" | "type">;
 
 export const table = "users";
 
 const selectUserColumns = () => [
   `${table}.id as id`,
   `${table}.email as email`,
+  `${table}.name as name`,
   `${table}.bio as bio`,
   `${accountsTable}.handle as handle`,
-  `${accountsTable}.name as name`,
   `${accountsTable}.type as type`,
   `${table}.createdAt as createdAt`,
   `${table}.updatedAt as updatedAt`
@@ -26,6 +28,7 @@ export const createUsersTable = async (db: Database): Promise<void> => {
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("email", "text", (col) => col.notNull())
+    .addColumn("name", "text", (col) => col.notNull())
     .addColumn("bio", "text")
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
@@ -59,31 +62,19 @@ export const getUserByEmail = async (db: Database, email: string): Promise<User 
     .executeTakeFirst();
 };
 
-export const upsertUser = async (db: Database, user: Omit<User, "createdAt" | "updatedAt">): Promise<User> => {
-  const payload: User = { ...user, createdAt: nowIso(), updatedAt: nowIso() };
-  const { type: _type, handle, name, ...userRow } = payload;
-  await db
-    .insertInto(accountsTable)
-    .values({ id: user.id, handle, name })
-    .onConflict((oc) => oc.column("id").doUpdateSet({ handle, name, type: "USER" }))
-    .execute();
-
-  const { id: _id, createdAt: __, ...updates } = userRow;
-  await db.insertInto(table).values(userRow).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getUser(db, user.id) ?? payload;
+export const createUser = async (db: Database, user: Omit<User, "id" | "createdAt" | "updatedAt" | "type">): Promise<User> => {
+  const id = randomBytes(16).toString("hex");
+  const createdAt = nowIso();
+  const updatedAt = nowIso();
+  const payload: User = { ...user, id, type: "USER", createdAt, updatedAt };
+  await db.insertInto(accountsTable).values({ id, handle: user.handle, type: "USER" }).execute();
+  await db.insertInto(table).values({ id, email: user.email, name: user.name, bio: user.bio, createdAt, updatedAt }).execute();
+  return await getUser(db, id) ?? payload;
 };
 
-export const updateUserProfile = async (
-  db: Database,
-  id: ID,
-  updates: { name?: string; bio?: string | null }
-): Promise<User | undefined> => {
-  const { name, bio } = updates;
-  if (bio !== undefined) {
-    await db.updateTable(table).set({ bio, updatedAt: nowIso() }).where("id", "=", id).execute();
-  }
-  if (name) {
-    await db.updateTable(accountsTable).set({ name }).where("id", "=", id).execute();
-  }
-  return await getUser(db, id);
+export const updateUser = async (db: Database, id: ID, updates: Partial<Omit<User, keyof Account | "createdAt" | "updatedAt">>): Promise<User> => {
+  await db.updateTable(table).set({ ...updates, updatedAt: nowIso() }).where("id", "=", id).execute();
+  const user = await getUser(db, id);
+  if (!user) { throw new Error(`User not found: ${id}`); }
+  return user;
 };

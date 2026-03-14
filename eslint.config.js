@@ -82,6 +82,7 @@ const additionalRules = {
 };
 
 const overrideRules = {
+  "@typescript-eslint/no-non-null-assertion": "off",
   "@typescript-eslint/no-unused-vars": [
     "error",
     {
@@ -101,7 +102,7 @@ if (duplicateRules.length > 0) {
 export default [
   eslint.configs.recommended,
   {
-    ignores: [".worktrees/**"]
+    ignores: [".worktrees/**", "**/dist/**"]
   },
   {
     files: ["**/*.{ts,tsx,js,jsx}"] ,

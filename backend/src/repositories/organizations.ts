@@ -6,7 +6,7 @@ import type { Database } from "db";
 import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 
-export type OrganizationRow = Omit<Organization, "handle" | "name" | "type">;
+export type OrganizationRow = Omit<Organization, "handle" | "type">;
 type OrganizationInput = Omit<Organization, "createdAt" | "updatedAt" | "id" | "type">;
 
 export const table = "organizations";
@@ -16,6 +16,7 @@ export const createOrganizationsTable = async (db: Database): Promise<void> => {
     .createTable(table)
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
+    .addColumn("name", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
     .execute();
@@ -28,7 +29,7 @@ export const getOrganization = async (db: Database, handle: string): Promise<Org
     .select([
       `${table}.id as id`,
       `${accountsTable}.handle as handle`,
-      `${accountsTable}.name as name`,
+      `${table}.name as name`,
       `${accountsTable}.type as type`,
       `${table}.createdAt as createdAt`,
       `${table}.updatedAt as updatedAt`
@@ -40,14 +41,22 @@ export const getOrganization = async (db: Database, handle: string): Promise<Org
 export const createOrganization = async (db: Database, organization: OrganizationInput): Promise<Organization> => {
   const id = randomBytes(16).toString("hex");
   const createdAt = nowIso();
-  await db.insertInto(accountsTable).values({ id, type: "ORGANIZATION", ...organization }).execute();
-  await db.insertInto(table).values({ id, createdAt, updatedAt: createdAt }).execute();
+  await db.insertInto(accountsTable).values({ id, type: "ORGANIZATION", handle: organization.handle }).execute();
+  await db.insertInto(table).values({ id, name: organization.name, createdAt, updatedAt: createdAt }).execute();
   return await getOrganization(db, organization.handle) ?? { id, type: "ORGANIZATION", createdAt, updatedAt: createdAt, ...organization };
 };
 
-export const updateOrganization = async (db: Database, id: string, organization: Partial<OrganizationInput>): Promise<Organization> => {
+export const updateOrganization = async (db: Database, id: string, organization: Partial<Omit<OrganizationInput, "handle">>): Promise<Organization> => {
   const updatedAt = nowIso();
-  await db.updateTable(accountsTable).set(organization).where("id", "=", id).execute();
-  await db.updateTable(table).set({ updatedAt }).where("id", "=", id).execute();
-  return await getOrganization(db, organization.handle) ?? { id, type: "ORGANIZATION", createdAt: updatedAt, updatedAt, ...organization };
+  await db.updateTable(table).set({ ...organization, updatedAt }).where("id", "=", id).execute();
+  const row = await db
+    .selectFrom(table)
+    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
+    .select(`${accountsTable}.handle as handle`)
+    .where(`${table}.id`, "=", id)
+    .executeTakeFirst();
+  if (!row) { throw new Error(`Organization not found: ${id}`); }
+  const output = await getOrganization(db, row.handle);
+  if (!output) { throw new Error(`Organization not found: ${id}`); }
+  return output;
 };

@@ -22,7 +22,7 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
 
 export const loadConfig = (configPath?: string): AppConfig => {
   if (!configPath) {
-    return AppConfigSchema.parse();
+    return AppConfigSchema.parse({});
   } else {
     const resolvedPath = path.resolve(process.cwd(), configPath);
     const rawConfig = fs.readFileSync(resolvedPath, "utf-8");

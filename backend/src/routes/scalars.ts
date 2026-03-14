@@ -1,5 +1,3 @@
-import { randomBytes } from "crypto";
-
 import { API_BASE } from "@underfit/types";
 import type { Scalar } from "@underfit/types";
 import { z } from "zod";
@@ -11,7 +9,7 @@ import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const InsertScalarBodySchema = z.strictObject({
-  step: z.number().nullable().optional(),
+  step: z.number().nullable().exactOptional().prefault(null),
   values: z.record(z.string(), z.number()),
   timestamp: z.string().min(1, "Scalar fields are required: timestamp")
 });
@@ -20,7 +18,7 @@ type InsertScalarBody = z.infer<typeof InsertScalarBodySchema>;
 
 export function registerScalarRoutes(app: RouteApp, db: Database): void {
   const insertScalarHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Scalar, InsertScalarBody> = async (req, res) => {
-    const { success, error, data: { step, values, timestamp } = {} } = InsertScalarBodySchema.safeParse(req.body);
+    const { success, error, data } = InsertScalarBodySchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -33,14 +31,7 @@ export function registerScalarRoutes(app: RouteApp, db: Database): void {
     if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      const scalar = await insertScalar(db, {
-        id: randomBytes(12).toString("hex"),
-        runId: run.id,
-        step: step ?? null,
-        values,
-        timestamp,
-      });
-      res.json(scalar);
+      res.json(await insertScalar(db, { runId: run.id, ...data }));
     }
   };
 

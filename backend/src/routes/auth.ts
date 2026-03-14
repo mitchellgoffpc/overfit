@@ -19,7 +19,7 @@ import type { Database } from "db";
 import { getAccount } from "repositories/accounts";
 import { getSession, upsertSession, deleteSession } from "repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
-import { getUserByEmail, getUser, upsertUser } from "repositories/users";
+import { createUser, getUserByEmail, getUser } from "repositories/users";
 import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 
@@ -82,7 +82,7 @@ const clearSessionCookie = (res: Response) => {
 };
 
 const getSessionToken = (headers: Record<string, string | string[] | undefined>, cookies: Record<string, string>) => {
-  const headerValue = Array.isArray(headers.authorization) ? headers.authorization[0] : headers.authorization;
+  const headerValue = Array.isArray(headers["authorization"]) ? (headers["authorization"][0] ?? "") : headers["authorization"];
   const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
   const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader) ?? cookies[SESSION_COOKIE_NAME];
   return raw?.trim();
@@ -115,25 +115,18 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
 
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
   const register: RouteHandler<Record<string, string>, AuthResponse, RegisterPayload> = async (req, res) => {
-    const { success, error, data: { email, handle, password } = {} } = RegisterPayloadSchema.safeParse(req.body);
+    const { success, error, data } = RegisterPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
-    } else if (await getAccount(db, handle)) {
+    } else if (await getAccount(db, data.handle)) {
       res.status(409).json({ error: USERNAME_IN_USE_ERROR });
-    } else if (await getUserByEmail(db, email)) {
+    } else if (await getUserByEmail(db, data.email)) {
       res.status(409).json({ error: EMAIL_IN_USE_ERROR });
     } else {
-      const user = await upsertUser(db, {
-        id: randomBytes(16).toString("hex"),
-        email,
-        handle,
-        name: handle,
-        bio: null,
-        type: "USER"
-      });
+      const user = await createUser(db, { email: data.email, handle: data.handle, name: data.handle, bio: null });
 
       const salt = randomBytes(SALT_BYTES).toString("hex");
-      const passwordHash = hashPassword(password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
+      const passwordHash = hashPassword(data.password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
       await upsertUserAuth(db, {
         id: user.id,
         passwordHash,
@@ -152,20 +145,20 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
   };
 
   const login: RouteHandler<Record<string, string>, AuthResponse, LoginPayload> = async (req, res) => {
-    const { success, error, data: { email, password } = {} } = LoginPayloadSchema.safeParse(req.body);
+    const { success, error, data } = LoginPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
 
-    const user = await getUserByEmail(db, email);
+    const user = await getUserByEmail(db, data.email);
     if (!user) {
       res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
       return;
     }
 
     const auth = await getUserAuth(db, user.id);
-    if (!auth || !verifyPassword(password, auth)) {
+    if (!auth || !verifyPassword(data.password, auth)) {
       res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
       return;
     }

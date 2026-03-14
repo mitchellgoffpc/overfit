@@ -20,16 +20,11 @@ const CreateOrganizationPayloadSchema = z.object({
   name: z.string()
 });
 const UpdateOrganizationPayloadSchema = z.object({
-  name: z.string().optional()
+  name: z.string().exactOptional()
 });
 const OrganizationMemberPayloadSchema = z.object({
   role: z.enum(organizationRoles).prefault("MEMBER")
 });
-
-interface MemberRouteParams {
-  handle: string;
-  userHandle: string;
-}
 
 type OrganizationMembersResponse = (User & { role: OrganizationRole })[];
 type CreateOrganizationPayload = z.infer<typeof CreateOrganizationPayloadSchema>;
@@ -39,7 +34,7 @@ type OrganizationMemberPayload = z.infer<typeof OrganizationMemberPayloadSchema>
 const isUniqueConstraintError = (error: unknown): boolean => {
   if (!(error instanceof Error)) { return false; }
   const { code } = error as Error & { code?: string };
-  return code === "SQLITE_CONSTRAINT_UNIQUE" || code === "SQLITE_CONSTRAINT_PRIMARYKEY" || code === "23505" || error.message.includes("UNIQUE constraint failed");
+  return code === "SQLITE_CONSTRAINT_UNIQUE" || code === "SQLITE_CONSTRAINT_PRIMARYKEY" || code === "23505";
 };
 
 export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
@@ -76,7 +71,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     } else if (selfMember?.role !== "ADMIN") {
       res.status(403).json({ error: "Forbidden" });
     } else {
-      res.json(await updateOrganization(db, organization.id, { handle, name: data.name ?? organization.name }));
+      res.json(await updateOrganization(db, organization.id, data));
     }
   };
 
@@ -89,7 +84,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const upsertOrganizationMemberHandler: RouteHandler<MemberRouteParams, OrganizationMember, OrganizationMemberPayload> = async (req, res) => {
+  const upsertOrganizationMemberHandler: RouteHandler<{ handle: string; userHandle: string }, OrganizationMember, OrganizationMemberPayload> = async (req, res) => {
     const { success, error, data } = OrganizationMemberPayloadSchema.safeParse(req.body);
     const handle = req.params.handle.trim().toLowerCase();
     const userHandle = req.params.userHandle.trim().toLowerCase();
@@ -113,7 +108,7 @@ export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const deleteOrganizationMemberHandler: RouteHandler<MemberRouteParams, { ok: true }> = async (req, res) => {
+  const deleteOrganizationMemberHandler: RouteHandler<{ handle: string; userHandle: string }, { ok: true }> = async (req, res) => {
     const organization = await getOrganization(db, req.params.handle.trim().toLowerCase());
     const user = await getUserByHandle(db, req.params.userHandle.trim().toLowerCase());
     const selfMember = organization ? await getOrganizationMember(db, organization.id, req.user.id) : undefined;

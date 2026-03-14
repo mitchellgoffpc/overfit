@@ -10,8 +10,6 @@ import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
 import type { StorageBackend } from "storage";
 
-const DEFAULT_LOG_LINE_COUNT = 10000;
-
 const InsertLogLineSchema = z.strictObject({
   timestamp: z.string().min(1),
   content: z.string()
@@ -25,8 +23,8 @@ const FlushLogBufferBodySchema = z.strictObject({
 });
 const ListLogEntriesQuerySchema = z.strictObject({
   workerId: z.string().min(1),
-  cursor: z.coerce.number().int().min(0).default(0),
-  count: z.coerce.number().int().positive().optional()
+  cursor: z.coerce.number().int().min(0).prefault(0),
+  count: z.coerce.number().int().positive().exactOptional().prefault(10000)
 });
 
 type InsertLogLinesPayload = z.infer<typeof InsertLogLinesBodySchema>;
@@ -52,44 +50,43 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
   };
 
   const insertLogLinesHandler: RouteHandler<RunPathParams, { status: "buffered" }, InsertLogLinesPayload> = async (req, res) => {
-    const { success, error, data: { workerId, lines } = {} } = InsertLogLinesBodySchema.safeParse(req.body);
+    const { success, error, data } = InsertLogLinesBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
     } else if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      await logBuffer.appendLines(run.id, workerId, normalizeLogLines(lines));
+      await logBuffer.appendLines(run.id, data.workerId, normalizeLogLines(data.lines));
       res.json({ status: "buffered" });
     }
   };
 
   const flushLogBufferHandler: RouteHandler<RunPathParams, { status: "flushed" }, FlushLogBufferPayload> = async (req, res) => {
-    const { success, error, data: { workerId } = {} } = FlushLogBufferBodySchema.safeParse(req.body);
+    const { success, error, data } = FlushLogBufferBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
     } else if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      await logBuffer.flush(run.id, workerId);
+      await logBuffer.flush(run.id, data.workerId);
       res.json({ status: "flushed" });
     }
   };
 
   const listLogEntriesHandler: RouteHandler<RunPathParams, LogPage, unknown, ListLogEntriesQuery> = async (req, res) => {
-    const parsedQuery = ListLogEntriesQuerySchema.safeParse(req.query);
-    if (!parsedQuery.success) {
-      res.status(400).json({ error: formatZodError(parsedQuery.error) });
+    const { success, error, data } = ListLogEntriesQuerySchema.safeParse(req.query);
+    if (!success) {
+      res.status(400).json({ error: formatZodError(error) });
       return;
     }
 
-    const { workerId, cursor, count } = parsedQuery.data;
+    const { workerId, cursor, count: lineCount } = data;
     const run = await getPathRun(req.params);
     if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      const lineCount = count ?? DEFAULT_LOG_LINE_COUNT;
       const persistedSegments = await listLogSegmentsForCursor(db, run.id, workerId, cursor, lineCount);
       if (persistedSegments.length > 0) {
         const entries = await Promise.all(persistedSegments.map(async ({ storageKey, startLine, endLine, startAt, endAt }) => {
@@ -97,8 +94,8 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
           const content = await readLogSegmentLines(storage, storageKey, clippedStartLine - startLine, endLine - startLine);
           return { startLine: clippedStartLine, endLine, content, startAt, endAt };
         }));
-        const nextCursor = entries[entries.length - 1].endLine;
-        const hasMore = persistedSegments[persistedSegments.length - 1].endLine >= cursor;
+        const nextCursor = entries[entries.length - 1]!.endLine;
+        const hasMore = persistedSegments[persistedSegments.length - 1]!.endLine >= cursor;
         res.json({ entries, nextCursor, hasMore });
         return;
       }
@@ -109,8 +106,8 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
         const entry = {
           startLine: cursor,
           endLine: cursor + visibleLines.length,
-          startAt: visibleLines[0].timestamp,
-          endAt: visibleLines[visibleLines.length - 1].timestamp,
+          startAt: visibleLines[0]!.timestamp,
+          endAt: visibleLines[visibleLines.length - 1]!.timestamp,
           content: visibleLines.map(({ content: lineContent }) => lineContent).join("\n")
         };
         res.json({ entries: [entry], nextCursor: cursor + visibleLines.length, hasMore: bufferedLines.length > lineCount });

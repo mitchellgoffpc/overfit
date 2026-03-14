@@ -150,8 +150,8 @@ export class LogBuffer {
   }
 
   private async writeLogSegment(state: LogBufferState): Promise<void> {
-    const startAt = state.lines[0].timestamp;
-    const endAt = state.lines[state.lines.length - 1].timestamp;
+    const startAt = state.lines[0]!.timestamp;
+    const endAt = state.lines[state.lines.length - 1]!.timestamp;
     const content = getLineContent(state.lines);
     const storageKey = await this.storage.write(getLogSegmentStorageKey(state.runId, state.workerId, state.startLine), Buffer.from(content, "utf8"));
     const { lines: _, firstBufferedAt: __, ...row } = state;

@@ -10,26 +10,27 @@ import type { Database } from "db";
 import { upsertProject } from "repositories/projects";
 import { insertRun } from "repositories/runs";
 import { upsertSession } from "repositories/sessions";
-import { upsertUser } from "repositories/users";
+import { createUser } from "repositories/users";
 
 describe("projects routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
+  let userId: string;
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
-    app = createApp(AppConfigSchema.parse(), db);
-    await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
+    app = createApp(AppConfigSchema.parse({}), db);
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
   });
 
   it("fetches projects by account handle and project name", async () => {
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
+    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: "Tracking runs" });
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
     expect(response.body).toMatchObject({ id: "project-1", owner: "ada", name: "underfit", description: "Tracking runs" });
   });
 
   it("fetches a project by account handle and name case-insensitively", async () => {
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: "Tracking runs" });
+    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: "Tracking runs" });
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit`).expect(200);
     expect(response.body).toMatchObject({ id: "project-1", owner: "ada", name: "underfit", description: "Tracking runs" });
   });
@@ -49,7 +50,7 @@ describe("projects routes", () => {
 
   it("rejects invalid project names", async () => {
     const response = await request(app).put(`${API_BASE}/accounts/ada/projects/Underfit%20Labs`).send({ description: null }).expect(400);
-    expect(response.body).toMatchObject({ error: "projectName: Invalid input" });
+    expect(response.body).toMatchObject({ error: "Invalid project name" });
   });
 
   it("rejects upserting projects for unknown accounts", async () => {
@@ -58,23 +59,23 @@ describe("projects routes", () => {
   });
 
   it("lists most active projects for the current user", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
-    await upsertProject(db, { id: "project-2", accountId: "user-1", name: "telemetry", description: null });
-    await insertRun(db, { id: "run-1", projectId: "project-1", userId: "user-1", name: "Run 1", status: "running", metadata: null });
-    await insertRun(db, { id: "run-2", projectId: "project-2", userId: "user-1", name: "Run 2", status: "finished", metadata: null });
-    await insertRun(db, { id: "run-3", projectId: "project-2", userId: "user-1", name: "Run 3", status: "running", metadata: null });
-    await insertRun(db, { id: "run-4", projectId: "project-1", userId: "user-2", name: "Run 4", status: "running", metadata: null });
-    await upsertSession(db, { id: "token-1", userId: "user-1", expiresAt: "2099-01-01T00:00:00.000Z" });
+    const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null })).id;
+    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: null });
+    await upsertProject(db, { id: "project-2", accountId: userId, name: "telemetry", description: null });
+    await insertRun(db, { projectId: "project-1", userId, name: "Run 1", status: "running", metadata: null });
+    await insertRun(db, { projectId: "project-2", userId, name: "Run 2", status: "finished", metadata: null });
+    await insertRun(db, { projectId: "project-2", userId, name: "Run 3", status: "running", metadata: null });
+    await insertRun(db, { projectId: "project-1", userId: user2Id, name: "Run 4", status: "running", metadata: null });
+    await upsertSession(db, { id: "token-1", userId, expiresAt: "2099-01-01T00:00:00.000Z" });
 
     const response = await request(app).get(`${API_BASE}/me/projects`).set("x-session-token", "token-1").expect(200);
     expect((response.body as Project[]).map((project) => project.id)).toEqual(["project-2", "project-1"]);
   });
 
   it("lists projects by account handle", async () => {
-    await upsertUser(db, { id: "user-2", email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null, type: "USER" });
-    await upsertProject(db, { id: "project-1", accountId: "user-1", name: "underfit", description: null });
-    await upsertProject(db, { id: "project-2", accountId: "user-2", name: "compiler", description: null });
+    const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null })).id;
+    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: null });
+    await upsertProject(db, { id: "project-2", accountId: user2Id, name: "compiler", description: null });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects`).expect(200);
     expect(response.body).toMatchObject([{ id: "project-1", owner: "ada", name: "underfit" }]);
