@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./frontend/tests/setup.ts"],
-    exclude: [".worktrees/**", "node_modules/**"],
+    exclude: [".worktrees/**", "node_modules/**", "backend/dist/**", "frontend/dist/**"],
     chaiConfig: {
       truncateThreshold: 0, // Set to 0 for no truncation
     },

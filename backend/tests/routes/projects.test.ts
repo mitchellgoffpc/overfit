@@ -7,7 +7,7 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import { upsertProject } from "repositories/projects";
+import { createProject } from "repositories/projects";
 import { insertRun } from "repositories/runs";
 import { upsertSession } from "repositories/sessions";
 import { createUser } from "repositories/users";
@@ -24,15 +24,15 @@ describe("projects routes", () => {
   });
 
   it("fetches projects by account handle and project name", async () => {
-    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: "Tracking runs" });
+    const project = await createProject(db, { accountId: userId, name: "underfit", description: "Tracking runs" });
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", owner: "ada", name: "underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: project.id, owner: "ada", name: "underfit", description: "Tracking runs" });
   });
 
   it("fetches a project by account handle and name case-insensitively", async () => {
-    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: "Tracking runs" });
+    const project = await createProject(db, { accountId: userId, name: "underfit", description: "Tracking runs" });
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit`).expect(200);
-    expect(response.body).toMatchObject({ id: "project-1", owner: "ada", name: "underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ id: project.id, owner: "ada", name: "underfit", description: "Tracking runs" });
   });
 
   it("rejects unknown projects", async () => {
@@ -40,44 +40,67 @@ describe("projects routes", () => {
     expect(response.body).toMatchObject({ error: "Project not found" });
   });
 
-  it("upserts and fetches a project by account handle and name", async () => {
-    const upsertResponse = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Tracking runs" }).expect(200);
-    expect(upsertResponse.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
+  it("creates and fetches a project by account handle and name", async () => {
+    const createResponse = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "underfit", description: "Tracking runs" }).expect(200);
+    expect(createResponse.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
     expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
   });
 
+  it("updates a project description", async () => {
+    await createProject(db, { accountId: userId, name: "underfit", description: "Initial" });
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Tracking runs" }).expect(200);
+    expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
+  });
+
   it("rejects invalid project names", async () => {
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/Underfit%20Labs`).send({ description: null }).expect(400);
+    const response = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "Underfit Labs", description: null }).expect(400);
     expect(response.body).toMatchObject({ error: "Invalid project name" });
   });
 
-  it("rejects upserting projects for unknown accounts", async () => {
-    const response = await request(app).put(`${API_BASE}/accounts/missing/projects/underfit`).send({ description: null }).expect(404);
+  it("rejects creating projects for unknown accounts", async () => {
+    const response = await request(app).post(`${API_BASE}/accounts/missing/projects`).send({ name: "underfit", description: null }).expect(404);
     expect(response.body).toMatchObject({ error: "Account not found" });
+  });
+
+  it("rejects updating unknown projects", async () => {
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/missing`).send({ description: "Tracking runs" }).expect(404);
+    expect(response.body).toMatchObject({ error: "Project not found" });
+  });
+
+  it("rejects creating duplicate projects", async () => {
+    await createProject(db, { accountId: userId, name: "underfit", description: null });
+    const response = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "underfit", description: null }).expect(409);
+    expect(response.body).toMatchObject({ error: "Project already exists" });
+  });
+
+  it("rejects updating non-updatable fields", async () => {
+    await createProject(db, { accountId: userId, name: "underfit", description: null });
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ name: "new-name", description: "Tracking runs" }).expect(400);
+    expect(response.body).toMatchObject({ error: "Unrecognized key: \"name\"" });
   });
 
   it("lists most active projects for the current user", async () => {
     const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null })).id;
-    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: null });
-    await upsertProject(db, { id: "project-2", accountId: userId, name: "telemetry", description: null });
-    await insertRun(db, { projectId: "project-1", userId, name: "Run 1", status: "running", metadata: null });
-    await insertRun(db, { projectId: "project-2", userId, name: "Run 2", status: "finished", metadata: null });
-    await insertRun(db, { projectId: "project-2", userId, name: "Run 3", status: "running", metadata: null });
-    await insertRun(db, { projectId: "project-1", userId: user2Id, name: "Run 4", status: "running", metadata: null });
+    const project1 = await createProject(db, { accountId: userId, name: "underfit", description: null });
+    const project2 = await createProject(db, { accountId: userId, name: "telemetry", description: null });
+    await insertRun(db, { projectId: project1.id, userId, name: "Run 1", status: "running", metadata: null });
+    await insertRun(db, { projectId: project2.id, userId, name: "Run 2", status: "finished", metadata: null });
+    await insertRun(db, { projectId: project2.id, userId, name: "Run 3", status: "running", metadata: null });
+    await insertRun(db, { projectId: project1.id, userId: user2Id, name: "Run 4", status: "running", metadata: null });
     await upsertSession(db, { id: "token-1", userId, expiresAt: "2099-01-01T00:00:00.000Z" });
 
     const response = await request(app).get(`${API_BASE}/me/projects`).set("x-session-token", "token-1").expect(200);
-    expect((response.body as Project[]).map((project) => project.id)).toEqual(["project-2", "project-1"]);
+    expect((response.body as Project[]).map((project) => project.id)).toEqual([project2.id, project1.id]);
   });
 
   it("lists projects by account handle", async () => {
     const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null })).id;
-    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: null });
-    await upsertProject(db, { id: "project-2", accountId: user2Id, name: "compiler", description: null });
+    const project1 = await createProject(db, { accountId: userId, name: "underfit", description: null });
+    await createProject(db, { accountId: user2Id, name: "compiler", description: null });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects`).expect(200);
-    expect(response.body).toMatchObject([{ id: "project-1", owner: "ada", name: "underfit" }]);
+    expect(response.body).toMatchObject([{ id: project1.id, owner: "ada", name: "underfit" }]);
   });
 });

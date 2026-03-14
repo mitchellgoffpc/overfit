@@ -10,7 +10,7 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import { upsertProject } from "repositories/projects";
+import { createProject } from "repositories/projects";
 import { insertRun } from "repositories/runs";
 import { createUser } from "repositories/users";
 
@@ -20,6 +20,7 @@ describe("artifacts routes", () => {
   let storageBaseDir: string;
   let userId: string;
   let runId: string;
+  let projectId: string;
 
   beforeAll(async () => {
     storageBaseDir = await fs.mkdtemp(path.join(os.tmpdir(), "underfit-artifacts-"));
@@ -33,8 +34,8 @@ describe("artifacts routes", () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir } }), db);
     userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
-    await upsertProject(db, { id: "project-1", accountId: userId, name: "underfit", description: null });
-    runId = (await insertRun(db, { projectId: "project-1", userId, name: "Run 1", status: "running", metadata: null })).id;
+    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null })).id;
+    runId = (await insertRun(db, { projectId, userId, name: "Run 1", status: "running", metadata: null })).id;
   });
 
   it("inserts and fetches an artifact", async () => {

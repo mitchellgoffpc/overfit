@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 import type { ApiKey, ID } from "@underfit/types";
 
 import type { Database } from "db";
@@ -21,8 +23,8 @@ export const listApiKeysByUser = async (db: Database, userId: ID): Promise<ApiKe
   return await db.selectFrom(table).selectAll().where("userId", "=", userId).orderBy("createdAt", "desc").execute();
 };
 
-export const createApiKey = async (db: Database, key: Omit<ApiKey, "createdAt">): Promise<ApiKey> => {
-  const payload: ApiKey = { ...key, createdAt: nowIso() };
+export const createApiKey = async (db: Database, key: Omit<ApiKey, "id" | "createdAt">): Promise<ApiKey> => {
+  const payload: ApiKey = { ...key, id: randomBytes(12).toString("hex"), createdAt: nowIso() };
   await db.insertInto(table).values(payload).execute();
   return payload;
 };

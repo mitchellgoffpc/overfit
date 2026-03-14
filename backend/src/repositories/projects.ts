@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 import type { ID, Project } from "@underfit/types";
 import { sql } from "kysely";
 
@@ -9,6 +11,8 @@ export const table = "projects";
 const runsTable = "runs";
 
 export type ProjectRow = Omit<Project, "owner"> & { accountId: ID };
+type InsertProjectRow = Pick<ProjectRow, "accountId" | "name" | "description">;
+type UpdateProjectRow = Partial<Pick<ProjectRow, "description">>;
 
 const projectSelect = [
   `${table}.id as id`,
@@ -61,13 +65,36 @@ export const getProject = async (db: Database, handle: string, name: string): Pr
     .executeTakeFirst();
 };
 
-export const upsertProject = async (db: Database, project: Omit<ProjectRow, "createdAt" | "updatedAt">): Promise<Project> => {
-  const payload: ProjectRow = { ...project, createdAt: nowIso(), updatedAt: nowIso() };
-  const { id: _, createdAt: __, ...updates } = payload;
-  await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  const result = await getProjectById(db, project.id);
+export const createProject = async (db: Database, project: InsertProjectRow): Promise<Project> => {
+  const id = randomBytes(16).toString("hex");
+  const payload: ProjectRow = { ...project, id, createdAt: nowIso(), updatedAt: nowIso() };
+  await db.insertInto(table).values(payload).execute();
+  const result = await getProjectById(db, id);
   if (!result) { throw new Error("RUH ROH"); }
   return result;
+};
+
+export const updateProject = async (db: Database, id: ID, updates: UpdateProjectRow): Promise<Project | undefined> => {
+  const payload = { description: updates.description, updatedAt: nowIso() };
+  const result = await db.updateTable(table).set(payload).where("id", "=", id).executeTakeFirst();
+  if (!result.numUpdatedRows) { return undefined; }
+  const project = await getProjectById(db, id);
+  if (!project) { throw new Error("RUH ROH"); }
+  return project;
+};
+
+export const updateProjectByName = async (db: Database, handle: string, name: string, updates: UpdateProjectRow): Promise<Project | undefined> => {
+  const payload = { description: updates.description, updatedAt: nowIso() };
+  const result = await db.updateTable(table)
+    .set(payload)
+    .where("id", "in", db.selectFrom(table)
+      .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
+      .select(`${table}.id`)
+      .where(`${accountsTable}.handle`, "=", handle)
+      .where(`${table}.name`, "=", name))
+    .executeTakeFirst();
+  if (!result.numUpdatedRows) { return undefined; }
+  return await getProject(db, handle, name);
 };
 
 export const listProjectsByUserActivity = async (db: Database, userId: ID): Promise<Project[]> => {
