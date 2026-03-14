@@ -6,7 +6,7 @@ import type { Database } from "db";
 import { formatZodError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import type { LogBuffer, LogLine } from "logbuffer";
-import { listLogSegmentsForCursor } from "repositories/logs";
+import { getLatestLogSegment, listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
 import type { StorageBackend } from "storage";
 
@@ -16,6 +16,7 @@ const CreateLogLineSchema = z.strictObject({
 });
 const CreateLogLinesBodySchema = z.strictObject({
   workerId: z.string().min(1),
+  startLine: z.number().int().min(0),
   lines: z.array(CreateLogLineSchema).min(1)
 });
 const FlushLogBufferBodySchema = z.strictObject({
@@ -30,6 +31,7 @@ const ListLogEntriesQuerySchema = z.strictObject({
 type CreateLogLinesPayload = z.infer<typeof CreateLogLinesBodySchema>;
 type FlushLogBufferPayload = z.infer<typeof FlushLogBufferBodySchema>;
 type ListLogEntriesQuery = z.infer<typeof ListLogEntriesQuerySchema>;
+type CreateLogLinesResponse = { status: "buffered" } | { error: string; expectedStartLine: number };
 
 interface RunPathParams { handle: string; projectName: string; runName: string; }
 
@@ -49,7 +51,7 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     return await getRun(db, params.handle.trim().toLowerCase(), params.projectName.trim().toLowerCase(), params.runName.trim().toLowerCase());
   };
 
-  const createLogLinesHandler: RouteHandler<RunPathParams, { status: "buffered" }, CreateLogLinesPayload> = async (req, res) => {
+  const createLogLinesHandler: RouteHandler<RunPathParams, CreateLogLinesResponse, CreateLogLinesPayload> = async (req, res) => {
     const { success, error, data } = CreateLogLinesBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
     if (!success) {
@@ -57,8 +59,19 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     } else if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      await logBuffer.appendLines(run.id, data.workerId, normalizeLogLines(data.lines));
-      res.json({ status: "buffered" });
+      const bufferedEndLine = logBuffer.getEndLine(run.id, data.workerId);
+      const expectedStartLine = bufferedEndLine ?? (await getLatestLogSegment(db, run.id, data.workerId))?.endLine ?? 0;
+      if (data.startLine !== expectedStartLine) {
+        res.status(409).json({ error: "Invalid startLine", expectedStartLine });
+        return;
+      }
+
+      const appendedStartLine = await logBuffer.appendLines(run.id, data.workerId, data.startLine, normalizeLogLines(data.lines));
+      if (appendedStartLine !== data.startLine) {
+        res.status(409).json({ error: "Invalid startLine", expectedStartLine: appendedStartLine });
+      } else {
+        res.json({ status: "buffered" });
+      }
     }
   };
 

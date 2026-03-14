@@ -2,7 +2,7 @@ import type { ID } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { createLogSegment, getLatestLogSegment } from "repositories/logs";
+import { createLogSegment } from "repositories/logs";
 import { getLogSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
@@ -60,22 +60,18 @@ export class LogBuffer {
     await this.flushAll();
   }
 
-  async appendLines(runId: ID, workerId: string, lines: LogLine[]): Promise<void> {
+  async appendLines(runId: ID, workerId: string, startLine: number, lines: LogLine[]): Promise<number> {
     if (lines.length === 0) {
-      return;
+      return startLine;
     }
 
     const key = getKey(runId, workerId);
-    let startLine = 0;
-    if (!this.buffers.has(key)) {
-      startLine = (await getLatestLogSegment(this.db, runId, workerId))?.endLine ?? 0;
-    }
-
-    // another append could have happend in the meantime, so...
     let state = this.buffers.get(key);
     if (!state) {
       state = { runId, workerId, startLine, endLine: startLine, lines: [], byteCount: 0, firstBufferedAt: Date.now() };
       this.buffers.set(key, state);
+    } else if (state.endLine !== startLine) {
+      return state.endLine;
     }
 
     state.lines.push(...lines);
@@ -84,6 +80,7 @@ export class LogBuffer {
     if (state.byteCount >= this.config.maxSegmentBytes) {
       await this.flushKey(key);
     }
+    return startLine;
   }
 
   getLines(runId: ID, workerId: string, cursor: number, limit: number): LogLine[] {
@@ -95,6 +92,11 @@ export class LogBuffer {
     const startLine = Math.max(buffer.startLine, cursor);
     const endLine = Math.min(buffer.endLine, startLine + limit);
     return buffer.lines.slice(startLine - buffer.startLine, endLine - buffer.startLine);
+  }
+
+  getEndLine(runId: ID, workerId: string): number | null {
+    const buffer = this.buffers.get(getKey(runId, workerId));
+    return buffer ? buffer.endLine : null;
   }
 
   private async flushExpired(): Promise<void> {

@@ -42,6 +42,7 @@ describe("logs routes", () => {
   it("reads buffered log deltas with cursor polling", async () => {
     const payloadA = {
       workerId: "worker-1",
+      startLine: 0,
       lines: [
         { timestamp: "2025-01-01T00:00:00.000Z", content: "hello" },
         { timestamp: "2025-01-01T00:00:00.500Z", content: "world" }
@@ -49,6 +50,7 @@ describe("logs routes", () => {
     };
     const payloadB = {
       workerId: "worker-1",
+      startLine: 2,
       lines: [{ timestamp: "2025-01-01T00:00:10.000Z", content: "next block" }]
     };
 
@@ -84,6 +86,7 @@ describe("logs routes", () => {
   it("reads persisted logs and supports cursor in the middle of a segment", async () => {
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
       workerId: "worker-1",
+      startLine: 0,
       lines: [
         { timestamp: "2025-01-01T00:00:00.000Z", content: "a" },
         { timestamp: "2025-01-01T00:00:01.000Z", content: "b" },
@@ -108,6 +111,7 @@ describe("logs routes", () => {
   it("reads persisted segments first and buffered tail on the next cursor", async () => {
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
       workerId: "worker-1",
+      startLine: 0,
       lines: [
         { timestamp: "2025-01-01T00:00:00.000Z", content: "line-0" },
         { timestamp: "2025-01-01T00:00:00.100Z", content: "line-1" }
@@ -116,6 +120,7 @@ describe("logs routes", () => {
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs/flush`).send({ workerId: "worker-1" }).expect(200);
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
       workerId: "worker-1",
+      startLine: 2,
       lines: [
         { timestamp: "2025-01-01T00:00:01.000Z", content: "line-2" },
         { timestamp: "2025-01-01T00:00:01.100Z", content: "line-3" }
@@ -144,6 +149,7 @@ describe("logs routes", () => {
   it("returns full persisted segments even when they pass the count hint", async () => {
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
       workerId: "worker-1",
+      startLine: 0,
       lines: [
         { timestamp: "2025-01-01T00:00:00.000Z", content: "a" },
         { timestamp: "2025-01-01T00:00:01.000Z", content: "b" },
@@ -166,6 +172,12 @@ describe("logs routes", () => {
   });
 
   it("rejects missing worker and invalid query params", async () => {
+    const missingStartLine = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
+      workerId: "worker-1",
+      lines: [{ timestamp: "2025-01-01T00:00:00.000Z", content: "hello" }]
+    }).expect(400);
+    expect(missingStartLine.body).toMatchObject({ error: "startLine: Invalid input: expected number, received undefined" });
+
     const missingWorker = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).expect(400);
     expect(missingWorker.body).toMatchObject({ error: "workerId: Invalid input: expected string, received undefined" });
 
@@ -179,12 +191,27 @@ describe("logs routes", () => {
   it("returns run not found for missing runs", async () => {
     const missingInsert = await request(app)
       .post(`${API_BASE}/accounts/ada/projects/underfit/runs/missing/logs`)
-      .send({ workerId: "worker-1", lines: [{ timestamp: "2025-01-01T00:00:00.000Z", content: "hello" }] })
+      .send({ workerId: "worker-1", startLine: 0, lines: [{ timestamp: "2025-01-01T00:00:00.000Z", content: "hello" }] })
       .expect(404);
     expect(missingInsert.body).toMatchObject({ error: "Run not found" });
 
     const missingList = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/missing/logs`).query({ workerId: "worker-1" }).expect(404);
     expect(missingList.body).toMatchObject({ error: "Run not found" });
+  });
+
+  it("rejects out-of-order startLine", async () => {
+    await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
+      workerId: "worker-1",
+      startLine: 0,
+      lines: [{ timestamp: "2025-01-01T00:00:00.000Z", content: "hello" }]
+    }).expect(200);
+
+    const outOfOrder = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/run-1/logs`).send({
+      workerId: "worker-1",
+      startLine: 0,
+      lines: [{ timestamp: "2025-01-01T00:00:01.000Z", content: "world" }]
+    }).expect(409);
+    expect(outOfOrder.body).toMatchObject({ error: "Invalid startLine", expectedStartLine: 1 });
   });
 
 });
