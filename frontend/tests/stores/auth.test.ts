@@ -124,7 +124,7 @@ describe("auth store", () => {
   });
 
   it("sets unauthenticated when the user request fails", async () => {
-    useAuthStore.setState({ user: null, sessionToken: "token-123", status: "idle" });
+    useAuthStore.setState({ user: null, status: "idle" });
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 401 }));
     await useAuthStore.getState().loadUser();
 

@@ -36,10 +36,10 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
     const dayOffset = start.getDay();
     start.setDate(start.getDate() - dayOffset - (WEEK_COUNT - 1) * 7);
 
-    const weekMatrix = Array.from({ length: WEEK_COUNT }, (unusedWeek, weekIndex) => {
+    const weekMatrix = Array.from({ length: WEEK_COUNT }, (_week, weekIndex) => {
       const weekStart = new Date(start);
       weekStart.setDate(start.getDate() + weekIndex * 7);
-      return Array.from({ length: 7 }, (unusedDay, dayIndex) => {
+      return Array.from({ length: 7 }, (_day, dayIndex) => {
         const date = new Date(weekStart);
         date.setDate(weekStart.getDate() + dayIndex);
         const key = toDateKey(date);
@@ -50,9 +50,13 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
     });
 
     const monthLabels = weekMatrix.map((week, index) => {
-      const month = week[0].date.toLocaleDateString("en-US", { month: "short" });
+      const weekStart = week[0];
+      if (!weekStart) { return ""; }
+      const month = weekStart.date.toLocaleDateString("en-US", { month: "short" });
       if (index === 0) { return month; }
-      const previousMonth = weekMatrix[index - 1][0].date.toLocaleDateString("en-US", { month: "short" });
+      const previousWeekStart = weekMatrix[index - 1]?.[0];
+      if (!previousWeekStart) { return month; }
+      const previousMonth = previousWeekStart.date.toLocaleDateString("en-US", { month: "short" });
       return month === previousMonth ? "" : month;
     });
 

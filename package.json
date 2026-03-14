@@ -11,7 +11,8 @@
     "dev": "bash scripts/dev.sh",
     "dev:frontend": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
-    "build": "npm run build -w @underfit/types && npm run build -w backend && npm run build -w frontend",
+    "build": "npm run build -w @underfit/types --silent && npm run build -w backend --silent && npm run build -w frontend --silent",
+    "typecheck": "npm run build -w @underfit/types --silent && sh -c 'npm run typecheck -w backend --silent; b=$?; npm run typecheck -w frontend --silent; f=$?; [ $b -eq 0 ] && [ $f -eq 0 ]'",
     "lint": "eslint .",
     "test": "vitest run"
   },

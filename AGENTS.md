@@ -30,9 +30,8 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 
 ## Committing changes
 
-- Always run the linter and tests before committing.
-- Run tests with `npm test`.
-- Run the linter with `npm run lint`.
+- Always run the linter, type checker, and tests before committing.
+- Run the linter with `npm run lint`, the typechecker with `npm run typecheck`, and the tests with `npm test`.
 - Use single-line commit messages in plain English.
 - Do not use conventional commit prefixes or add signatures (e.g. Co-Authored By)
 - Run `git add` and `git commit` sequentially (or in one chained command), not in parallel, to avoid `.git/index.lock` conflicts.

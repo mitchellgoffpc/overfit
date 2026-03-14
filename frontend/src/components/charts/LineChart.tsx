@@ -47,8 +47,9 @@ export default function LineChart({ series, height = 220, className, xLabelForma
     if (!node) { return; }
 
     const observer = new ResizeObserver((entries) => {
-      if (entries.length === 0) { return; }
-      const nextWidth = Math.floor(entries[0].contentRect.width);
+      const entry = entries[0];
+      if (!entry) { return; }
+      const nextWidth = Math.floor(entry.contentRect.width);
       setWidth((prev) => (prev === nextWidth ? prev : nextWidth));
     });
 
@@ -58,20 +59,23 @@ export default function LineChart({ series, height = 220, className, xLabelForma
     };
   }, []);
 
-  const options = useMemo<LineChartOptions>(() => ({
-    width,
-    height,
-    padding: { left: 36, right: 12, top: 10, bottom: 24 },
-    xTicks: 6,
-    yTicks: 5,
-    background: "#ffffff",
-    gridColor: "#edf2f2",
-    axisColor: "#d7e2e2",
-    textColor: "#627070",
-    xLabelFormatter,
-    yLabelFormatter,
-    font: "10px Space Grotesk, system-ui, sans-serif",
-  }), [height, width, xLabelFormatter, yLabelFormatter]);
+  const options = useMemo<LineChartOptions>(() => {
+    const base: LineChartOptions = {
+      width,
+      height,
+      padding: { left: 36, right: 12, top: 10, bottom: 24 },
+      xTicks: 6,
+      yTicks: 5,
+      background: "#ffffff",
+      gridColor: "#edf2f2",
+      axisColor: "#d7e2e2",
+      textColor: "#627070",
+      font: "10px Space Grotesk, system-ui, sans-serif",
+    };
+    if (xLabelFormatter) { base.xLabelFormatter = xLabelFormatter; }
+    if (yLabelFormatter) { base.yLabelFormatter = yLabelFormatter; }
+    return base;
+  }, [height, width, xLabelFormatter, yLabelFormatter]);
 
   const geometry = useMemo<LineChartGeometry | null>(() => {
     if (width === 0) { return null; }

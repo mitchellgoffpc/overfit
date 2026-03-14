@@ -119,8 +119,8 @@ describe("log store", () => {
   });
 
   it("ignores success responses when cursor changes before completion", async () => {
-    let resolveFetch: ((value: ReturnType<typeof createResponse>) => void) | null = null;
-    fetchMock.mockReturnValueOnce(new Promise((resolve) => {
+    let resolveFetch!: (value: ReturnType<typeof createResponse>) => void;
+    fetchMock.mockReturnValueOnce(new Promise<ReturnType<typeof createResponse>>((resolve) => {
       resolveFetch = resolve;
     }));
 
@@ -130,7 +130,7 @@ describe("log store", () => {
         "ada/demo/run-1/worker-1": { lines: [{ content: "stale", timestamp: null, message: "stale" }], cursor: 9, error: null }
       }
     });
-    resolveFetch?.(createResponse({ entries: [{ content: "2025-01-01T00:00:00Z ignored\n" }], nextCursor: 1, hasMore: false }));
+    resolveFetch(createResponse({ entries: [{ content: "2025-01-01T00:00:00Z ignored\n" }], nextCursor: 1, hasMore: false }));
     await fetchPromise;
 
     expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toEqual({
@@ -141,8 +141,8 @@ describe("log store", () => {
   });
 
   it("ignores error responses when cursor changes before completion", async () => {
-    let resolveFetch: ((value: ReturnType<typeof createResponse>) => void) | null = null;
-    fetchMock.mockReturnValueOnce(new Promise((resolve) => {
+    let resolveFetch!: (value: ReturnType<typeof createResponse>) => void;
+    fetchMock.mockReturnValueOnce(new Promise<ReturnType<typeof createResponse>>((resolve) => {
       resolveFetch = resolve;
     }));
 
@@ -152,7 +152,7 @@ describe("log store", () => {
         "ada/demo/run-1/worker-1": { lines: [], cursor: 3, error: null }
       }
     });
-    resolveFetch?.(createResponse({ error: "late failure" }, { ok: false, status: 500 }));
+    resolveFetch(createResponse({ error: "late failure" }, { ok: false, status: 500 }));
     await fetchPromise;
 
     expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toEqual({ lines: [], cursor: 3, error: null });

@@ -56,7 +56,8 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
   const sections = useMemo(() => {
     const buckets = new Map<string, typeof chartSeries>();
     chartSeries.forEach((series) => {
-      const prefix = series.id.includes("/") ? series.id.split("/")[0] : "other";
+      const [firstSegment] = series.id.split("/");
+      const prefix = series.id.includes("/") ? (firstSegment ?? "other") : "other";
       const list = buckets.get(prefix) ?? [];
       list.push(series);
       buckets.set(prefix, list);
@@ -113,7 +114,7 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
             height={220}
             xLabelFormatter={xFormatter}
             yLabelFormatter={yFormatter}
-            hoverStep={hovered?.step}
+            hoverStep={hovered?.step ?? null}
             onHover={(hover) => { onChartHover(prefix, hover); }}
           />
         </div>

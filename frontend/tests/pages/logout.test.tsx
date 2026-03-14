@@ -49,7 +49,7 @@ describe("Navbar logout", () => {
 
     render(
       <Router hook={hook}>
-        <Navbar user={user} locationLabel="Projects" />
+        <Navbar locationLabel="Projects" />
       </Router>
     );
 
@@ -73,7 +73,7 @@ describe("Navbar logout", () => {
 
     render(
       <Router hook={hook}>
-        <Navbar user={user} locationLabel="Projects" />
+        <Navbar locationLabel="Projects" />
       </Router>
     );
 

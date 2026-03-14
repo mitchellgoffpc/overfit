@@ -4,19 +4,23 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "baseUrl": "./src",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
     "jsx": "react-jsx",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals", "react", "react-dom"],
     "paths": {
-      "@underfit/types": ["../../packages/types/src"]
+      "@underfit/types": ["../../packages/types/src/index.ts"],
+      "react": ["../node_modules/@types/react/index.d.ts"],
+      "react/*": ["../node_modules/@types/react/*"],
+      "react-dom": ["../node_modules/@types/react-dom/index.d.ts"],
+      "react-dom/*": ["../node_modules/@types/react-dom/*"]
     }
   },
-  "include": ["src/**/*", "tests/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "tests/**/*"],
   "references": [{ "path": "../packages/types" }]
 }

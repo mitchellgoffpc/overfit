@@ -29,8 +29,8 @@ const splitLines = (content: string): string[] => {
 
 const splitTimestampPrefix = (line: string): ParsedLogLine => {
   const match = /^(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)\s+(.*)$/.exec(line);
-  if (!match) { return { timestamp: null, message: line }; }
-  return { content: line, timestamp: match[1], message: match[2] };
+  if (!match) { return { content: line, timestamp: null, message: line }; }
+  return { content: line, timestamp: match[1] ?? null, message: match[2] ?? line };
 };
 
 export const useLogStore = create<LogState>((set, get) => ({
@@ -54,6 +54,6 @@ export const useLogStore = create<LogState>((set, get) => ({
       }
     } else if (scope.cursor === requestedCursor) {
       set((state) => ({ logsByScope: { ...state.logsByScope, [scopeKey]: { ...scope, error } } }));
-    };
+    }
   }
 }));

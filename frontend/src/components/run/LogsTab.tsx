@@ -16,7 +16,7 @@ const workerIds: string[] = ["worker-0", "worker-1"];
 const emptyLines: ParsedLogLine[] = [];
 
 export default function LogsTab({ handle, projectName, runName }: LogsTabProps): ReactElement {
-  const [workerId, setWorkerId] = useState<string>(workerIds[0]);
+  const [workerId, setWorkerId] = useState<string>(workerIds[0] ?? "");
   const [search, setSearch] = useState("");
   const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
   const scope = useLogStore((state) => state.logsByScope[scopeKey]);

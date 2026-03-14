@@ -1,7 +1,9 @@
 import { API_VERSION } from "@underfit/types";
 import type { Project, Run } from "@underfit/types";
 
-type APIResponse<T> = ({ ok: true; body: T } | { ok: false; error: string }) & { status: number | null };
+interface APISuccessResponse<T> { ok: true; body: T; error?: never; status: number };
+interface APIFailureResponse { ok: false; body?: never; error: string; status: number };
+type APIResponse<T> = APISuccessResponse<T> | APIFailureResponse;
 
 export const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
@@ -13,15 +15,15 @@ export const request = async <T>(path: string, init?: RequestInit): Promise<APIR
     const payload = await response.json().catch(() => null) as T | {error: string} | null;
 
     if (!response.ok) {
-      const error = payload && "error" in payload ? payload.error : `Request failed with status ${String(response.status)}`;
+      const error = payload && typeof payload === "object" && "error" in payload ? payload.error : `Request failed with status ${String(response.status)}`;
       return { ok: false, status: response.status, error };
     } else if (payload) {
-      return { ok: true, status: response.status, body: payload };
+      return { ok: true, status: response.status, body: payload as T };
     } else {
       return { ok: false, status: response.status, error: "Invalid response" };
     }
   } catch (error) {
-    return { ok: false, status: null, error: error instanceof Error ? error.message : "Request failed" };
+    return { ok: false, status: -1, error: error instanceof Error ? error.message : "Request failed" };
   }
 };
 

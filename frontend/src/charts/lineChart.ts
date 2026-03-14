@@ -101,7 +101,8 @@ const formatTick = (value: number): string => {
   if (abs === 0) { return "0"; }
   if (abs < 1e-3) {
     const exp = value.toExponential(2);
-    const [mantissa, exponent = "0"] = exp.split("e");
+    const [rawMantissa, exponent = "0"] = exp.split("e");
+    const mantissa = rawMantissa ?? "0";
     return `${trimZeros(mantissa)}e${exponent}`;
   }
 
@@ -151,7 +152,10 @@ const getNiceTicks = (min: number, max: number, targetCount: number): number[] =
       }
       if (ticks.length === 0) { continue; }
       const countDiff = Math.abs(ticks.length - targetCount);
-      const coverageDiff = Math.abs((ticks[ticks.length - 1] - ticks[0]) - range);
+      const firstTick = ticks[0];
+      const lastTick = ticks[ticks.length - 1];
+      if (firstTick === undefined || lastTick === undefined) { continue; }
+      const coverageDiff = Math.abs((lastTick - firstTick) - range);
       if (!best || countDiff < best.countDiff || (countDiff === best.countDiff && (coverageDiff < best.coverageDiff || (coverageDiff === best.coverageDiff && step < best.step)))) {
         best = { step, countDiff, coverageDiff, ticks };
       }
@@ -252,6 +256,7 @@ export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], o
   for (let i = 0; i < xTickValues.length; i += 1) {
     if (i === 0) { continue; }
     const value = xTickValues[i];
+    if (value === undefined) { continue; }
     const x = xScale(value);
     ctx.fillText(xFormatter(value), x, padding.top + plotHeight + 8);
   }
