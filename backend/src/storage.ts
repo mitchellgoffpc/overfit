@@ -49,6 +49,7 @@ class FileStorageBackend implements StorageBackend {
 
 export const getArtifactStorageKey = (runId: ID, artifactId: ID): string => path.join(runId, artifactId);
 export const getLogSegmentStorageKey = (runId: ID, workerId: string, startLine: number): string => path.join(runId, "logs", workerId, `${String(startLine)}.log`);
+export const getScalarSegmentStorageKey = (runId: ID, startLine: number): string => path.join(runId, "scalars", `${String(startLine)}.jsonl`);
 
 export const createStorage = (config: StorageConfig): StorageBackend => {
   return new FileStorageBackend(config.baseDir);

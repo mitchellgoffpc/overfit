@@ -1,4 +1,4 @@
-import type { ApiKeyWithToken, LogSegment, OrganizationMember, Session, UserAuth } from "@underfit/types";
+import type { ApiKeyWithToken, LogSegment, OrganizationMember, ScalarSegment, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 import { z } from "zod";
@@ -16,8 +16,7 @@ import { createProjectsTable } from "repositories/projects";
 import type { ProjectRow } from "repositories/projects";
 import type { RunRow } from "repositories/runs";
 import { createRunsTable } from "repositories/runs";
-import type { ScalarRow } from "repositories/scalars";
-import { createScalarsTable } from "repositories/scalars";
+import { createScalarSegmentsTable } from "repositories/scalars";
 import { createSessionsTable } from "repositories/sessions";
 import { createUserAuthTable } from "repositories/user-auth";
 import type { UserRow } from "repositories/users";
@@ -48,7 +47,7 @@ interface DatabaseSchema {
   runs: RunRow;
   log_segments: LogSegment;
   artifacts: ArtifactRow;
-  scalars: ScalarRow;
+  scalar_segments: ScalarSegment;
 }
 
 export type Database = Kysely<DatabaseSchema>;
@@ -65,7 +64,7 @@ const initDatabase = async (db: Database): Promise<void> => {
   await createRunsTable(db);
   await createLogSegmentsTable(db);
   await createArtifactsTable(db);
-  await createScalarsTable(db);
+  await createScalarSegmentsTable(db);
 };
 
 export const createDatabase = async (config: DatabaseConfig): Promise<Database> => {

@@ -18,13 +18,16 @@ import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
 import { registerScalarRoutes } from "routes/scalars";
 import { registerUserRoutes } from "routes/users";
+import { ScalarBuffer } from "scalarbuffer";
 import { createStorage } from "storage";
 
 export function createApp(config: AppConfig, db: Database): Express {
   const app = express();
   const storage = createStorage(config.storage);
   const logBuffer = new LogBuffer(db, storage, config.logBuffer);
+  const scalarBuffer = new ScalarBuffer(db, storage, config.logBuffer);
   logBuffer.start();
+  scalarBuffer.start();
 
   app.use(cors({ origin: true, credentials: true }));
   app.use(cookieParser());
@@ -49,7 +52,7 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerRunRoutes(app, db);
   registerLogRoutes(app, db, logBuffer, storage);
   registerArtifactRoutes(app, db, storage);
-  registerScalarRoutes(app, db);
+  registerScalarRoutes(app, db, scalarBuffer, storage);
 
   return app;
 }

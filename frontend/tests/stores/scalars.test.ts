@@ -7,8 +7,6 @@ import { useScalarStore } from "stores/scalars";
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
 const scalar: Scalar = {
-  id: "scalar-1",
-  runId: "run-1",
   step: 1,
   values: { loss: 0.5 },
   timestamp: "2025-01-01T00:00:00.000Z"
@@ -63,7 +61,7 @@ describe("scalar store", () => {
   });
 
   it("replaces scalars and clears stale errors on success", async () => {
-    const existingScalar: Scalar = { ...scalar, id: "scalar-2", step: 0 };
+    const existingScalar: Scalar = { ...scalar, step: 0 };
     useScalarStore.setState({ scalars: [existingScalar], isLoading: false, error: "stale error" });
     fetchMock.mockResolvedValueOnce(createResponse([scalar]));
 

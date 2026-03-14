@@ -90,11 +90,21 @@ export interface Artifact {
 }
 
 export interface Scalar {
-  id: ID;
-  runId: ID;
   step: number | null;
   values: Record<string, number>;
   timestamp: Timestamp;
+}
+
+export interface ScalarSegment {
+  id: ID;
+  runId: ID;
+  startLine: number;
+  endLine: number;
+  startAt: Timestamp;
+  endAt: Timestamp;
+  byteCount: number;
+  storageKey: string;
+  createdAt: Timestamp;
 }
 
 export interface LogSegment {
