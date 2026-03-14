@@ -8,6 +8,8 @@ import { table as usersTable } from "repositories/users";
 
 const table = "organization_members";
 
+const getMembershipId = (organizationId: ID, userId: ID): ID => `${organizationId}:${userId}`;
+
 export const createOrganizationMembersTable = async (db: Database): Promise<void> => {
   await db.schema
     .createTable(table)
@@ -21,29 +23,34 @@ export const createOrganizationMembersTable = async (db: Database): Promise<void
     .execute();
 };
 
-export const getOrganizationMember = async (db: Database, id: ID): Promise<OrganizationMember | undefined> => {
-  return await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst();
+export const getOrganizationMember = async (db: Database, organizationId: ID, userId: ID): Promise<OrganizationMember | undefined> => {
+  return await db.selectFrom(table).selectAll().where("id", "=", getMembershipId(organizationId, userId)).executeTakeFirst();
 };
 
-export const hasOrganizationMember = async (db: Database, id: ID): Promise<boolean> => {
-  return Boolean(await db.selectFrom(table).select("id").where("id", "=", id).executeTakeFirst());
+export const createOrganizationMember = async (db: Database, organizationId: ID, userId: ID, role: OrganizationRole): Promise<OrganizationMember> => {
+  const id = getMembershipId(organizationId, userId);
+  const payload: OrganizationMember = { id, userId, organizationId, role, createdAt: nowIso(), updatedAt: nowIso() };
+  await db.insertInto(table).values(payload).execute();
+  return payload;
 };
 
-export const upsertOrganizationMember = async (db: Database, member: Omit<OrganizationMember, "createdAt" | "updatedAt">): Promise<OrganizationMember> => {
-  const payload: OrganizationMember = { ...member, createdAt: nowIso(), updatedAt: nowIso() };
-  const { id: _, createdAt: __, ...updates } = payload;
-  await db.insertInto(table).values(payload).onConflict((oc) => oc.column("id").doUpdateSet(updates)).execute();
-  return await getOrganizationMember(db, member.id) ?? payload;
+export const deleteOrganizationMember = async (db: Database, organizationId: ID, userId: ID): Promise<boolean> => {
+  const result = await db
+    .deleteFrom(table)
+    .where("id", "=", getMembershipId(organizationId, userId))
+    .where((qb) => qb.exists(
+      qb.selectFrom(table)
+        .select("id")
+        .where("organizationId", "=", organizationId)
+        .where("role", "=", "ADMIN")
+        .where("userId", "!=", userId)
+    ))
+    .executeTakeFirst();
+
+  return result.numDeletedRows > 0;
 };
 
-export const deleteOrganizationMember = async (db: Database, id: ID): Promise<void> => {
-  await db.deleteFrom(table).where("id", "=", id).execute();
-};
-
-export const listOrganizationUsersByOrganizationId = async (
-  db: Database,
-  organizationId: ID
-): Promise<(User & { role: OrganizationRole })[]> => {
+export const listOrganizationUsersByOrganizationId = async (db: Database, organizationId: ID): Promise<(User & { role: OrganizationRole })[]> => {
   return await db
     .selectFrom(table)
     .innerJoin(usersTable, `${usersTable}.id`, `${table}.userId`)
@@ -62,10 +69,7 @@ export const listOrganizationUsersByOrganizationId = async (
     .execute();
 };
 
-export const listOrganizationMembershipsByUserId = async (
-  db: Database,
-  userId: ID
-): Promise<(Organization & { role: OrganizationRole })[]> => {
+export const listOrganizationMembershipsByUserId = async (db: Database, userId: ID): Promise<(Organization & { role: OrganizationRole })[]> => {
   return await db
     .selectFrom(table)
     .innerJoin(organizationsTable, `${organizationsTable}.id`, `${table}.organizationId`)

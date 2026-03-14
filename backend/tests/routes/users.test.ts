@@ -7,8 +7,8 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import { upsertOrganizationMember } from "repositories/organization-members.js";
-import { upsertOrganization } from "repositories/organizations";
+import { createOrganizationMember } from "repositories/organization-members.js";
+import { createOrganization } from "repositories/organizations";
 import { upsertUser } from "repositories/users";
 
 interface RegisterResponse {
@@ -24,18 +24,19 @@ const registerUser = async (app: ReturnType<typeof createApp>, email: string, ha
 describe("users routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
+  let organizationId: string;
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse(), db);
-    await upsertOrganization(db, { id: "org-1", handle: "core", name: "Core", type: "ORGANIZATION" });
+    organizationId = (await createOrganization(db, { handle: "core", name: "Core" })).id;
     await upsertUser(db, { id: "user-1", email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null, type: "USER" });
-    await upsertOrganizationMember(db, { organizationId: "org-1", userId: "user-1", role: "ADMIN" });
+    await createOrganizationMember(db, organizationId, "user-1", "ADMIN");
   });
 
   it("lists user organizations", async () => {
     const response = await request(app).get(`${API_BASE}/users/ada/memberships`).expect(200);
-    expect(response.body).toMatchObject([{ id: "org-1", handle: "core", name: "Core", role: "ADMIN" }]);
+    expect(response.body).toMatchObject([{ id: organizationId, handle: "core", name: "Core", role: "ADMIN" }]);
   });
 
   it("rejects unknown users when listing memberships", async () => {
