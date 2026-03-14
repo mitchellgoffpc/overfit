@@ -38,10 +38,6 @@ export function createApp(config: AppConfig, db: Database): Express {
     });
   });
 
-  app.get(`${API_BASE}/health`, (_req: Request, res: Response) => {
-    res.json({ status: "ok", version: API_VERSION });
-  });
-
   registerAuthRoutes(app, db);
   registerAccountRoutes(app, db);
   registerUserRoutes(app, db);
@@ -53,6 +49,13 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerLogRoutes(app, db, logBuffer, storage);
   registerArtifactRoutes(app, db, storage);
   registerScalarRoutes(app, db, scalarBuffer, storage);
+
+  app.get(`${API_BASE}/health`, (_req: Request, res: Response) => {
+    res.json({ status: "ok", version: API_VERSION });
+  });
+  app.use((_req: Request, res: Response) => {
+    res.status(404).json({ error: "Route not found" });
+  });
 
   return app;
 }
