@@ -128,8 +128,11 @@ export interface ApiKey {
   id: ID;
   userId: ID;
   label: string | null;
-  token: string;
   createdAt: Timestamp;
+}
+
+export interface ApiKeyWithToken extends ApiKey {
+  token: string;
 }
 
 export const API_VERSION = "v1";

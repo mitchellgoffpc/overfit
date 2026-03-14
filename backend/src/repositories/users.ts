@@ -4,14 +4,14 @@ import type { ID, User, Account } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
-import { table as accountsTable } from "repositories/accounts";
 import { nowIso } from "repositories/helpers";
 
 export type UserRow = Omit<User, "handle" | "type">;
 
 export const table = "users";
+const accountsTable = "accounts";
 
-const selectUserColumns = () => [
+export const selectUserColumns = [
   `${table}.id as id`,
   `${table}.email as email`,
   `${table}.name as name`,
@@ -39,7 +39,7 @@ export const getUser = async (db: Database, id: ID): Promise<User | undefined> =
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select(selectUserColumns())
+    .select(selectUserColumns)
     .where(`${table}.id`, "=", id)
     .executeTakeFirst();
 };
@@ -48,7 +48,7 @@ export const getUserByHandle = async (db: Database, handle: string): Promise<Use
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select(selectUserColumns())
+    .select(selectUserColumns)
     .where(`${accountsTable}.handle`, "=", handle)
     .executeTakeFirst();
 };
@@ -57,7 +57,7 @@ export const getUserByEmail = async (db: Database, email: string): Promise<User 
   return await db
     .selectFrom(table)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.id`)
-    .select(selectUserColumns())
+    .select(selectUserColumns)
     .where(sql`lower(${sql.ref(`${table}.email`)})`, "=", email.toLowerCase())
     .executeTakeFirst();
 };

@@ -1,4 +1,4 @@
-import type { ApiKey, LogSegment, OrganizationMember, Session, UserAuth } from "@underfit/types";
+import type { ApiKeyWithToken, LogSegment, OrganizationMember, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 import { z } from "zod";
@@ -39,7 +39,7 @@ export type DatabaseConfig = z.infer<typeof DatabaseConfigSchema>;
 interface DatabaseSchema {
   accounts: AccountRow;
   users: UserRow;
-  api_keys: ApiKey;
+  api_keys: ApiKeyWithToken;
   user_auth: UserAuth;
   sessions: Session;
   organizations: OrganizationRow;

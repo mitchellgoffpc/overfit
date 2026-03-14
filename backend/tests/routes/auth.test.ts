@@ -27,10 +27,10 @@ async function getWithCookie(app: ReturnType<typeof createApp>, path: string, co
     .expect(status);
 }
 
-async function postWithToken(app: ReturnType<typeof createApp>, path: string, token: string, status = 200) {
+async function postWithCookie(app: ReturnType<typeof createApp>, path: string, cookie: string, status = 200) {
   return request(app)
     .post(path)
-    .set("Authorization", `Bearer ${token}`)
+    .set("Cookie", cookie)
     .expect(status);
 }
 
@@ -81,24 +81,26 @@ describe("auth routes", () => {
     expect(badLogin.body).toMatchObject({ error: CREDENTIALS_INVALID_ERROR });
 
     const login = await post(app, "auth/login", { email: "jules@example.com", password: "password123" });
-    const loginBody = login.body as { session: { token: string } };
-    const token = loginBody.session.token;
+    const loginCookie = getSetCookie(login) ?? "";
 
-    const logout = await postWithToken(app, `${API_BASE}/auth/logout`, token);
+    const logout = await postWithCookie(app, `${API_BASE}/auth/logout`, loginCookie);
     expect(logout.body).toMatchObject({ status: "ok" });
     expect(getSetCookie(logout)).toContain("underfit_session=;");
 
-    const current = await getWithToken(app, `${API_BASE}/me`, token, 401);
+    const current = await getWithCookie(app, `${API_BASE}/me`, loginCookie, 401);
     expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
   });
 
-  it("accepts cookie authentication alongside bearer auth", async () => {
+  it("accepts cookie authentication alongside bearer api-key auth", async () => {
     const login = await post(app, "auth/register", { email: "cookie@example.com", handle: "cookie", password: "password123" });
-    const cookie = getSetCookie(login);
+    const cookie = getSetCookie(login) ?? "";
 
-    const current = await getWithCookie(app, `${API_BASE}/me`, cookie ?? "");
-
+    const current = await getWithCookie(app, `${API_BASE}/me`, cookie);
     expect((current.body as { handle: string }).handle).toBe("cookie");
+
+    const created = await request(app).post(`${API_BASE}/me/api-keys`).set("Cookie", cookie).send({ label: "test" }).expect(200);
+    const currentWithApiKey = await getWithToken(app, `${API_BASE}/me`, (created.body as { token: string }).token);
+    expect((currentWithApiKey.body as { handle: string }).handle).toBe("cookie");
   });
 
   it("rejects duplicate handles and emails", async () => {
@@ -133,11 +135,10 @@ describe("auth routes", () => {
     try {
       vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));
       const register = await post(app, "auth/register", { email: "expired@example.com", handle: "expired", password: "password123" });
-      const registerBody = register.body as { session: { token: string } };
-      const token = registerBody.session.token;
+      const registerCookie = getSetCookie(register) ?? "";
 
       vi.advanceTimersByTime(1000 * 60 * 60 * 24 * 31);
-      const current = await getWithToken(app, `${API_BASE}/me`, token, 401);
+      const current = await getWithCookie(app, `${API_BASE}/me`, registerCookie, 401);
       expect(current.body).toMatchObject({ error: SESSION_INVALID_ERROR });
     } finally {
       vi.useRealTimers();

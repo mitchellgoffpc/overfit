@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
 
 import { API_BASE } from "@underfit/types";
-import type { ApiKey } from "@underfit/types";
+import type { ApiKey, ApiKeyWithToken } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { createApiKey, deleteApiKey, listApiKeysByUser } from "repositories/api-keys";
+import { createApiKey, deleteApiKey, listApiKeys } from "repositories/api-keys";
 import { requireAuth } from "routes/auth";
 import { formatZodError } from "routes/helpers";
 import type { RouteApp, RouteHandler } from "routes/helpers";
@@ -18,10 +18,10 @@ type ApiKeyPayload = z.infer<typeof ApiKeyPayloadSchema>;
 
 export function registerApiKeyRoutes(app: RouteApp, db: Database): void {
   const listApiKeysHandler: RouteHandler<Record<string, string>, ApiKey[]> = async (req, res) => {
-    res.json(await listApiKeysByUser(db, req.user.id));
+    res.json(await listApiKeys(db, req.user.id));
   };
 
-  const createApiKeyHandler: RouteHandler<Record<string, string>, ApiKey, ApiKeyPayload> = async (req, res) => {
+  const createApiKeyHandler: RouteHandler<Record<string, string>, ApiKeyWithToken, ApiKeyPayload> = async (req, res) => {
     const { success, error, data } = ApiKeyPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });

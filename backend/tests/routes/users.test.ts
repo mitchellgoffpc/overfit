@@ -1,5 +1,5 @@
 import { API_BASE } from "@underfit/types";
-import type { ApiKey } from "@underfit/types";
+import type { ApiKey, ApiKeyWithToken } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -20,6 +20,7 @@ const registerUser = async (app: ReturnType<typeof createApp>, email: string, ha
   const response = await request(app).post(`${API_BASE}/auth/register`).send({ email, handle, password: "password123" }).expect(200);
   return response.body as RegisterResponse;
 };
+const sessionCookie = (token: string) => `underfit_session=${token}`;
 
 describe("users routes", () => {
   let db: Database;
@@ -58,24 +59,26 @@ describe("users routes", () => {
 
   it("updates the current user profile", async () => {
     const { session } = await registerUser(app, "sam@example.com", "sam");
-    const response = await request(app).patch(`${API_BASE}/me`).set("Authorization", `Bearer ${session.token}`).send({ name: "Sam Tester", bio: "Building models." }).expect(200);
+    const response = await request(app).patch(`${API_BASE}/me`).set("Cookie", sessionCookie(session.token)).send({ name: "Sam Tester", bio: "Building models." }).expect(200);
     expect(response.body).toMatchObject({ name: "Sam Tester", bio: "Building models." });
   });
 
   it("creates and deletes API keys", async () => {
     const { user, session } = await registerUser(app, "alex@example.com", "alex");
-    const created = await request(app).post(`${API_BASE}/me/api-keys`).set("Authorization", `Bearer ${session.token}`).send({ label: "CI" }).expect(200);
-    const createdBody = created.body as ApiKey;
+    const created = await request(app).post(`${API_BASE}/me/api-keys`).set("Cookie", sessionCookie(session.token)).send({ label: "CI" }).expect(200);
+    const createdBody = created.body as ApiKeyWithToken;
     expect(createdBody).toMatchObject({ userId: user.id, label: "CI" });
     expect(typeof createdBody.token).toBe("string");
 
-    const list = await request(app).get(`${API_BASE}/me/api-keys`).set("Authorization", `Bearer ${session.token}`).expect(200);
+    const list = await request(app).get(`${API_BASE}/me/api-keys`).set("Cookie", sessionCookie(session.token)).expect(200);
     const listBody = list.body as ApiKey[];
     expect(listBody.length).toBe(1);
+    expect(listBody[0]).toMatchObject({ id: createdBody.id, userId: user.id, label: "CI" });
+    expect(listBody[0]).not.toHaveProperty("token");
 
-    await request(app).delete(`${API_BASE}/me/api-keys/${createdBody.id}`).set("Authorization", `Bearer ${session.token}`).expect(200);
+    await request(app).delete(`${API_BASE}/me/api-keys/${createdBody.id}`).set("Cookie", sessionCookie(session.token)).expect(200);
 
-    const listAfterDelete = await request(app).get(`${API_BASE}/me/api-keys`).set("Authorization", `Bearer ${session.token}`).expect(200);
+    const listAfterDelete = await request(app).get(`${API_BASE}/me/api-keys`).set("Cookie", sessionCookie(session.token)).expect(200);
     const listAfterDeleteBody = listAfterDelete.body as ApiKey[];
     expect(listAfterDeleteBody.length).toBe(0);
   });

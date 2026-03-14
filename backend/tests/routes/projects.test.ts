@@ -91,7 +91,7 @@ describe("projects routes", () => {
     await insertRun(db, { projectId: project1.id, userId: user2Id, name: "Run 4", status: "running", metadata: null });
     await upsertSession(db, { id: "token-1", userId, expiresAt: "2099-01-01T00:00:00.000Z" });
 
-    const response = await request(app).get(`${API_BASE}/me/projects`).set("x-session-token", "token-1").expect(200);
+    const response = await request(app).get(`${API_BASE}/me/projects`).set("Cookie", "underfit_session=token-1").expect(200);
     expect((response.body as Project[]).map((project) => project.id)).toEqual([project2.id, project1.id]);
   });
 

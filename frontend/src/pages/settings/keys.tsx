@@ -11,6 +11,7 @@ export default function SettingsKeysContent(): ReactElement {
   const [apiKeysError, setApiKeysError] = useState<string | null>(null);
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [newKeyLabel, setNewKeyLabel] = useState("");
+  const [createdKeyToken, setCreatedKeyToken] = useState<string | null>(null);
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [isDeletingKey, setIsDeletingKey] = useState<string | null>(null);
 
@@ -37,9 +38,11 @@ export default function SettingsKeysContent(): ReactElement {
     if (status !== "authenticated") { return; }
     setIsCreatingKey(true);
     setApiKeysError(null);
+    setCreatedKeyToken(null);
     const result = await createApiKey(newKeyLabel);
     if (result.ok) {
-      setApiKeys((current) => [result.body, ...current]);
+      setApiKeys((current) => [{ id: result.body.id, userId: result.body.userId, label: result.body.label, createdAt: result.body.createdAt }, ...current]);
+      setCreatedKeyToken(result.body.token);
       setNewKeyLabel("");
       setIsCreatingKey(false);
     } else {
@@ -90,6 +93,12 @@ export default function SettingsKeysContent(): ReactElement {
             {isCreatingKey ? "Creating..." : "Add key"}
           </button>
         </div>
+        {createdKeyToken ? (
+          <div className="grid gap-1.5 rounded-[12px] border border-brand-border bg-white p-3">
+            <p className="text-xs font-semibold text-brand-text">Copy this key now. You won&apos;t be able to see it again.</p>
+            <p className="font-mono text-xs text-brand-textMuted">{createdKeyToken}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-3 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
@@ -105,7 +114,6 @@ export default function SettingsKeysContent(): ReactElement {
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-brand-border bg-white px-4 py-3" key={key.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{key.label ?? "Untitled key"}</p>
-                <p className="font-mono text-xs text-brand-textMuted">{key.token}</p>
                 <p className="text-[11px] text-brand-textMuted">Created {new Date(key.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
               </div>
               <button

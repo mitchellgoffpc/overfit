@@ -1,5 +1,5 @@
 import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, testEmail, testHandle } from "@underfit/types";
-import type { ApiKey, User } from "@underfit/types";
+import type { ApiKey, ApiKeyWithToken, User } from "@underfit/types";
 import { create } from "zustand";
 
 import { request, send } from "helpers";
@@ -7,7 +7,7 @@ import { request, send } from "helpers";
 type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
 type ApiKeysResult = { ok: true; body: ApiKey[] } | { ok: false; error: string };
-type CreateApiKeyResult = { ok: true; body: ApiKey } | { ok: false; error: string };
+type CreateApiKeyResult = { ok: true; body: ApiKeyWithToken } | { ok: false; error: string };
 interface AuthResponse { user: User };
 
 export const checkEmailValid = async (email: string): Promise<string | null> => {
@@ -35,7 +35,7 @@ export const loadApiKeys = async (): Promise<ApiKeysResult> => {
 };
 
 export const createApiKey = async (label: string): Promise<CreateApiKeyResult> => {
-  const { ok, error, body } = await send<ApiKey>("me/api-keys", "POST", { label });
+  const { ok, error, body } = await send<ApiKeyWithToken>("me/api-keys", "POST", { label });
   return ok ? { ok: true, body } : { ok: false, error };
 };
 

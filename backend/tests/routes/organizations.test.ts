@@ -6,13 +6,10 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { createApiKey } from "repositories/api-keys";
 import { createOrganizationMember } from "repositories/organization-members";
 import { createOrganization } from "repositories/organizations";
-
-interface RegisterResponse {
-  user: { id: string; handle: string };
-  session: { token: string };
-}
+import { createUser } from "repositories/users";
 
 describe("organizations routes", () => {
   let db: Database;
@@ -24,21 +21,15 @@ describe("organizations routes", () => {
   let adaId: string;
   let outsiderToken: string;
 
-  const register = async (email: string, handle: string): Promise<RegisterResponse> => {
-    const response = await request(app).post(`${API_BASE}/auth/register`).send({ email, handle, password: "password123" }).expect(200);
-    return response.body as RegisterResponse;
-  };
-
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
-    const owner = await register("owner@example.com", "owner");
-    ownerToken = owner.session.token;
-    ownerId = owner.user.id;
-    const ada = await register("ada@example.com", "ada");
-    adaToken = ada.session.token;
-    adaId = ada.user.id;
-    outsiderToken = (await register("outsider@example.com", "outsider")).session.token;
+    ownerId = (await createUser(db, { email: "owner@example.com", handle: "owner", name: "Owner", bio: null })).id;
+    adaId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada", bio: null })).id;
+    const outsiderId = (await createUser(db, { email: "outsider@example.com", handle: "outsider", name: "Outsider", bio: null })).id;
+    ownerToken = (await createApiKey(db, { userId: ownerId, label: "owner", token: "owner-token" })).token;
+    adaToken = (await createApiKey(db, { userId: adaId, label: "ada", token: "ada-token" })).token;
+    outsiderToken = (await createApiKey(db, { userId: outsiderId, label: "outsider", token: "outsider-token" })).token;
 
     organizationId = (await createOrganization(db, { handle: "core", name: "Core" })).id;
     await createOrganizationMember(db, organizationId, ownerId, "ADMIN");

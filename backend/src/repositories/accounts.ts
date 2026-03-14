@@ -2,7 +2,7 @@ import type { AccountType, ID, Organization, User } from "@underfit/types";
 
 import type { Database } from "db";
 import { table as organizationsTable } from "repositories/organizations";
-import { table as usersTable } from "repositories/users";
+import { selectUserColumns, table as usersTable } from "repositories/users";
 
 export const table = "accounts";
 
@@ -24,15 +24,7 @@ const hydrateAccount = async (db: Database, account: { id: ID; type: AccountType
     return await db
       .selectFrom(usersTable)
       .innerJoin(table, `${table}.id`, `${usersTable}.id`)
-      .select([
-        `${usersTable}.id as id`,
-        `${table}.handle as handle`,
-        `${usersTable}.name as name`,
-        `${table}.type as type`,
-        `${usersTable}.email as email`,
-        `${usersTable}.createdAt as createdAt`,
-        `${usersTable}.updatedAt as updatedAt`
-      ])
+      .select(selectUserColumns)
       .where(`${table}.id`, "=", account.id)
       .executeTakeFirst();
   } else {

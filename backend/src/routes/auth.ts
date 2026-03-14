@@ -17,6 +17,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { getAccount } from "repositories/accounts";
+import { getUserByApiKey } from "repositories/api-keys";
 import { getSession, upsertSession, deleteSession } from "repositories/sessions";
 import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
 import { createUser, getUserByEmail, getUser } from "repositories/users";
@@ -67,10 +68,10 @@ const verifyPassword = (password: string, auth: UserAuth) => {
   return left.length === right.length && timingSafeEqual(left, right);
 };
 
-const resolveSessionToken = (value?: string) => {
+const resolveBearerToken = (value?: string) => {
   if (!value) { return undefined; }
   const [type, token] = value.split(" ");
-  return type?.toLowerCase() === "bearer" && token ? token : value;
+  return type?.toLowerCase() === "bearer" && token ? token : undefined;
 };
 
 const setSessionCookie = (res: Response, token: string, expiresAt: string) => {
@@ -81,15 +82,32 @@ const clearSessionCookie = (res: Response) => {
   res.clearCookie(SESSION_COOKIE_NAME, { path: "/", httpOnly: true, sameSite: "lax" });
 };
 
-const getSessionToken = (headers: Record<string, string | string[] | undefined>, cookies: Record<string, string>) => {
+const getBearerToken = (headers: Record<string, string | string[] | undefined>) => {
   const headerValue = Array.isArray(headers["authorization"]) ? (headers["authorization"][0] ?? "") : headers["authorization"];
-  const sessionHeader = Array.isArray(headers["x-session-token"]) ? headers["x-session-token"][0] : headers["x-session-token"];
-  const raw = resolveSessionToken(headerValue) ?? resolveSessionToken(sessionHeader) ?? cookies[SESSION_COOKIE_NAME];
+  const raw = resolveBearerToken(headerValue);
+  return raw?.trim();
+};
+
+const getSessionToken = (cookies: Record<string, string>) => {
+  const raw = cookies[SESSION_COOKIE_NAME];
   return raw?.trim();
 };
 
 export const requireAuth = (db: Database): RequestHandler => async (req, res, next) => {
-  const token = getSessionToken(req.headers, req.cookies as Record<string, string>);
+  const apiKeyToken = getBearerToken(req.headers);
+  if (apiKeyToken) {
+    const user = await getUserByApiKey(db, apiKeyToken);
+    if (!user) {
+      res.status(401).json({ error: SESSION_INVALID_ERROR });
+      return;
+    }
+
+    req.user = user;
+    next();
+    return;
+  }
+
+  const token = getSessionToken(req.cookies as Record<string, string>);
   if (!token) {
     clearSessionCookie(res);
     res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
@@ -171,7 +189,7 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
   };
 
   const logout: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
-    const token = getSessionToken(req.headers, req.cookies as Record<string, string>);
+    const token = getSessionToken(req.cookies as Record<string, string>);
     if (!token) {
       clearSessionCookie(res);
       res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
