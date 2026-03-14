@@ -51,6 +51,8 @@ export function registerOrganizationMembershipRoutes(app: RouteApp, db: Database
       res.status(404).json({ error: "User not found" });
     } else if (selfMember?.role !== "ADMIN") {
       res.status(403).json({ error: "Forbidden" });
+    } else if (targetMember?.role === data.role) {
+      res.json(targetMember);
     } else if (targetMember && !await deleteOrganizationMember(db, organization.id, user.id)) {
       res.status(400).json({ error: "Cannot remove the only admin" });
     } else {

@@ -53,10 +53,11 @@ post_log_lines() {
   local project_name="$1"
   local run_name="$2"
   local worker_id="$3"
-  local timestamp="$4"
-  local content="$5"
+  local start_line="$4"
+  local timestamp="$5"
+  local content="$6"
   local payload
-  payload="$(jq -cn --arg workerId "$worker_id" --arg timestamp "$timestamp" --arg content "$content" '{workerId:$workerId,lines:($content|split("\n")|map(select(length > 0)|{timestamp:$timestamp,content:.}))}')"
+  payload="$(jq -cn --arg workerId "$worker_id" --argjson startLine "$start_line" --arg timestamp "$timestamp" --arg content "$content" '{workerId:$workerId,startLine:$startLine,lines:($content|split("\n")|map(select(length > 0)|{timestamp:$timestamp,content:.}))}')"
   json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/logs" "$payload" >/dev/null
 }
 
@@ -64,12 +65,15 @@ seed_logs_for_worker() {
   local project_name="$1"
   local run_name="$2"
   local worker_id="$3"
-  local row timestamp content
+  local row timestamp content line_count next_start_line
+  next_start_line=0
 
   while IFS= read -r row; do
     timestamp="$(jq -r '.timestamp' <<<"$row")"
     content="$(jq -r '.content' <<<"$row")"
-    post_log_lines "$project_name" "$run_name" "$worker_id" "$timestamp" "$content"
+    line_count="$(jq -nr --arg content "$content" '$content|split("\n")|map(select(length > 0))|length')"
+    post_log_lines "$project_name" "$run_name" "$worker_id" "$next_start_line" "$timestamp" "$content"
+    next_start_line=$((next_start_line + line_count))
   done < <(node <<'NODE'
 const start = new Date("2025-01-10T12:00:00.000Z").getTime();
 const chunkCount = 14;
@@ -121,6 +125,56 @@ ensure_run() {
   echo "$actual_name"
 }
 
+ensure_organization() {
+  local handle="$1"
+  local name="$2"
+  local get_response get_status
+
+  get_response="$(raw_request "GET" "/accounts/$handle" "")"
+  get_status="${get_response##*$'\n'}"
+  if [[ "$get_status" -eq 404 ]]; then
+    create_response="$(raw_request "POST" "/organizations" "{\"handle\":\"$handle\",\"name\":\"$name\"}")"
+    create_status="${create_response##*$'\n'}"
+    if [[ "$create_status" -ne 201 && "$create_status" -ne 409 ]]; then
+      echo "Seed request failed ($create_status): ${create_response%$'\n'*}" >&2
+      return 1
+    fi
+  elif [[ "$get_status" -ne 200 ]]; then
+    echo "Seed request failed ($get_status): ${get_response%$'\n'*}" >&2
+    return 1
+  fi
+
+  patch_response="$(raw_request "PATCH" "/organizations/$handle" "{\"name\":\"$name\"}")"
+  patch_status="${patch_response##*$'\n'}"
+  if [[ "$patch_status" -lt 200 || "$patch_status" -ge 300 ]]; then
+    echo "Seed request failed ($patch_status): ${patch_response%$'\n'*}" >&2
+    return 1
+  fi
+}
+
+ensure_project() {
+  local handle="$1"
+  local name="$2"
+  local description="$3"
+  local get_response get_status create_response create_status
+
+  get_response="$(raw_request "GET" "/accounts/$handle/projects/$name" "")"
+  get_status="${get_response##*$'\n'}"
+  if [[ "$get_status" -eq 404 ]]; then
+    create_response="$(raw_request "POST" "/accounts/$handle/projects" "{\"name\":\"$name\",\"description\":$description}")"
+    create_status="${create_response##*$'\n'}"
+    if [[ "$create_status" -ne 200 && "$create_status" -ne 409 ]]; then
+      echo "Seed request failed ($create_status): ${create_response%$'\n'*}" >&2
+      return 1
+    fi
+  elif [[ "$get_status" -ne 200 ]]; then
+    echo "Seed request failed ($get_status): ${get_response%$'\n'*}" >&2
+    return 1
+  fi
+
+  json_request "PUT" "/accounts/$handle/projects/$name" "{\"description\":$description}" >/dev/null
+}
+
 wait_for_server
 
 auth_payload='{"email":"test@test.com","handle":"test","password":"test1234"}'
@@ -141,11 +195,11 @@ organization_handle="acme-labs"
 project_one_name="solaris"
 project_two_name="orbit"
 
-json_request "PUT" "/organizations/$organization_handle" '{"displayName":"Acme Labs"}' >/dev/null
+ensure_organization "$organization_handle" "Acme Labs"
 json_request "PUT" "/organizations/$organization_handle/members/$user_handle" '{"role":"ADMIN"}' >/dev/null
 
-json_request "PUT" "/accounts/$user_handle/projects/$project_one_name" '{"description":"Computer vision experiments for aerial imagery classification."}' >/dev/null
-json_request "PUT" "/accounts/$user_handle/projects/$project_two_name" '{"description":"Language model evaluation runs for support ticket triage."}' >/dev/null
+ensure_project "$user_handle" "$project_one_name" '"Computer vision experiments for aerial imagery classification."'
+ensure_project "$user_handle" "$project_two_name" '"Language model evaluation runs for support ticket triage."'
 
 baseline_run_name="$(ensure_run "$project_one_name" "baseline-resnet" "finished" '{"accuracy":0.91,"epochs":40,"dataset":"sat-imagery-v2"}')"
 distilbert_run_name="$(ensure_run "$project_two_name" "distilbert-finetune" "running" '{"f1":0.84,"dataset":"support-tickets","batchSize":32}')"
@@ -172,8 +226,10 @@ NODE
 for run_target in "$project_one_name:$baseline_run_name" "$project_two_name:$distilbert_run_name" "$project_two_name:$llama_eval_run_name"; do
   project_name="${run_target%%:*}"
   run_name="${run_target#*:}"
+  scalar_start_line=0
   while IFS=$'\t' read -r scalar_suffix scalar_step scalar_train_loss scalar_train_acc scalar_val_loss scalar_val_acc scalar_timestamp; do
-    json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/scalars" "{\"step\":$scalar_step,\"values\":{\"train/loss\":$scalar_train_loss,\"train/acc\":$scalar_train_acc,\"val/loss\":$scalar_val_loss,\"val/acc\":$scalar_val_acc},\"timestamp\":\"$scalar_timestamp\"}" >/dev/null
+    json_request "POST" "/accounts/$user_handle/projects/$project_name/runs/$run_name/scalars" "{\"startLine\":$scalar_start_line,\"scalars\":[{\"step\":$scalar_step,\"values\":{\"train/loss\":$scalar_train_loss,\"train/acc\":$scalar_train_acc,\"val/loss\":$scalar_val_loss,\"val/acc\":$scalar_val_acc},\"timestamp\":\"$scalar_timestamp\"}]}" >/dev/null
+    scalar_start_line=$((scalar_start_line + 1))
   done <<<"$scalar_rows"
 done
 
