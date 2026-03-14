@@ -17,6 +17,7 @@ import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
 import { registerScalarRoutes } from "routes/scalars";
+import { registerUserAvatarRoutes } from "routes/user-avatars";
 import { registerUserRoutes } from "routes/users";
 import { ScalarBuffer } from "scalarbuffer";
 import { createStorage } from "storage";
@@ -41,6 +42,7 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerAuthRoutes(app, db);
   registerAccountRoutes(app, db);
   registerUserRoutes(app, db);
+  registerUserAvatarRoutes(app, db);
   registerApiKeyRoutes(app, db);
   registerOrganizationMembershipRoutes(app, db);
   registerOrganizationRoutes(app, db);

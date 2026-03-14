@@ -1,4 +1,4 @@
-import type { ApiKeyWithToken, LogSegment, OrganizationMember, ScalarSegment, Session, UserAuth } from "@underfit/types";
+import type { ApiKeyWithToken, LogSegment, OrganizationMember, ScalarSegment, Session, UserAuth, UserAvatar } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 import { z } from "zod";
@@ -19,6 +19,7 @@ import { createRunsTable } from "repositories/runs";
 import { createScalarSegmentsTable } from "repositories/scalars";
 import { createSessionsTable } from "repositories/sessions";
 import { createUserAuthTable } from "repositories/user-auth";
+import { createUserAvatarsTable } from "repositories/user-avatars";
 import type { UserRow } from "repositories/users";
 import { createUsersTable } from "repositories/users";
 
@@ -40,6 +41,7 @@ interface DatabaseSchema {
   users: UserRow;
   api_keys: ApiKeyWithToken;
   user_auth: UserAuth;
+  user_avatars: UserAvatar;
   sessions: Session;
   organizations: OrganizationRow;
   organization_members: OrganizationMember;
@@ -57,6 +59,7 @@ const initDatabase = async (db: Database): Promise<void> => {
   await createUsersTable(db);
   await createApiKeysTable(db);
   await createUserAuthTable(db);
+  await createUserAvatarsTable(db);
   await createSessionsTable(db);
   await createOrganizationsTable(db);
   await createOrganizationMembersTable(db);

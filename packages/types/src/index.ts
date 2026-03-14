@@ -33,6 +33,13 @@ export interface UserAuth {
   updatedAt: Timestamp;
 }
 
+export interface UserAvatar {
+  userId: ID;
+  image: Uint8Array;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 export interface Session {
   id: ID;
   userId: ID;
