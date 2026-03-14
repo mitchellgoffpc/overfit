@@ -44,6 +44,21 @@ export const deleteApiKey = async (id: string): Promise<AuthResult> => {
   return ok ? { ok: true } : { ok: false, error };
 };
 
+export const uploadCurrentUserAvatar = async (file: File): Promise<AuthResult> => {
+  const body = await file.arrayBuffer();
+  const { ok, error } = await request<{ status: "ok" }>("me/avatar", {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body
+  });
+  return ok ? { ok: true } : { ok: false, error };
+};
+
+export const deleteCurrentUserAvatar = async (): Promise<AuthResult> => {
+  const { ok, error } = await request<{ status: "ok" }>("me/avatar", { method: "DELETE" });
+  return ok ? { ok: true } : { ok: false, error };
+};
+
 interface AuthState {
   user: User | null;
   status: AuthStatus;

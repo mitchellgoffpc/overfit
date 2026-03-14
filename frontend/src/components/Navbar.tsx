@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
+import { apiBase } from "helpers";
 import { useAuthStore } from "stores/auth";
 
 interface NavbarProps {
@@ -16,8 +17,10 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
   const logout = useAuthStore((state) => state.logout);
   const ownerLabel = user?.handle ?? "workspace";
   const name = user?.name ?? "";
+  const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const avatarSrc = user ? `${apiBase}/users/${encodeURIComponent(user.handle)}/avatar` : "";
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -104,8 +107,17 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
               <p className="text-sm font-semibold">{name}</p>
               <p className="mt-1 text-xs text-brand-textMuted">{user.email}</p>
             </div>
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
-              {name.slice(0, 2).toUpperCase()}
+            <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#d9ecec] font-semibold text-brand-accentStrong">
+              {initials}
+              <img
+                key={user.handle}
+                className="absolute inset-0 h-full w-full object-cover"
+                src={avatarSrc}
+                alt={`${name} avatar`}
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                }}
+              />
             </div>
           </button>
           {isMenuOpen ? (

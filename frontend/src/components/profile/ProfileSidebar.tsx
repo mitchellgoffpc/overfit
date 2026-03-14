@@ -2,7 +2,7 @@ import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { Link } from "wouter";
 
-import { formatDate } from "helpers";
+import { apiBase, formatDate } from "helpers";
 
 interface ProfileSidebarProps {
   readonly user: User | null;
@@ -22,13 +22,23 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
   const name = user.name;
   const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
+  const avatarSrc = `${apiBase}/users/${encodeURIComponent(user.handle)}/avatar`;
 
   return (
     <aside className="flex h-full flex-col gap-5 border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
       <div className="grid gap-4">
         <div className="grid place-items-center">
-          <div className="grid h-24 w-24 place-items-center rounded-full bg-[#d9ecec] text-2xl font-semibold text-brand-accentStrong">
+          <div className="relative grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-[#d9ecec] text-2xl font-semibold text-brand-accentStrong">
             {initials}
+            <img
+              key={user.handle}
+              className="absolute inset-0 h-full w-full object-cover"
+              src={avatarSrc}
+              alt={`${name} avatar`}
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
+            />
           </div>
         </div>
         <div className="grid gap-2 text-center">
