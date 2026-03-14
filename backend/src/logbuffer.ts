@@ -2,7 +2,7 @@ import type { ID } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { getLatestLogSegment, insertLogSegment } from "repositories/logs";
+import { createLogSegment, getLatestLogSegment } from "repositories/logs";
 import { getLogSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
@@ -155,6 +155,6 @@ export class LogBuffer {
     const content = getLineContent(state.lines);
     const storageKey = await this.storage.write(getLogSegmentStorageKey(state.runId, state.workerId, state.startLine), Buffer.from(content, "utf8"));
     const { lines: _, firstBufferedAt: __, ...row } = state;
-    await insertLogSegment(this.db, { ...row, startAt, endAt, storageKey });
+    await createLogSegment(this.db, { ...row, startAt, endAt, storageKey });
   }
 }

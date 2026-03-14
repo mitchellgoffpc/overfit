@@ -7,8 +7,8 @@ import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { createProject } from "repositories/projects";
-import { insertRun } from "repositories/runs";
-import { insertScalar } from "repositories/scalars";
+import { createRun } from "repositories/runs";
+import { createScalar } from "repositories/scalars";
 import { createUser } from "repositories/users";
 
 const testTimestamp = "2025-01-01T00:00:00.000Z";
@@ -23,9 +23,9 @@ describe("scalar routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
-    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
-    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null })).id;
-    runId = (await insertRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null })).id;
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
+    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
+    runId = (await createRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null }))!.id;
   });
 
   it("inserts a scalar", async () => {
@@ -44,9 +44,9 @@ describe("scalar routes", () => {
   });
 
   it("fetches scalars by account handle, project name, and run name", async () => {
-    const baselineRunId = (await insertRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null })).id;
-    await insertScalar(db, { runId: baselineRunId, step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
-    await insertScalar(db, { runId: baselineRunId, step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
+    const baselineRunId = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null }))!.id;
+    await createScalar(db, { runId: baselineRunId, step: 1, values: { loss: 0.5 }, timestamp: testTimestamp });
+    await createScalar(db, { runId: baselineRunId, step: 2, values: { loss: 0.4 }, timestamp: testTimestamp });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/baseline/scalars`).expect(200);
     expect(response.body as unknown[]).toHaveLength(2);

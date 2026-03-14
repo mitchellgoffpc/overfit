@@ -2,8 +2,8 @@ import { API_BASE } from "@underfit/types";
 import type { Organization, User } from "@underfit/types";
 
 import type { Database } from "db";
+import type { RouteApp, RouteHandler } from "helpers";
 import { getAccount } from "repositories/accounts";
-import type { RouteApp, RouteHandler } from "routes/helpers";
 
 export function registerAccountRoutes(app: RouteApp, db: Database): void {
   const handleExistsHandler: RouteHandler<{ handle: string }, { exists: boolean }> = async (req, res) => {

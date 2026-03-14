@@ -1,9 +1,7 @@
 import {
   API_BASE,
-  EMAIL_IN_USE_ERROR,
   CREDENTIALS_INVALID_ERROR,
-  SESSION_INVALID_ERROR,
-  USERNAME_IN_USE_ERROR
+  SESSION_INVALID_ERROR
 } from "@underfit/types";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -106,9 +104,9 @@ describe("auth routes", () => {
   it("rejects duplicate handles and emails", async () => {
     await post(app, "auth/register", { email: "dup@example.com", handle: "dup", password: "password123" });
     const emailDup = await post(app, "auth/register", { email: "dup@example.com", handle: "test", password: "password123" }, 409);
-    expect(emailDup.body).toMatchObject({ error: EMAIL_IN_USE_ERROR });
+    expect(emailDup.body).toMatchObject({ error: "Unable to create account" });
     const handleDup = await post(app, "auth/register", { email: "second@example.com", handle: "dup", password: "password123" }, 409);
-    expect(handleDup.body).toMatchObject({ error: USERNAME_IN_USE_ERROR });
+    expect(handleDup.body).toMatchObject({ error: "Unable to create account" });
   });
 
   it("rejects invalid emails, handles, and passwords", async () => {

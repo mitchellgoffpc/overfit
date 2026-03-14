@@ -3,20 +3,20 @@ import type { LogPage } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import type { LogBuffer, LogLine } from "logbuffer";
 import { listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler } from "routes/helpers";
 import type { StorageBackend } from "storage";
 
-const InsertLogLineSchema = z.strictObject({
+const CreateLogLineSchema = z.strictObject({
   timestamp: z.string().min(1),
   content: z.string()
 });
-const InsertLogLinesBodySchema = z.strictObject({
+const CreateLogLinesBodySchema = z.strictObject({
   workerId: z.string().min(1),
-  lines: z.array(InsertLogLineSchema).min(1)
+  lines: z.array(CreateLogLineSchema).min(1)
 });
 const FlushLogBufferBodySchema = z.strictObject({
   workerId: z.string().min(1)
@@ -27,7 +27,7 @@ const ListLogEntriesQuerySchema = z.strictObject({
   count: z.coerce.number().int().positive().exactOptional().prefault(10000)
 });
 
-type InsertLogLinesPayload = z.infer<typeof InsertLogLinesBodySchema>;
+type CreateLogLinesPayload = z.infer<typeof CreateLogLinesBodySchema>;
 type FlushLogBufferPayload = z.infer<typeof FlushLogBufferBodySchema>;
 type ListLogEntriesQuery = z.infer<typeof ListLogEntriesQuerySchema>;
 
@@ -49,8 +49,8 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     return await getRun(db, params.handle.trim().toLowerCase(), params.projectName.trim().toLowerCase(), params.runName.trim().toLowerCase());
   };
 
-  const insertLogLinesHandler: RouteHandler<RunPathParams, { status: "buffered" }, InsertLogLinesPayload> = async (req, res) => {
-    const { success, error, data } = InsertLogLinesBodySchema.safeParse(req.body);
+  const createLogLinesHandler: RouteHandler<RunPathParams, { status: "buffered" }, CreateLogLinesPayload> = async (req, res) => {
+    const { success, error, data } = CreateLogLinesBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
@@ -119,6 +119,6 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
   };
 
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, listLogEntriesHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, insertLogLinesHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, createLogLinesHandler);
   app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs/flush`, flushLogBufferHandler);
 }

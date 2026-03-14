@@ -32,8 +32,8 @@ describe("accounts routes", () => {
   });
 
   it("fetches an account by handle", async () => {
-    const user = await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null });
-    const organization = await createOrganization(db, { handle: "core", name: "Core" });
+    const user = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!;
+    const organization = (await createOrganization(db, { handle: "core", name: "Core" }))!;
 
     const userResponse = await request(app).get(`${API_BASE}/accounts/ada`).expect(200);
     expect(userResponse.body).toMatchObject({ id: user.id, email: "ada@example.com", handle: "ada", name: "Ada Lovelace", type: "USER" });

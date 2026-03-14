@@ -3,13 +3,13 @@ import { randomBytes } from "crypto";
 import type { ID, Run } from "@underfit/types";
 
 import type { Database } from "db";
+import { nowIso } from "helpers";
 import { table as accountsTable } from "repositories/accounts";
-import { nowIso } from "repositories/helpers";
 import { table as projectsTable } from "repositories/projects";
 import { table as usersTable } from "repositories/users";
 
 export type RunRow = Omit<Run, "user" | "projectName" | "projectOwner" | "metadata"> & { userId: ID; metadata: string | null };
-type InsertRunRow = Pick<Run, "projectId" | "name" | "status" | "metadata"> & { userId: ID };
+type CreateRunRow = Pick<Run, "projectId" | "name" | "status" | "metadata"> & { userId: ID };
 type UpdateRunRow = Partial<Pick<Run, "status" | "metadata">>;
 
 export const table = "runs";
@@ -77,22 +77,13 @@ export const getRun = async (db: Database, handle: string, projectName: string, 
   return row ? { ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null } : undefined;
 };
 
-export const insertRun = async (db: Database, run: InsertRunRow): Promise<Run> => {
+export const createRun = async (db: Database, run: CreateRunRow): Promise<Run | undefined> => {
   const payload = { ...run, id: randomBytes(16).toString("hex"), createdAt: nowIso(), updatedAt: nowIso(), metadata: JSON.stringify(run.metadata) };
-  await db.insertInto(table).values(payload).execute();
-  const result = await getRunById(db, payload.id);
-  if (!result) { throw new Error("RUH ROH"); }
-  return result;
+  const result = await db.insertInto(table).values(payload).onConflict((oc) => oc.columns(["projectId", "name"]).doNothing()).executeTakeFirst();
+  return result.numInsertedOrUpdatedRows ? await getRunById(db, payload.id) : undefined;
 };
 
-export const updateRun = async (db: Database, id: ID, updates: UpdateRunRow): Promise<Run | undefined> => {
-  const metadata = updates.metadata ? JSON.stringify(updates.metadata) : null;
-  const payload = { status: updates.status, updatedAt: nowIso(), ...metadata && { metadata } };
-  const result = await db.updateTable(table).set(payload).where("id", "=", id).executeTakeFirst();
-  return result.numUpdatedRows ? await getRunById(db, id) : undefined;
-};
-
-export const updateRunByName = async (db: Database, handle: string, projectName: string, runName: string, updates: UpdateRunRow): Promise<Run | undefined> => {
+export const updateRun = async (db: Database, handle: string, projectName: string, runName: string, updates: UpdateRunRow): Promise<Run | undefined> => {
   const metadata = updates.metadata ? JSON.stringify(updates.metadata) : null;
   const payload = { status: updates.status, updatedAt: nowIso(), ...metadata && { metadata } };
   const result = await db.updateTable(table)

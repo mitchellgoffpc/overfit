@@ -24,14 +24,14 @@ describe("organizations routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
-    ownerId = (await createUser(db, { email: "owner@example.com", handle: "owner", name: "Owner", bio: null })).id;
-    adaId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada", bio: null })).id;
-    const outsiderId = (await createUser(db, { email: "outsider@example.com", handle: "outsider", name: "Outsider", bio: null })).id;
+    ownerId = (await createUser(db, { email: "owner@example.com", handle: "owner", name: "Owner", bio: null }))!.id;
+    adaId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada", bio: null }))!.id;
+    const outsiderId = (await createUser(db, { email: "outsider@example.com", handle: "outsider", name: "Outsider", bio: null }))!.id;
     ownerToken = (await createApiKey(db, { userId: ownerId, label: "owner", token: "owner-token" })).token;
     adaToken = (await createApiKey(db, { userId: adaId, label: "ada", token: "ada-token" })).token;
     outsiderToken = (await createApiKey(db, { userId: outsiderId, label: "outsider", token: "outsider-token" })).token;
 
-    organizationId = (await createOrganization(db, { handle: "core", name: "Core" })).id;
+    organizationId = (await createOrganization(db, { handle: "core", name: "Core" }))!.id;
     await createOrganizationMember(db, organizationId, ownerId, "ADMIN");
   });
 

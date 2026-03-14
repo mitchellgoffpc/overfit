@@ -8,6 +8,8 @@ export interface ErrorResponse { error: string };
 export type RouteHandler<P, ResBody, ReqBody = unknown, ReqQuery = Record<string, string>> =
     RequestHandler<P, ResBody | ErrorResponse, ReqBody, ReqQuery>;
 
+export const nowIso = (): string => new Date().toISOString();
+
 export const formatZodError = (error: ZodError): string => {
   const issue = error.issues[0];
   if (!issue) { return "Invalid payload"; }

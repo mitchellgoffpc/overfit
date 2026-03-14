@@ -5,10 +5,10 @@ import type { ApiKey, ApiKeyWithToken } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import { createApiKey, deleteApiKey, listApiKeys } from "repositories/api-keys";
 import { requireAuth } from "routes/auth";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const ApiKeyPayloadSchema = z.strictObject({
   label: z.string().trim().min(1).nullable().exactOptional().prefault(null)

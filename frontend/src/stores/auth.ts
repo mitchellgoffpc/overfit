@@ -49,7 +49,7 @@ interface AuthState {
   status: AuthStatus;
   loadUser: () => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (name: string, bio: string) => Promise<AuthResult>;
+  updateUser: (name: string, bio: string) => Promise<AuthResult>;
   login: (email: string, password: string) => Promise<AuthResult>;
   signup: (email: string, handle: string, password: string) => Promise<AuthResult>;
 }
@@ -93,7 +93,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: null, status: "idle" });
   },
 
-  updateUserProfile: async (name: string, bio: string) => {
+  updateUser: async (name: string, bio: string) => {
     const { ok, error, body } = await send<User>("me", "PATCH", { name, bio });
     if (ok) {
       set({ user: body, status: "authenticated" });

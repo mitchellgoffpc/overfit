@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import type { ID, LogSegment } from "@underfit/types";
 
 import type { Database } from "db";
-import { nowIso } from "repositories/helpers";
+import { nowIso } from "helpers";
 
 export const table = "log_segments";
 
@@ -25,7 +25,7 @@ export const createLogSegmentsTable = async (db: Database): Promise<void> => {
     .execute();
 };
 
-export const insertLogSegment = async (db: Database, segment: Omit<LogSegment, "id" | "createdAt">): Promise<LogSegment> => {
+export const createLogSegment = async (db: Database, segment: Omit<LogSegment, "id" | "createdAt">): Promise<LogSegment> => {
   const payload = { ...segment, id: randomBytes(12).toString("hex"), createdAt: nowIso() };
   await db.insertInto(table).values(payload).execute();
   return payload;

@@ -3,22 +3,22 @@ import type { Scalar } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import { getRun } from "repositories/runs";
-import { getScalars, insertScalar } from "repositories/scalars";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler } from "routes/helpers";
+import { createScalar, getScalars } from "repositories/scalars";
 
-const InsertScalarBodySchema = z.strictObject({
+const CreateScalarBodySchema = z.strictObject({
   step: z.number().nullable().exactOptional().prefault(null),
   values: z.record(z.string(), z.number()),
   timestamp: z.string().min(1, "Scalar fields are required: timestamp")
 });
 
-type InsertScalarBody = z.infer<typeof InsertScalarBodySchema>;
+type CreateScalarBody = z.infer<typeof CreateScalarBodySchema>;
 
 export function registerScalarRoutes(app: RouteApp, db: Database): void {
-  const insertScalarHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Scalar, InsertScalarBody> = async (req, res) => {
-    const { success, error, data } = InsertScalarBodySchema.safeParse(req.body);
+  const createScalarHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Scalar, CreateScalarBody> = async (req, res) => {
+    const { success, error, data } = CreateScalarBodySchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -31,7 +31,7 @@ export function registerScalarRoutes(app: RouteApp, db: Database): void {
     if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
-      res.json(await insertScalar(db, { runId: run.id, ...data }));
+      res.json(await createScalar(db, { runId: run.id, ...data }));
     }
   };
 
@@ -51,5 +51,5 @@ export function registerScalarRoutes(app: RouteApp, db: Database): void {
   };
 
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars`, getScalarsHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars`, insertScalarHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars`, createScalarHandler);
 }

@@ -1,7 +1,7 @@
 import type { AccountType, ID, Organization, User } from "@underfit/types";
 
 import type { Database } from "db";
-import { table as organizationsTable } from "repositories/organizations";
+import { selectOrganizationColumns, table as organizationsTable } from "repositories/organizations";
 import { selectUserColumns, table as usersTable } from "repositories/users";
 
 export const table = "accounts";
@@ -31,14 +31,7 @@ const hydrateAccount = async (db: Database, account: { id: ID; type: AccountType
     return await db
       .selectFrom(organizationsTable)
       .innerJoin(table, `${table}.id`, `${organizationsTable}.id`)
-      .select([
-        `${organizationsTable}.id as id`,
-        `${table}.handle as handle`,
-        `${organizationsTable}.name as name`,
-        `${table}.type as type`,
-        `${organizationsTable}.createdAt as createdAt`,
-        `${organizationsTable}.updatedAt as updatedAt`
-      ])
+      .select(selectOrganizationColumns)
       .where(`${table}.id`, "=", account.id)
       .executeTakeFirst();
   }

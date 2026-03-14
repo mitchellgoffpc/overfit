@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import type { Artifact, ID } from "@underfit/types";
 
 import type { Database } from "db";
-import { nowIso } from "repositories/helpers";
+import { nowIso } from "helpers";
 
 export type ArtifactRow = Omit<Artifact, "metadata"> & { metadata: string | null };
 
@@ -35,11 +35,28 @@ export const getArtifact = async (db: Database, id: ID): Promise<Artifact | unde
   return row ? { ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null } : undefined;
 };
 
-export const insertArtifact = async (db: Database, artifact: Omit<Artifact, "id" | "createdAt" | "updatedAt">): Promise<Artifact> => {
+export const createArtifact = async (db: Database, artifact: Omit<Artifact, "id" | "createdAt" | "updatedAt">): Promise<Artifact | undefined> => {
   const payload: Artifact = { ...artifact, id: randomBytes(16).toString("hex"), createdAt: nowIso(), updatedAt: nowIso() };
   const row: ArtifactRow = { ...payload, metadata: payload.metadata ? JSON.stringify(payload.metadata) : null };
-  await db.insertInto(table).values(row).execute();
-  return payload;
+  const result = await db
+    .insertInto(table)
+    .columns(["id", "runId", "name", "type", "version", "createdAt", "updatedAt", "uri", "metadata"])
+    .expression((eb) => eb
+      .selectFrom("runs")
+      .select([
+        eb.val(row.id).as("id"),
+        eb.val(row.runId).as("runId"),
+        eb.val(row.name).as("name"),
+        eb.val(row.type).as("type"),
+        eb.val(row.version).as("version"),
+        eb.val(row.createdAt).as("createdAt"),
+        eb.val(row.updatedAt).as("updatedAt"),
+        eb.val(row.uri).as("uri"),
+        eb.val(row.metadata).as("metadata")
+      ])
+      .where("runs.id", "=", row.runId))
+    .executeTakeFirst();
+  return result.numInsertedOrUpdatedRows ? payload : undefined;
 };
 
 export const updateArtifactUri = async (db: Database, id: ID, uri: string): Promise<Artifact | undefined> => {

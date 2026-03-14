@@ -38,9 +38,9 @@ export const getScalars = async (db: Database, handle: string, projectName: stri
   return rows.map((row) => ({ ...row, values: JSON.parse(row.values) as Record<string, number> }));
 };
 
-export const insertScalar = async (db: Database, scalar: Omit<Scalar, "id">): Promise<Scalar> => {
-  const insertedScalar: Scalar = { ...scalar, id: randomBytes(12).toString("hex") };
-  const row: ScalarRow = { ...insertedScalar, values: JSON.stringify(insertedScalar.values) };
+export const createScalar = async (db: Database, scalar: Omit<Scalar, "id">): Promise<Scalar> => {
+  const payload = { ...scalar, id: randomBytes(12).toString("hex") };
+  const row = { ...payload, values: JSON.stringify(payload.values) };
   await db.insertInto(table).values(row).execute();
-  return insertedScalar;
+  return payload;
 };

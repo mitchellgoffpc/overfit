@@ -6,10 +6,10 @@ import { useAuthStore } from "stores/auth";
 
 interface ProfileSettingsCardProps {
   readonly user: User;
-  readonly updateUserProfile: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  readonly updateUser: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
-function ProfileSettingsCard({ user, updateUserProfile }: ProfileSettingsCardProps): ReactElement {
+function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): ReactElement {
   const [name, setName] = useState(() => user.name);
   const [bio, setBio] = useState(() => user.bio ?? "");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ function ProfileSettingsCard({ user, updateUserProfile }: ProfileSettingsCardPro
     setIsSaving(true);
     setSaveError(null);
     setSaveStatus(null);
-    const result = await updateUserProfile(name, bio);
+    const result = await updateUser(name, bio);
     if (result.ok) {
       setSaveStatus("Saved");
       setIsSaving(false);
@@ -74,7 +74,7 @@ function ProfileSettingsCard({ user, updateUserProfile }: ProfileSettingsCardPro
 
 export default function SettingsProfileContent(): ReactElement {
   const user = useAuthStore((state) => state.user);
-  const updateUserProfile = useAuthStore((state) => state.updateUserProfile);
+  const updateUser = useAuthStore((state) => state.updateUser);
 
-  return user ? <ProfileSettingsCard key={user.id} user={user} updateUserProfile={updateUserProfile} /> : <div />;
+  return user ? <ProfileSettingsCard key={user.id} user={user} updateUser={updateUser} /> : <div />;
 }

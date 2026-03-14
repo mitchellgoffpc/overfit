@@ -1,10 +1,10 @@
 import type { ID, Organization, OrganizationMember, OrganizationRole, User } from "@underfit/types";
 
 import type { Database } from "db";
+import { nowIso } from "helpers";
 import { table as accountsTable } from "repositories/accounts";
-import { nowIso } from "repositories/helpers";
-import { table as organizationsTable } from "repositories/organizations";
-import { table as usersTable } from "repositories/users";
+import { selectOrganizationColumns, table as organizationsTable } from "repositories/organizations";
+import { selectUserColumns, table as usersTable } from "repositories/users";
 
 const table = "organization_members";
 
@@ -38,8 +38,8 @@ export const deleteOrganizationMember = async (db: Database, organizationId: ID,
   const result = await db
     .deleteFrom(table)
     .where("id", "=", getMembershipId(organizationId, userId))
-    .where((qb) => qb.exists(
-      qb.selectFrom(table)
+    .where((eb) => eb.exists(
+      eb.selectFrom(table)
         .select("id")
         .where("organizationId", "=", organizationId)
         .where("role", "=", "ADMIN")
@@ -50,40 +50,22 @@ export const deleteOrganizationMember = async (db: Database, organizationId: ID,
   return result.numDeletedRows > 0;
 };
 
-export const listOrganizationUsersByOrganizationId = async (db: Database, organizationId: ID): Promise<(User & { role: OrganizationRole })[]> => {
+export const listOrganizationMembers = async (db: Database, organizationId: ID): Promise<(User & { role: OrganizationRole })[]> => {
   return await db
     .selectFrom(table)
     .innerJoin(usersTable, `${usersTable}.id`, `${table}.userId`)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${usersTable}.id`)
-    .select([
-      `${usersTable}.id as id`,
-      `${usersTable}.email as email`,
-      `${usersTable}.bio as bio`,
-      `${accountsTable}.handle as handle`,
-      `${usersTable}.name as name`,
-      `${accountsTable}.type as type`,
-      `${usersTable}.createdAt as createdAt`,
-      `${usersTable}.updatedAt as updatedAt`,
-      `${table}.role as role`
-    ])
+    .select([...selectUserColumns, `${table}.role as role`])
     .where(`${table}.organizationId`, "=", organizationId)
     .execute();
 };
 
-export const listOrganizationMembershipsByUserId = async (db: Database, userId: ID): Promise<(Organization & { role: OrganizationRole })[]> => {
+export const listUserMemberships = async (db: Database, userId: ID): Promise<(Organization & { role: OrganizationRole })[]> => {
   return await db
     .selectFrom(table)
     .innerJoin(organizationsTable, `${organizationsTable}.id`, `${table}.organizationId`)
     .innerJoin(accountsTable, `${accountsTable}.id`, `${organizationsTable}.id`)
-    .select([
-      `${organizationsTable}.id as id`,
-      `${accountsTable}.handle as handle`,
-      `${organizationsTable}.name as name`,
-      `${accountsTable}.type as type`,
-      `${organizationsTable}.createdAt as createdAt`,
-      `${organizationsTable}.updatedAt as updatedAt`,
-      `${table}.role as role`
-    ])
+    .select([...selectOrganizationColumns, `${table}.role as role`])
     .where(`${table}.userId`, "=", userId)
     .execute();
 };

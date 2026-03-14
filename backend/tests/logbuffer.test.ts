@@ -10,7 +10,7 @@ import type { Database } from "db";
 import { LogBuffer } from "logbuffer";
 import { listLogSegmentsForCursor } from "repositories/logs";
 import { createProject } from "repositories/projects";
-import { insertRun } from "repositories/runs";
+import { createRun } from "repositories/runs";
 import { createUser } from "repositories/users";
 import { createStorage } from "storage";
 
@@ -29,9 +29,9 @@ describe("logbuffer", () => {
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
-    const userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
-    const projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null })).id;
-    runId = (await insertRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null })).id;
+    const userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
+    const projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
+    runId = (await createRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null }))!.id;
   });
 
   it("buffers lines and flushes explicitly", async () => {

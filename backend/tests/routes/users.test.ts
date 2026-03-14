@@ -31,8 +31,8 @@ describe("users routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
-    organizationId = (await createOrganization(db, { handle: "core", name: "Core" })).id;
-    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
+    organizationId = (await createOrganization(db, { handle: "core", name: "Core" }))!.id;
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
     await createOrganizationMember(db, organizationId, userId, "ADMIN");
   });
 

@@ -152,12 +152,12 @@ describe("auth store", () => {
     expect(useAuthStore.getState().status).toBe("idle");
   });
 
-  it("updates the user profile", async () => {
+  it("updates the user", async () => {
     const updated = { ...user, name: "Ada", bio: "Math pioneer" };
     useAuthStore.setState({ user, status: "authenticated" });
     fetchMock.mockResolvedValueOnce(createResponse(updated));
 
-    const result = await useAuthStore.getState().updateUserProfile("Ada", "Math pioneer");
+    const result = await useAuthStore.getState().updateUser("Ada", "Math pioneer");
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/me`, {
@@ -169,11 +169,11 @@ describe("auth store", () => {
     expect(useAuthStore.getState().user).toEqual(updated);
   });
 
-  it("returns an error when updating the profile fails", async () => {
+  it("returns an error when updating the user fails", async () => {
     useAuthStore.setState({ user, status: "authenticated" });
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Invalid profile" }, { ok: false, status: 400 }));
 
-    const result = await useAuthStore.getState().updateUserProfile("", "Math pioneer");
+    const result = await useAuthStore.getState().updateUser("", "Math pioneer");
 
     expect(result).toEqual({ ok: false, error: "Invalid profile" });
     expect(useAuthStore.getState().user).toEqual(user);

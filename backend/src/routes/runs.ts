@@ -7,14 +7,14 @@ import type { Run } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import { getProject } from "repositories/projects";
-import { getRun, insertRun, listProjectRuns, listUserRuns, updateRunByName } from "repositories/runs";
+import { createRun, getRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
 import { getUserByHandle } from "repositories/users";
 import { requireAuth } from "routes/auth";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler } from "routes/helpers";
 
-const InsertRunPayloadSchema = z.strictObject({
+const CreateRunPayloadSchema = z.strictObject({
   status: z.enum(runStatus).exactOptional().prefault("queued"),
   metadata: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
 });
@@ -23,7 +23,7 @@ const UpdateRunPayloadSchema = z.strictObject({
   metadata: z.record(z.string(), z.unknown()).nullable().exactOptional()
 });
 
-type InsertRunPayload = z.infer<typeof InsertRunPayloadSchema>;
+type CreateRunPayload = z.infer<typeof CreateRunPayloadSchema>;
 type UpdateRunPayload = z.infer<typeof UpdateRunPayloadSchema>;
 
 const parseWordList = (relativePath: string): string[] => fs.readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf-8").split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
@@ -68,8 +68,8 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const insertRunHandler: RouteHandler<{ handle: string; projectName: string }, Run, InsertRunPayload> = async (req, res) => {
-    const { success, error, data } = InsertRunPayloadSchema.safeParse(req.body);
+  const createRunHandler: RouteHandler<{ handle: string; projectName: string }, Run, CreateRunPayload> = async (req, res) => {
+    const { success, error, data } = CreateRunPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
@@ -81,18 +81,15 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     if (!project) {
       res.status(404).json({ error: "Project not found" });
     } else {
-      let runName = "";
+      let run: Run | undefined;
       for (let attempt = 0; attempt < 8; attempt += 1) {
-        const candidate = randomRunName();
-        if (!await getRun(db, handle, projectName, candidate)) {
-          runName = candidate;
-          break;
-        }
+        run = await createRun(db, { projectId: project.id, userId: req.user.id, name: randomRunName(), ...data });
+        if (run) { break; }
       }
-      if (!runName) {
+      if (!run) {
         res.status(500).json({ error: "Unable to allocate run name" });
       } else {
-        res.json(await insertRun(db, { projectId: project.id, userId: req.user.id, name: runName, ...data }));
+        res.json(run);
       }
     }
   };
@@ -107,7 +104,7 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
     const runName = req.params.runName.trim().toLowerCase();
-    const run = await updateRunByName(db, handle, projectName, runName, data);
+    const run = await updateRun(db, handle, projectName, runName, data);
     if (!run) {
       res.status(404).json({ error: "Run not found" });
     } else {
@@ -118,6 +115,6 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
   app.get(`${API_BASE}/users/:handle/runs`, listUserRunsHandler);
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, listProjectRunsHandler);
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, getRunHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, requireAuth(db), insertRunHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, requireAuth(db), createRunHandler);
   app.put(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, updateRunHandler);
 }

@@ -9,8 +9,8 @@ import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { createProject } from "repositories/projects";
-import { insertRun } from "repositories/runs";
-import { upsertSession } from "repositories/sessions";
+import { createRun } from "repositories/runs";
+import { createSession } from "repositories/sessions";
 import { createUser } from "repositories/users";
 
 interface RunResponse {
@@ -23,17 +23,18 @@ describe("runs routes", () => {
   let app: ReturnType<typeof createApp>;
   let userId: string;
   let projectId: string;
+  let sessionToken: string;
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
-    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
-    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null })).id;
-    await upsertSession(db, { id: "token-1", userId, expiresAt: "2099-01-01T00:00:00.000Z" });
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
+    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
+    sessionToken = (await createSession(db, { userId, expiresAt: "2099-01-01T00:00:00.000Z" })).id;
   });
 
   it("inserts and fetches a run", async () => {
-    const insertResponse = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs`).set("Cookie", "underfit_session=token-1").send({ status: "running", metadata: { lr: 0.001 } }).expect(200);
+    const insertResponse = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs`).set("Cookie", `underfit_session=${sessionToken}`).send({ status: "running", metadata: { lr: 0.001 } }).expect(200);
     const inserted = insertResponse.body as RunResponse;
     expect(insertResponse.body).toMatchObject({ projectId, user: "ada", status: "running", metadata: { lr: 0.001 } });
     expect(typeof inserted.name).toBe("string");
@@ -50,7 +51,7 @@ describe("runs routes", () => {
   });
 
   it("rejects unknown projects when inserting", async () => {
-    const response = await request(app).post(`${API_BASE}/accounts/ada/projects/missing/runs`).set("Cookie", "underfit_session=token-1").send({ status: "running" }).expect(404);
+    const response = await request(app).post(`${API_BASE}/accounts/ada/projects/missing/runs`).set("Cookie", `underfit_session=${sessionToken}`).send({ status: "running" }).expect(404);
     expect(response.body).toMatchObject({ error: "Project not found" });
   });
 
@@ -60,21 +61,21 @@ describe("runs routes", () => {
   });
 
   it("updates a run", async () => {
-    const run = await insertRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null });
+    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null }))!;
 
     const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ status: "finished", metadata: { loss: 0.12 } }).expect(200);
     expect(response.body).toMatchObject({ id: run.id, status: "finished", metadata: { loss: 0.12 } });
   });
 
   it("partially updates a run", async () => {
-    const run = await insertRun(db, { projectId, userId, name: "baseline", status: "running", metadata: { loss: 0.13 } });
+    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: { loss: 0.13 } }))!;
 
     const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ metadata: { loss: 0.12 } }).expect(200);
     expect(response.body).toMatchObject({ id: run.id, status: "running", metadata: { loss: 0.12 } });
   });
 
   it("fetches a run", async () => {
-    const run = await insertRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null });
+    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null }))!;
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/baseline`).expect(200);
     expect(response.body).toMatchObject({ id: run.id, projectId, user: "ada", name: "baseline", status: "running" });
@@ -84,13 +85,12 @@ describe("runs routes", () => {
   });
 
   it("lists runs for a project", async () => {
-    const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null })).id;
-    const firstRun = await insertRun(db, { projectId, userId, name: "a", status: "running", metadata: null });
+    const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null }))!.id;
+    const firstRun = (await createRun(db, { projectId, userId, name: "a", status: "running", metadata: null }))!;
     await delay(5);
-    const secondRun = await insertRun(db, { projectId, userId: user2Id, name: "b", status: "finished", metadata: null });
+    const secondRun = (await createRun(db, { projectId, userId: user2Id, name: "b", status: "finished", metadata: null }))!;
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs`).expect(200);
-    const runs = response.body as { id: string }[];
-    expect(runs.map((run) => run.id)).toEqual([secondRun.id, firstRun.id]);
+    expect(response.body).toMatchObject([{ id: secondRun.id }, { id: firstRun.id }]);
   });
 
   it("rejects unknown projects when listing project runs", async () => {
@@ -99,15 +99,14 @@ describe("runs routes", () => {
   });
 
   it("lists runs for a user handle by created date", async () => {
-    const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null })).id;
-    const firstRun = await insertRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null });
+    const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null }))!.id;
+    const firstRun = (await createRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null }))!;
     await delay(5);
-    const secondRun = await insertRun(db, { projectId, userId, name: "run-2", status: "finished", metadata: null });
-    await insertRun(db, { projectId, userId: user2Id, name: "run-3", status: "running", metadata: null });
+    const secondRun = (await createRun(db, { projectId, userId, name: "run-2", status: "finished", metadata: null }))!;
+    await createRun(db, { projectId, userId: user2Id, name: "run-3", status: "running", metadata: null });
 
     const response = await request(app).get(`${API_BASE}/users/ada/runs`).expect(200);
-    const runs = response.body as { id: string }[];
-    expect(runs.map((run) => run.id)).toEqual([secondRun.id, firstRun.id]);
+    expect(response.body).toMatchObject([{ id: secondRun.id }, { id: firstRun.id }]);
   });
 
   it("rejects unknown user handles when listing runs", async () => {

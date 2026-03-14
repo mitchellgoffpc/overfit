@@ -4,14 +4,14 @@ import type { ID, Project } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
+import { nowIso } from "helpers";
 import { table as accountsTable } from "repositories/accounts";
-import { nowIso } from "repositories/helpers";
+import { table as runsTable } from "repositories/runs";
 
 export const table = "projects";
-const runsTable = "runs";
 
 export type ProjectRow = Omit<Project, "owner"> & { accountId: ID };
-type InsertProjectRow = Pick<ProjectRow, "accountId" | "name" | "description">;
+type CreateProjectRow = Pick<ProjectRow, "accountId" | "name" | "description">;
 type UpdateProjectRow = Partial<Pick<ProjectRow, "description">>;
 
 const projectSelect = [
@@ -22,6 +22,11 @@ const projectSelect = [
   `${table}.createdAt as createdAt`,
   `${table}.updatedAt as updatedAt`
 ] as const;
+
+const selectProjects = (db: Database) => db
+  .selectFrom(table)
+  .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
+  .select(projectSelect);
 
 export const createProjectsTable = async (db: Database): Promise<void> => {
   await db.schema
@@ -38,52 +43,25 @@ export const createProjectsTable = async (db: Database): Promise<void> => {
 };
 
 export const listProjects = async (db: Database, handle: string): Promise<Project[]> => {
-  return await db
-    .selectFrom(table)
-    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
-    .select(projectSelect)
-    .where(`${accountsTable}.handle`, "=", handle)
-    .execute();
+  return await selectProjects(db).where(`${accountsTable}.handle`, "=", handle).execute();
 };
 
 const getProjectById = async (db: Database, id: ID): Promise<Project | undefined> => {
-  return await db
-    .selectFrom(table)
-    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
-    .select(projectSelect)
-    .where(`${table}.id`, "=", id)
-    .executeTakeFirst();
+  return await selectProjects(db).where(`${table}.id`, "=", id).executeTakeFirst();
 };
 
 export const getProject = async (db: Database, handle: string, name: string): Promise<Project | undefined> => {
-  return await db
-    .selectFrom(table)
-    .innerJoin(accountsTable, `${accountsTable}.id`, `${table}.accountId`)
-    .select(projectSelect)
-    .where(`${accountsTable}.handle`, "=", handle)
-    .where(`${table}.name`, "=", name)
-    .executeTakeFirst();
+  return await selectProjects(db).where(`${accountsTable}.handle`, "=", handle).where(`${table}.name`, "=", name).executeTakeFirst();
 };
 
-export const createProject = async (db: Database, project: InsertProjectRow): Promise<Project> => {
+export const createProject = async (db: Database, project: CreateProjectRow): Promise<Project | undefined> => {
   const id = randomBytes(16).toString("hex");
   const payload: ProjectRow = { ...project, id, createdAt: nowIso(), updatedAt: nowIso() };
-  await db.insertInto(table).values(payload).execute();
-  const result = await getProjectById(db, id);
-  if (!result) { throw new Error("RUH ROH"); }
-  return result;
+  const result = await db.insertInto(table).values(payload).onConflict((oc) => oc.columns(["accountId", "name"]).doNothing()).executeTakeFirst();
+  return result.numInsertedOrUpdatedRows ? await getProjectById(db, id) : undefined;
 };
 
-export const updateProject = async (db: Database, id: ID, updates: UpdateProjectRow): Promise<Project | undefined> => {
-  const payload = { description: updates.description, updatedAt: nowIso() };
-  const result = await db.updateTable(table).set(payload).where("id", "=", id).executeTakeFirst();
-  if (!result.numUpdatedRows) { return undefined; }
-  const project = await getProjectById(db, id);
-  if (!project) { throw new Error("RUH ROH"); }
-  return project;
-};
-
-export const updateProjectByName = async (db: Database, handle: string, name: string, updates: UpdateProjectRow): Promise<Project | undefined> => {
+export const updateProject = async (db: Database, handle: string, name: string, updates: UpdateProjectRow): Promise<Project | undefined> => {
   const payload = { description: updates.description, updatedAt: nowIso() };
   const result = await db.updateTable(table)
     .set(payload)
@@ -93,8 +71,7 @@ export const updateProjectByName = async (db: Database, handle: string, name: st
       .where(`${accountsTable}.handle`, "=", handle)
       .where(`${table}.name`, "=", name))
     .executeTakeFirst();
-  if (!result.numUpdatedRows) { return undefined; }
-  return await getProject(db, handle, name);
+  return result.numUpdatedRows ? await getProject(db, handle, name) : undefined;
 };
 
 export const listProjectsByUserActivity = async (db: Database, userId: ID): Promise<Project[]> => {

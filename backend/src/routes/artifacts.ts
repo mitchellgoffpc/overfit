@@ -4,13 +4,13 @@ import express from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { getArtifact, insertArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler, RouteParams } from "routes/helpers";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler, RouteParams } from "helpers";
+import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { getArtifactStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
-const InsertArtifactPayloadSchema = z.strictObject({
+const CreateArtifactPayloadSchema = z.strictObject({
   runId: z.string(),
   name: z.string(),
   type: z.string(),
@@ -18,34 +18,25 @@ const InsertArtifactPayloadSchema = z.strictObject({
   uri: z.string().nullable().exactOptional().prefault(null),
   metadata: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
 });
-type InsertArtifactPayload = z.infer<typeof InsertArtifactPayloadSchema>;
-
-const isForeignKeyConstraintError = (error: unknown): boolean => {
-  if (!(error instanceof Error)) { return false; }
-  const { code } = error as Error & { code?: string };
-  return code === "SQLITE_CONSTRAINT_FOREIGNKEY" || code === "23503";
-};
+type CreateArtifactPayload = z.infer<typeof CreateArtifactPayloadSchema>;
 
 export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend): void {
   const listArtifactsHandler: RouteHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
 
-  const insertArtifactHandler: RouteHandler<Record<string, string>, Artifact, InsertArtifactPayload> = async (req, res) => {
-    const { success, error, data } = InsertArtifactPayloadSchema.safeParse(req.body);
+  const createArtifactHandler: RouteHandler<Record<string, string>, Artifact, CreateArtifactPayload> = async (req, res) => {
+    const { success, error, data } = CreateArtifactPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
 
-    try {
-      res.json(await insertArtifact(db, data));
-    } catch (caught) {
-      if (isForeignKeyConstraintError(caught)) {
-        res.status(400).json({ error: "Artifact runId does not reference an existing run" });
-      } else {
-        throw caught;
-      }
+    const artifact = await createArtifact(db, data);
+    if (!artifact) {
+      res.status(400).json({ error: "Artifact runId does not reference an existing run" });
+    } else {
+      res.json(artifact);
     }
   };
 
@@ -97,7 +88,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
   };
 
   app.get(`${API_BASE}/artifacts`, listArtifactsHandler);
-  app.put(`${API_BASE}/artifacts`, insertArtifactHandler);
+  app.put(`${API_BASE}/artifacts`, createArtifactHandler);
   app.get(`${API_BASE}/artifacts/:id`, getArtifactHandler);
   app.put(`${API_BASE}/artifacts/:id/file`, express.raw({ type: "*/*", limit: "250mb" }), uploadArtifactHandler);
   app.get(`${API_BASE}/artifacts/:id/file`, downloadArtifactHandler);

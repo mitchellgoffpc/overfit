@@ -3,14 +3,14 @@ import type { Project } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import { getAccount } from "repositories/accounts";
-import { createProject, getProject, listProjects, listProjectsByUserActivity, updateProjectByName } from "repositories/projects";
+import { createProject, getProject, listProjects, listProjectsByUserActivity, updateProject } from "repositories/projects";
 import { requireAuth } from "routes/auth";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const CreateProjectPayloadSchema = z.strictObject({
-  name: z.string(),
+  name: z.string().trim().toLowerCase(),
   description: z.string().nullable().exactOptional()
 });
 const UpdateProjectPayloadSchema = z.strictObject({
@@ -41,32 +41,25 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
   };
 
   const createProjectHandler: RouteHandler<{ handle: string }, Project, CreateProjectPayload> = async (req, res) => {
-    const handle = req.params.handle.trim().toLowerCase();
     const { success, error, data } = CreateProjectPayloadSchema.safeParse(req.body);
+    const handle = req.params.handle.trim().toLowerCase();
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
-      return;
-    }
-
-    const name = data.name.trim().toLowerCase();
-    if (testSlug(name)) {
+    } else if (testSlug(data.name)) {
       res.status(400).json({ error: "Invalid project name" });
-      return;
+    } else {
+      const account = await getAccount(db, handle);
+      if (!account) {
+        res.status(404).json({ error: "Account not found" });
+      } else {
+        const project = await createProject(db, { accountId: account.id, name: data.name, description: data.description ?? null });
+        if (!project) {
+          res.status(409).json({ error: "Project already exists" });
+        } else {
+          res.json(project);
+        }
+      }
     }
-
-    const account = await getAccount(db, handle);
-    if (!account) {
-      res.status(404).json({ error: "Account not found" });
-      return;
-    }
-
-    const existing = await getProject(db, handle, name);
-    if (existing) {
-      res.status(409).json({ error: "Project already exists" });
-      return;
-    }
-
-    res.json(await createProject(db, { accountId: account.id, name, description: data.description ?? null }));
   };
 
   const updateProjectHandler: RouteHandler<{ handle: string; projectName: string }, Project, UpdateProjectPayload> = async (req, res) => {
@@ -84,7 +77,7 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
         return;
       }
 
-      const project = await updateProjectByName(db, handle, projectName, { description: data.description });
+      const project = await updateProject(db, handle, projectName, { description: data.description });
       if (!project) {
         res.status(404).json({ error: "Project not found" });
       } else {

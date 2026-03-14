@@ -2,11 +2,9 @@ import { pbkdf2Sync, randomBytes, timingSafeEqual } from "crypto";
 
 import {
   API_BASE,
-  EMAIL_IN_USE_ERROR,
   CREDENTIALS_INVALID_ERROR,
   SESSION_INVALID_ERROR,
   SESSION_TOKEN_REQUIRED_ERROR,
-  USERNAME_IN_USE_ERROR,
   testEmail,
   testPassword,
   testHandle
@@ -16,19 +14,17 @@ import type { RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { getAccount } from "repositories/accounts";
+import { formatZodError } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import { getUserByApiKey } from "repositories/api-keys";
-import { getSession, upsertSession, deleteSession } from "repositories/sessions";
-import { getUserAuth, upsertUserAuth } from "repositories/user-auth";
+import { getSession, createSession, deleteSession } from "repositories/sessions";
+import { createUserAuth, getUserAuth } from "repositories/user-auth";
 import { createUser, getUserByEmail, getUser } from "repositories/users";
-import { formatZodError } from "routes/helpers";
-import type { RouteApp, RouteHandler } from "routes/helpers";
 
 const PASSWORD_ITERATIONS = 310000;
 const PASSWORD_DIGEST = "sha256";
 const PASSWORD_BYTES = 32;
 const SALT_BYTES = 16;
-const SESSION_BYTES = 32;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_COOKIE_NAME = "underfit_session";
 
@@ -136,30 +132,29 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     const { success, error, data } = RegisterPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
-    } else if (await getAccount(db, data.handle)) {
-      res.status(409).json({ error: USERNAME_IN_USE_ERROR });
-    } else if (await getUserByEmail(db, data.email)) {
-      res.status(409).json({ error: EMAIL_IN_USE_ERROR });
-    } else {
-      const user = await createUser(db, { email: data.email, handle: data.handle, name: data.handle, bio: null });
-
-      const salt = randomBytes(SALT_BYTES).toString("hex");
-      const passwordHash = hashPassword(data.password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
-      await upsertUserAuth(db, {
-        id: user.id,
-        passwordHash,
-        passwordSalt: salt,
-        passwordIterations: PASSWORD_ITERATIONS,
-        passwordDigest: PASSWORD_DIGEST
-      });
-
-      const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
-      const token = randomBytes(SESSION_BYTES).toString("base64url");
-      const session = await upsertSession(db, { id: token, userId: user.id, expiresAt });
-
-      setSessionCookie(res, token, expiresAt);
-      res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
+      return;
     }
+
+    const user = await createUser(db, { email: data.email, handle: data.handle, name: data.handle, bio: null });
+    if (!user) {
+      res.status(409).json({ error: "Unable to create account" });
+      return;
+    }
+
+    const salt = randomBytes(SALT_BYTES).toString("hex");
+    const passwordHash = hashPassword(data.password, salt, PASSWORD_ITERATIONS, PASSWORD_DIGEST);
+    await createUserAuth(db, {
+      id: user.id,
+      passwordHash,
+      passwordSalt: salt,
+      passwordIterations: PASSWORD_ITERATIONS,
+      passwordDigest: PASSWORD_DIGEST
+    });
+
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+    const session = await createSession(db, { userId: user.id, expiresAt });
+    setSessionCookie(res, session.id, expiresAt);
+    res.json({ user, session: { token: session.id, createdAt: session.createdAt, expiresAt } });
   };
 
   const login: RouteHandler<Record<string, string>, AuthResponse, LoginPayload> = async (req, res) => {
@@ -170,42 +165,29 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     }
 
     const user = await getUserByEmail(db, data.email);
-    if (!user) {
-      res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
-      return;
-    }
-
-    const auth = await getUserAuth(db, user.id);
-    if (!auth || !verifyPassword(data.password, auth)) {
+    const auth = user ? await getUserAuth(db, user.id) : undefined;
+    if (!user || !auth || !verifyPassword(data.password, auth)) {
       res.status(401).json({ error: CREDENTIALS_INVALID_ERROR });
       return;
     }
 
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
-    const token = randomBytes(SESSION_BYTES).toString("base64url");
-    const session = await upsertSession(db, { id: token, userId: user.id, expiresAt });
-    setSessionCookie(res, token, expiresAt);
-    res.json({ user, session: { token, createdAt: session.createdAt, expiresAt } });
+    const session = await createSession(db, { userId: user.id, expiresAt });
+    setSessionCookie(res, session.id, expiresAt);
+    res.json({ user, session: { token: session.id, createdAt: session.createdAt, expiresAt } });
   };
 
   const logout: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
     const token = getSessionToken(req.cookies as Record<string, string>);
-    if (!token) {
+    const session = token ? await getSession(db, token) : undefined;
+    if (!token || !session) {
       clearSessionCookie(res);
       res.status(401).json({ error: SESSION_TOKEN_REQUIRED_ERROR });
-      return;
-    }
-
-    const session = await getSession(db, token);
-    if (!session) {
+    } else {
+      await deleteSession(db, token);
       clearSessionCookie(res);
-      res.status(401).json({ error: SESSION_INVALID_ERROR });
-      return;
+      res.json({ status: "ok" });
     }
-
-    await deleteSession(db, token);
-    clearSessionCookie(res);
-    res.json({ status: "ok" });
   };
 
   app.post(`${API_BASE}/auth/register`, register);

@@ -11,7 +11,7 @@ import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
 import { createProject } from "repositories/projects";
-import { insertRun } from "repositories/runs";
+import { createRun } from "repositories/runs";
 import { createUser } from "repositories/users";
 
 describe("artifacts routes", () => {
@@ -33,9 +33,9 @@ describe("artifacts routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir } }), db);
-    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null })).id;
-    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null })).id;
-    runId = (await insertRun(db, { projectId, userId, name: "Run 1", status: "running", metadata: null })).id;
+    userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
+    projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
+    runId = (await createRun(db, { projectId, userId, name: "Run 1", status: "running", metadata: null }))!.id;
   });
 
   it("inserts and fetches an artifact", async () => {
