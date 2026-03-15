@@ -1,0 +1,64 @@
+import type { Organization, User } from "@underfit/types";
+import { create } from "zustand";
+
+import { request, send } from "helpers";
+import { useAuthStore } from "stores/auth";
+
+type UserResult = { ok: true } | { ok: false; error: string };
+
+export const uploadCurrentUserAvatar = async (file: File): Promise<UserResult> => {
+  const body = await file.arrayBuffer();
+  const { ok, error } = await request<{ status: "ok" }>("me/avatar", {
+    method: "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
+    body
+  });
+  return ok ? { ok: true } : { ok: false, error };
+};
+
+export const deleteCurrentUserAvatar = async (): Promise<UserResult> => {
+  const { ok, error } = await request<{ status: "ok" }>("me/avatar", { method: "DELETE" });
+  return ok ? { ok: true } : { ok: false, error };
+};
+
+interface AccountsState {
+  accounts: Record<string, User | Organization>;
+  me: () => User | null;
+  fetchAccount: (handle: string) => Promise<User | Organization | null>;
+  updateProfile: (name: string, bio: string) => Promise<UserResult>;
+  setAccount: (account: User | Organization) => void;
+}
+
+export const useAccountsStore = create<AccountsState>((set, get) => ({
+  accounts: {},
+
+  me: () => {
+    const currentHandle = useAuthStore.getState().currentHandle;
+    const account = currentHandle ? get().accounts[currentHandle] ?? null : null;
+    return account && account.type === "USER" ? account : null;
+  },
+
+  fetchAccount: async (handle: string) => {
+    const { ok, body } = await request<User | Organization>(`accounts/${handle}`);
+    if (ok) {
+      set((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
+      return body;
+    } else {
+      return null;
+    }
+  },
+
+  updateProfile: async (name: string, bio: string) => {
+    const { ok, error, body } = await send<User>("me", "PATCH", { name, bio });
+    if (ok) {
+      set((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
+      return { ok: true };
+    } else {
+      return { ok: false, error };
+    }
+  },
+
+  setAccount: (account: User | Organization) => {
+    set((state) => ({ accounts: { ...state.accounts, [account.handle]: account } }));
+  },
+}));

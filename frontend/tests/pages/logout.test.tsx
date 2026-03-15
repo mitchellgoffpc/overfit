@@ -6,8 +6,8 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import Navbar from "components/Navbar";
+import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { useUsersStore } from "stores/users";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
@@ -37,7 +37,7 @@ describe("Navbar logout", () => {
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
     useAuthStore.setState({ status: "idle", currentHandle: null });
-    useUsersStore.setState({ users: {} });
+    useAccountsStore.setState({ accounts: {} });
   });
 
   afterEach(() => {
@@ -47,7 +47,7 @@ describe("Navbar logout", () => {
   it("logs out and clears auth state", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true });
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useUsersStore.getState().setUser(user);
+    useAccountsStore.getState().setAccount(user);
     const { hook } = memoryLocation({ path: "/" });
 
     render(
@@ -73,7 +73,7 @@ describe("Navbar logout", () => {
 
   it("logs out with the session cookie even when no token is stored in memory", async () => {
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useUsersStore.getState().setUser(user);
+    useAccountsStore.getState().setAccount(user);
     const { hook } = memoryLocation({ path: "/" });
 
     render(

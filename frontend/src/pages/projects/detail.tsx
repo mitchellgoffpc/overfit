@@ -5,15 +5,13 @@ import { useParams } from "wouter";
 import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";
 import Sidebar from "components/Sidebar";
-import { useAuthStore } from "stores/auth";
+import { useAccountsStore } from "stores/accounts";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
-import { useUsersStore } from "stores/users";
 
 export default function ProjectDetailRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const currentHandle = useAuthStore((state) => state.currentHandle);
-  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
+  const user = useAccountsStore((state) => state.me());
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);

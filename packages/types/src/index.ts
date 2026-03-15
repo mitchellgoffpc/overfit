@@ -12,10 +12,10 @@ export type AccountType = (typeof accountTypes)[number];
 export interface Account {
   id: ID;
   handle: Handle;
-  type: AccountType;
 }
 
 export interface User extends Account {
+  type: "USER";
   email: string;
   name: string;
   bio: string | null;
@@ -48,6 +48,7 @@ export interface Session {
 }
 
 export interface Organization extends Account {
+  type: "ORGANIZATION";
   name: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;

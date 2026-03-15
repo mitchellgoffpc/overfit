@@ -3,7 +3,7 @@ import type { ApiKey, ApiKeyWithToken, User } from "@underfit/types";
 import { create } from "zustand";
 
 import { request, send } from "helpers";
-import { useUsersStore } from "stores/users";
+import { useAccountsStore } from "stores/accounts";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
@@ -62,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ status: "loading" });
     const { ok, body, status } = await request<User>("me");
     if (ok) {
-      useUsersStore.getState().setUser(body);
+      useAccountsStore.getState().setAccount(body);
       set({ status: "authenticated", currentHandle: body.handle });
     } else if (status === 401) {
       set({ status: "unauthenticated", currentHandle: null });
@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email: string, password: string) => {
     const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
     if (ok) {
-      useUsersStore.getState().setUser(body.user);
+      useAccountsStore.getState().setAccount(body.user);
       set({ status: "authenticated", currentHandle: body.user.handle });
       return { ok: true };
     } else {
@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signup: async (email: string, handle: string, password: string) => {
     const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
     if (ok) {
-      useUsersStore.getState().setUser(body.user);
+      useAccountsStore.getState().setAccount(body.user);
       set({ status: "authenticated", currentHandle: body.user.handle });
       return { ok: true };
     } else {

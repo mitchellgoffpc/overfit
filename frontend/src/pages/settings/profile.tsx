@@ -3,8 +3,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { apiBase } from "helpers";
-import { useAuthStore } from "stores/auth";
-import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useUsersStore } from "stores/users";
+import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useAccountsStore } from "stores/accounts";
 
 const smallButtonClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold"
   + " text-brand-text disabled:cursor-wait disabled:opacity-70";
@@ -15,10 +14,10 @@ const textareaClass = "min-h-[96px] resize-none rounded-[10px] border border-bra
 
 interface ProfileSettingsCardProps {
   readonly user: User;
-  readonly updateUser: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  readonly updateProfile: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
-function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): ReactElement {
+function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps): ReactElement {
   const [name, setName] = useState(() => user.name);
   const [bio, setBio] = useState(() => user.bio ?? "");
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -37,7 +36,7 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
     setIsSaving(true);
     setSaveError(null);
     setSaveStatus(null);
-    const result = await updateUser(name, bio);
+    const result = await updateProfile(name, bio);
     if (result.ok) {
       setSaveStatus("Saved");
       setIsSaving(false);
@@ -174,9 +173,8 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
 }
 
 export default function SettingsProfileContent(): ReactElement {
-  const currentHandle = useAuthStore((state) => state.currentHandle);
-  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
-  const updateUser = useUsersStore((state) => state.updateUser);
+  const user = useAccountsStore((state) => state.me());
+  const updateProfile = useAccountsStore((state) => state.updateProfile);
 
-  return user ? <ProfileSettingsCard key={user.id} user={user} updateUser={updateUser} /> : <div />;
+  return user ? <ProfileSettingsCard key={user.id} user={user} updateProfile={updateProfile} /> : <div />;
 }

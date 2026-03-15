@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
 import { apiBase } from "helpers";
+import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { useUsersStore } from "stores/users";
 
 const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition"
   + " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
@@ -17,8 +17,7 @@ interface NavbarProps {
 
 export default function Navbar({ locationLabel, parentLabel, parentHref }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
-  const currentHandle = useAuthStore((state) => state.currentHandle);
-  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
+  const user = useAccountsStore((state) => state.me());
   const logout = useAuthStore((state) => state.logout);
   const ownerLabel = user?.handle ?? "workspace";
   const name = user?.name ?? "";

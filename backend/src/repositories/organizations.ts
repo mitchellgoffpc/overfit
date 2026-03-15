@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 
 import type { Organization } from "@underfit/types";
+import { sql } from "kysely";
 
 import type { Database } from "db";
 import { nowIso } from "helpers";
@@ -15,7 +16,7 @@ export const selectOrganizationColumns = [
   `${table}.id as id`,
   `${accountsTable}.handle as handle`,
   `${table}.name as name`,
-  `${accountsTable}.type as type`,
+  sql<"ORGANIZATION">`'ORGANIZATION'`.as("type"),
   `${table}.createdAt as createdAt`,
   `${table}.updatedAt as updatedAt`
 ] as const;

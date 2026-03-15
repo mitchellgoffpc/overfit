@@ -17,7 +17,7 @@ export const selectUserColumns = [
   `${table}.name as name`,
   `${table}.bio as bio`,
   `${accountsTable}.handle as handle`,
-  `${accountsTable}.type as type`,
+  sql<"USER">`'USER'`.as("type"),
   `${table}.createdAt as createdAt`,
   `${table}.updatedAt as updatedAt`
 ] as const;

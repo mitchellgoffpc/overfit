@@ -5,8 +5,8 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import LoginPage from "pages/login";
+import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { useUsersStore } from "stores/users";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
@@ -41,7 +41,7 @@ describe("LoginRoute", () => {
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
     useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
-    useUsersStore.setState({ users: {} });
+    useAccountsStore.setState({ accounts: {} });
   });
 
   afterEach(() => {

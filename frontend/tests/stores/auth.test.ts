@@ -2,8 +2,8 @@ import { API_VERSION, EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR } from "@underfi
 import type { User } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useAccountsStore } from "stores/accounts";
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
-import { useUsersStore } from "stores/users";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
@@ -31,7 +31,7 @@ describe("auth store", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     useAuthStore.setState({ status: "idle", currentHandle: null });
-    useUsersStore.setState({ users: {} });
+    useAccountsStore.setState({ accounts: {} });
     vi.restoreAllMocks();
   });
 
@@ -49,7 +49,7 @@ describe("auth store", () => {
     });
     expect(useAuthStore.getState().status).toBe("authenticated");
     expect(useAuthStore.getState().currentHandle).toBe(user.handle);
-    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
+    expect(useAccountsStore.getState().accounts[user.handle]).toEqual(user);
   });
 
   it("returns an error when login fails", async () => {
@@ -74,7 +74,7 @@ describe("auth store", () => {
     });
     expect(useAuthStore.getState().status).toBe("authenticated");
     expect(useAuthStore.getState().currentHandle).toBe(user.handle);
-    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
+    expect(useAccountsStore.getState().accounts[user.handle]).toEqual(user);
   });
 
   it("returns a conflict error when email is already in use", async () => {
@@ -119,7 +119,7 @@ describe("auth store", () => {
 
   it("logs out and clears user state", async () => {
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useUsersStore.getState().setUser(user);
+    useAccountsStore.getState().setAccount(user);
     fetchMock.mockResolvedValueOnce(createResponse({}));
 
     await useAuthStore.getState().logout();
@@ -127,7 +127,7 @@ describe("auth store", () => {
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, { credentials: "include", method: "POST" });
     expect(useAuthStore.getState().status).toBe("unauthenticated");
     expect(useAuthStore.getState().currentHandle).toBeNull();
-    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
+    expect(useAccountsStore.getState().accounts[user.handle]).toEqual(user);
   });
 
   it("skips logout request when not authenticated", async () => {

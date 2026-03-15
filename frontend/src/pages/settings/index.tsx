@@ -4,8 +4,7 @@ import { Link, Redirect, Route, Switch, useLocation } from "wouter";
 import Navbar from "components/Navbar";
 import SettingsKeysContent from "pages/settings/keys";
 import SettingsProfileContent from "pages/settings/profile";
-import { useAuthStore } from "stores/auth";
-import { useUsersStore } from "stores/users";
+import { useAccountsStore } from "stores/accounts";
 
 const tabs = [
   { path: "/settings/profile", label: "Profile", title: "Profile", description: "Update the name and bio shown across your workspace." },
@@ -13,8 +12,7 @@ const tabs = [
 ] as const;
 
 export default function SettingsPage(): ReactElement {
-  const currentHandle = useAuthStore((state) => state.currentHandle);
-  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
+  const user = useAccountsStore((state) => state.me());
   const [location] = useLocation();
   const name = user?.name ?? "workspace";
   const handle = user?.handle ?? "workspace";
