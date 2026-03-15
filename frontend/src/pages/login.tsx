@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
 import { useAuthStore } from "stores/auth";
+import { useUsersStore } from "stores/users";
 
 export default function LoginRoute(): ReactElement {
   const [, navigate] = useLocation();
@@ -10,8 +11,8 @@ export default function LoginRoute(): ReactElement {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const status = useAuthStore((state) => state.status);
-  const loadUser = useAuthStore((state) => state.loadUser);
+  const status = useUsersStore((state) => state.status);
+  const loadUser = useUsersStore((state) => state.loadUser);
   const login = useAuthStore((state) => state.login);
 
   useEffect(() => {

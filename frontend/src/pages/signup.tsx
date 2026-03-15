@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
+import { useUsersStore } from "stores/users";
 
 export default function SignupRoute(): ReactElement {
   const [, navigate] = useLocation();
@@ -15,8 +16,8 @@ export default function SignupRoute(): ReactElement {
   const [usernameHintError, setUsernameHintError] = useState<string | null>(null);
   const [passwordHintError, setPasswordHintError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const status = useAuthStore((state) => state.status);
-  const loadUser = useAuthStore((state) => state.loadUser);
+  const status = useUsersStore((state) => state.status);
+  const loadUser = useUsersStore((state) => state.loadUser);
   const signup = useAuthStore((state) => state.signup);
 
   useEffect(() => {

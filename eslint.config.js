@@ -94,7 +94,6 @@ const overrideRules = {
 };
 
 const duplicateRules = Object.keys(additionalRules).filter((rule) => Object.prototype.hasOwnProperty.call(baseRules, rule));
-
 if (duplicateRules.length > 0) {
   throw new Error(`Manual ESLint rules duplicate base configs: ${duplicateRules.join(", ")}`);
 }
@@ -128,8 +127,8 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint,
-      import: importPlugin,
-      react: reactPlugin,
+      "import": importPlugin,
+      "react": reactPlugin,
       "react-hooks": reactHooksPlugin,
       "jsx-a11y": a11yPlugin,
     },

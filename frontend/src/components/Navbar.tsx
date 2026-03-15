@@ -4,6 +4,7 @@ import { Link, useLocation } from "wouter";
 
 import { apiBase } from "helpers";
 import { useAuthStore } from "stores/auth";
+import { useUsersStore } from "stores/users";
 
 interface NavbarProps {
   readonly locationLabel: string;
@@ -13,7 +14,7 @@ interface NavbarProps {
 
 export default function Navbar({ locationLabel, parentLabel, parentHref }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
-  const user = useAuthStore((state) => state.user);
+  const user = useUsersStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const ownerLabel = user?.handle ?? "workspace";
   const name = user?.name ?? "";

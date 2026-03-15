@@ -2,10 +2,11 @@ import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
-import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
+import { createApiKey, deleteApiKey, loadApiKeys } from "stores/auth";
+import { useUsersStore } from "stores/users";
 
 export default function SettingsKeysContent(): ReactElement {
-  const status = useAuthStore((state) => state.status);
+  const status = useUsersStore((state) => state.status);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeysLoaded, setApiKeysLoaded] = useState(false);
   const [apiKeysError, setApiKeysError] = useState<string | null>(null);

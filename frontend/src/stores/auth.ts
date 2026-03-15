@@ -3,8 +3,8 @@ import type { ApiKey, ApiKeyWithToken, User } from "@underfit/types";
 import { create } from "zustand";
 
 import { request, send } from "helpers";
+import { useUsersStore } from "stores/users";
 
-type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
 type ApiKeysResult = { ok: true; body: ApiKey[] } | { ok: false; error: string };
 type CreateApiKeyResult = { ok: true; body: ApiKeyWithToken } | { ok: false; error: string };
@@ -44,49 +44,17 @@ export const deleteApiKey = async (id: string): Promise<AuthResult> => {
   return ok ? { ok: true } : { ok: false, error };
 };
 
-export const uploadCurrentUserAvatar = async (file: File): Promise<AuthResult> => {
-  const body = await file.arrayBuffer();
-  const { ok, error } = await request<{ status: "ok" }>("me/avatar", {
-    method: "PUT",
-    headers: { "Content-Type": file.type || "application/octet-stream" },
-    body
-  });
-  return ok ? { ok: true } : { ok: false, error };
-};
-
-export const deleteCurrentUserAvatar = async (): Promise<AuthResult> => {
-  const { ok, error } = await request<{ status: "ok" }>("me/avatar", { method: "DELETE" });
-  return ok ? { ok: true } : { ok: false, error };
-};
-
 interface AuthState {
-  user: User | null;
-  status: AuthStatus;
-  loadUser: () => Promise<void>;
-  logout: () => Promise<void>;
-  updateUser: (name: string, bio: string) => Promise<AuthResult>;
   login: (email: string, password: string) => Promise<AuthResult>;
   signup: (email: string, handle: string, password: string) => Promise<AuthResult>;
+  logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  status: "idle",
-
-  loadUser: async () => {
-    set({ status: "loading" });
-    const { ok, body, status: statusCode } = await request<User>("me");
-    if (ok) {
-      set({ user: body, status: "authenticated" });
-    } else if (statusCode === 401) {
-      set({ user: null, status: "unauthenticated" });
-    }
-  },
-
+export const useAuthStore = create<AuthState>(() => ({
   login: async (email: string, password: string) => {
     const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
     if (ok) {
-      set({ user: body.user, status: "authenticated" });
+      useUsersStore.getState().setAuthenticatedUser(body.user);
       return { ok: true };
     } else {
       return { ok: false, error };
@@ -96,7 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signup: async (email: string, handle: string, password: string) => {
     const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
     if (ok) {
-      set({ user: body.user, status: "authenticated" });
+      useUsersStore.getState().setAuthenticatedUser(body.user);
       return { ok: true };
     } else {
       return { ok: false, error };
@@ -104,17 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    if (get().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
-    set({ user: null, status: "idle" });
-  },
-
-  updateUser: async (name: string, bio: string) => {
-    const { ok, error, body } = await send<User>("me", "PATCH", { name, bio });
-    if (ok) {
-      set({ user: body, status: "authenticated" });
-      return { ok: true };
-    } else {
-      return { ok: false, error };
-    }
+    if (useUsersStore.getState().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
+    useUsersStore.getState().clearUser("idle");
   },
 }));

@@ -3,7 +3,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { apiBase } from "helpers";
-import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useAuthStore } from "stores/auth";
+import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useUsersStore } from "stores/users";
 
 interface ProfileSettingsCardProps {
   readonly user: User;
@@ -166,8 +166,8 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
 }
 
 export default function SettingsProfileContent(): ReactElement {
-  const user = useAuthStore((state) => state.user);
-  const updateUser = useAuthStore((state) => state.updateUser);
+  const user = useUsersStore((state) => state.user);
+  const updateUser = useUsersStore((state) => state.updateUser);
 
   return user ? <ProfileSettingsCard key={user.id} user={user} updateUser={updateUser} /> : <div />;
 }

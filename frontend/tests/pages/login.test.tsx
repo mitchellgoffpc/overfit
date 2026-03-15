@@ -5,7 +5,7 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import LoginPage from "pages/login";
-import { useAuthStore } from "stores/auth";
+import { useUsersStore } from "stores/users";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 
@@ -39,7 +39,7 @@ describe("LoginRoute", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
-    useAuthStore.setState({ user: null, status: "unauthenticated" });
+    useUsersStore.setState({ user: null, status: "unauthenticated" });
   });
 
   afterEach(() => {
@@ -71,7 +71,7 @@ describe("LoginRoute", () => {
   });
 
   it("navigates on successful login", async () => {
-    useAuthStore.setState({ user: null, status: "idle" });
+    useUsersStore.setState({ user: null, status: "idle" });
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Session token is required" }, { ok: false, status: 401 }));
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" }, user }));
     const { hook } = memoryLocation({ path: "/login" });

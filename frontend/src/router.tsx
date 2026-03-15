@@ -10,11 +10,11 @@ import ProjectDetailPage from "pages/projects/detail";
 import RunDetailPage from "pages/projects/run";
 import SettingsPage from "pages/settings/index";
 import SignupPage from "pages/signup";
-import { useAuthStore } from "stores/auth";
+import { useUsersStore } from "stores/users";
 
 function AuthLayout({ children }: { readonly children: ReactNode }): ReactElement {
-  const status = useAuthStore((state) => state.status);
-  const loadUser = useAuthStore((state) => state.loadUser);
+  const status = useUsersStore((state) => state.status);
+  const loadUser = useUsersStore((state) => state.loadUser);
 
   useEffect(() => {
     void loadUser();
