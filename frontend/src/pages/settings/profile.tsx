@@ -5,11 +5,14 @@ import { useMemo, useRef, useState } from "react";
 import { apiBase } from "helpers";
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useAccountsStore } from "stores/accounts";
 
+const uploadButtonClass = "rounded-[10px] bg-brand-accent px-3 py-2 text-xs font-semibold text-white disabled:cursor-wait disabled:opacity-70";
 const smallButtonClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold"
   + " text-brand-text disabled:cursor-wait disabled:opacity-70";
+const avatarClass = "relative grid h-40 w-40 place-items-center overflow-hidden rounded-full border border-brand-border"
+  + " bg-[#d9ecec] text-4xl font-semibold text-brand-accentStrong";
 const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
-const textareaClass = "min-h-[96px] resize-none rounded-[10px] border border-brand-border bg-white px-3 py-2.5"
+const textareaClass = "min-h-[96px] rounded-[10px] border border-brand-border bg-white px-3 py-2.5"
   + " text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
 
 interface ProfileSettingsCardProps {
@@ -88,9 +91,47 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
       {avatarStatus ? <div className="rounded-[10px] border border-[#bbf7d0] bg-[#dcfce7] px-2.5 py-2 text-xs text-[#166534]">{avatarStatus}</div> : null}
       {saveError ? <div className="rounded-[10px] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{saveError}</div> : null}
       {saveStatus ? <div className="rounded-[10px] border border-[#bbf7d0] bg-[#dcfce7] px-2.5 py-2 text-xs text-[#166534]">{saveStatus}</div> : null}
-      <div className="flex items-center justify-between rounded-[12px] border border-brand-border bg-white px-3 py-3">
-        <div className="flex items-center gap-3">
-          <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-[#d9ecec] text-sm font-semibold text-brand-accentStrong">
+      <div className="grid gap-6 lg:grid-cols-[1fr_220px] lg:items-start">
+        <div className="grid gap-4">
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+            Name
+            <input
+              className={inputClass}
+              type="text"
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+              }}
+            />
+          </label>
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+            Bio
+            <textarea
+              className={textareaClass}
+              value={bio}
+              onChange={(event) => {
+                setBio(event.target.value);
+              }}
+            />
+          </label>
+          <div>
+            <button
+              className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+              type="button"
+              onClick={() => {
+                void handleSaveProfile();
+              }}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Update profile"}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid justify-items-center gap-3">
+
+          <p className="text-[13px] font-medium text-brand-text">Profile picture</p>
+          <div className={avatarClass}>
             {!isAvatarMissing ? (
               <img
                 className="h-full w-full object-cover"
@@ -105,68 +146,38 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
               />
             ) : initials}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-brand-text">Profile picture</p>
-            <p className="text-xs text-brand-textMuted">Upload a square image for best results.</p>
+<input
+            ref={fileInputRef}
+            className="hidden"
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              void handleAvatarUpload(event);
+            }}
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              className={uploadButtonClass}
+              type="button"
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+              disabled={isAvatarSaving}
+            >
+              {isAvatarSaving ? "Uploading..." : "Upload"}
+            </button>
+            <button
+              className={smallButtonClass}
+              type="button"
+              onClick={() => {
+                void handleAvatarDelete();
+              }}
+              disabled={isAvatarSaving}
+            >
+              Remove
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input ref={fileInputRef} className="hidden" type="file" accept="image/*" onChange={(event) => { void handleAvatarUpload(event); }} />
-          <button
-            className={smallButtonClass}
-            type="button"
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-            disabled={isAvatarSaving}
-          >
-            {isAvatarSaving ? "Uploading..." : "Upload"}
-          </button>
-          <button
-            className={smallButtonClass}
-            type="button"
-            onClick={() => {
-              void handleAvatarDelete();
-            }}
-            disabled={isAvatarSaving}
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-      <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
-        Name
-        <input
-          className={inputClass}
-          type="text"
-          value={name}
-          onChange={(event) => {
-            setName(event.target.value);
-          }}
-        />
-      </label>
-      <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
-        Bio
-        <textarea
-          className={textareaClass}
-          value={bio}
-          onChange={(event) => {
-            setBio(event.target.value);
-          }}
-        />
-      </label>
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-brand-textMuted">Changes apply immediately across Underfit.</p>
-        <button
-          className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
-          type="button"
-          onClick={() => {
-            void handleSaveProfile();
-          }}
-          disabled={isSaving}
-        >
-          {isSaving ? "Saving..." : "Save changes"}
-        </button>
       </div>
     </section>
   );

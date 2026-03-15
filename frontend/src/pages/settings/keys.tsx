@@ -6,6 +6,8 @@ import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/au
 
 const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+const deleteButtonClass = "rounded-[10px] border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-xs font-semibold"
+  + " text-[#b42318] hover:border-[#f87171] hover:bg-[#fee2e2]";
 
 export default function SettingsKeysContent(): ReactElement {
   const status = useAuthStore((state) => state.status);
@@ -84,7 +86,9 @@ export default function SettingsKeysContent(): ReactElement {
           />
         </label>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-brand-textMuted">Create a new API key for scripts or automation.</p>
+          {apiKeysError
+            ? <p className="text-xs text-[#b42318]">{apiKeysError}</p>
+            : <p className="text-xs text-brand-textMuted">Create a new API key for scripts or automation.</p>}
           <button
             className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
             type="button"
@@ -104,17 +108,16 @@ export default function SettingsKeysContent(): ReactElement {
         ) : null}
       </div>
 
-      <div className="grid gap-3 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+      <div className="grid gap-4 rounded-[18px] border border-brand-border bg-brand-surface px-5 pb-3 pt-5 shadow-soft">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold">Active keys</p>
           <p className="text-xs text-brand-textMuted">{apiKeys.length} total</p>
         </div>
-        {apiKeysError ? <div className="text-xs text-[#b42318]">{apiKeysError}</div> : null}
-        {isApiKeysLoading ? <div className="text-xs text-brand-textMuted">Loading API keys...</div> : null}
+{isApiKeysLoading ? <div className="text-xs text-brand-textMuted">Loading API keys...</div> : null}
         {!isApiKeysLoading && apiKeys.length === 0 ? <div className="text-xs text-brand-textMuted">No API keys yet.</div> : null}
-        <div className="grid gap-2">
+        <div className={apiKeys.length > 0 ? "border-t border-brand-border" : ""}>
           {apiKeys.map((key) => (
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-brand-border bg-white px-4 py-3" key={key.id}>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-border px-1 py-3 last:border-b-0" key={key.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{key.label ?? "Untitled key"}</p>
                 <p className="text-[11px] text-brand-textMuted">
@@ -122,7 +125,7 @@ export default function SettingsKeysContent(): ReactElement {
                 </p>
               </div>
               <button
-                className="rounded-[10px] border border-brand-border px-3 py-2 text-xs font-semibold text-brand-text hover:border-brand-accent"
+                className={deleteButtonClass}
                 type="button"
                 onClick={() => {
                   void handleDeleteKey(key.id);
