@@ -8,9 +8,10 @@ interface ProfileSidebarProps {
   readonly user: User | null;
   readonly projects: Project[];
   readonly runs: Run[];
+  readonly isOwnProfile: boolean;
 }
 
-export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarProps): ReactElement {
+export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: ProfileSidebarProps): ReactElement {
   if (!user) {
     return (
       <aside className="flex h-full flex-col gap-5 border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
@@ -48,12 +49,14 @@ export default function ProfileSidebar({ user, projects, runs }: ProfileSidebarP
           </div>
           <p className="text-[13px] text-brand-textMuted">{bio}</p>
         </div>
-        <Link
-          className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-center text-sm font-semibold text-brand-text no-underline"
-          href="/settings/profile"
-        >
-          Edit profile
-        </Link>
+        {isOwnProfile ? (
+          <Link
+            className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-center text-sm font-semibold text-brand-text no-underline"
+            href="/settings/profile"
+          >
+            Edit profile
+          </Link>
+        ) : null}
       </div>
 
       <div className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surface px-4 py-4 text-sm">

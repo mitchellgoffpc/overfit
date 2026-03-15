@@ -8,6 +8,7 @@ import ProfileProjectsPanel from "components/profile/ProfileProjectsPanel";
 import ProfileRunsPanel from "components/profile/ProfileRunsPanel";
 import ProfileSidebar from "components/profile/ProfileSidebar";
 import { useAccountsStore } from "stores/accounts";
+import { useAuthStore } from "stores/auth";
 import { useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 
@@ -23,6 +24,7 @@ export default function ProfileRoute(): ReactElement {
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
   const fetchRuns = useRunStore((state) => state.fetchRuns);
+  const currentHandle = useAuthStore((state) => state.currentHandle);
   const user = account?.type === "USER" ? account : null;
   const projects = Object.values(projectsByKey).filter((project) => project.owner === handle);
   const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle);
@@ -44,7 +46,7 @@ export default function ProfileRoute(): ReactElement {
       <Navbar locationLabel="Profile" ownerLabel={handle} ownerHref={`/${handle}`} />
 
       <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[280px_1fr]">
-        <ProfileSidebar user={user} projects={projects} runs={runs} />
+        <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
 
         <main className="p-6 lg:p-8">
           <header className="mb-6 flex flex-col gap-4">
