@@ -113,29 +113,45 @@ baseline_run_name="$(ensure_run "$project_one_name" "baseline-resnet" "finished"
 distilbert_run_name="$(ensure_run "$project_two_name" "distilbert-finetune" "running" '{"f1":0.84,"dataset":"support-tickets","batchSize":32}')"
 llama_eval_run_name="$(ensure_run "$project_two_name" "llama3-eval" "failed" '{"reason":"oom","maxTokens":2048,"samples":1200}')"
 
-scalar_rows="$(node <<'NODE'
-const start = new Date("2025-01-10T12:00:00.000Z").getTime();
+scalar_rows_for_run() {
+  local variant="$1"
+  node - "$variant" <<'NODE'
+const variant = Number(process.argv[2] ?? 0);
+const start = new Date("2025-01-10T12:00:00.000Z").getTime() + variant * 180_000;
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const speed = 68 + variant * 8;
+const trainFloor = 0.08 + variant * 0.02;
+const valFloor = 0.1 + variant * 0.03;
+const trainAmp = 0.05 + variant * 0.01;
+const valAmp = 0.07 + variant * 0.012;
 for (let i = 0; i < 140; i += 1) {
   const step = i * 30;
-  const decay = Math.exp(-i / 70);
-  const trainLoss = Math.max(0.08, 2.4 * decay + 0.15 + Math.sin(i / 6) * 0.06);
-  const trainAcc = Math.min(0.98, 0.42 + (1 - decay) * 0.58 + Math.sin(i / 9) * 0.01);
-  const valLoss = Math.max(0.1, 2.55 * decay + 0.22 + Math.sin(i / 7) * 0.08);
-  const valAcc = Math.min(0.96, 0.38 + (1 - decay) * 0.56 + Math.cos(i / 10) * 0.012);
+  const decay = Math.exp(-i / speed);
+  const trainLossRaw = 2.45 * decay + 0.13 + Math.sin(i / (6 + variant)) * trainAmp + Math.cos(i / (11 + variant)) * 0.012;
+  const valLossRaw = 2.6 * decay + 0.2 + Math.sin(i / (7 + variant)) * valAmp + Math.cos(i / (10 + variant)) * 0.016;
+  const trainAccRaw = 0.4 + (1 - decay) * (0.57 - variant * 0.03) + Math.sin(i / (9 + variant)) * (0.01 + variant * 0.002);
+  const valAccRaw = 0.37 + (1 - decay) * (0.55 - variant * 0.035) + Math.cos(i / (10 + variant)) * (0.012 + variant * 0.0025);
+  const trainLoss = Math.max(trainFloor, trainLossRaw);
+  const valLoss = Math.max(valFloor, valLossRaw);
+  const trainAcc = clamp(trainAccRaw, 0.0, 0.985 - variant * 0.02);
+  const valAcc = clamp(valAccRaw, 0.0, 0.965 - variant * 0.025);
   const timestamp = new Date(start + i * 60_000).toISOString();
   process.stdout.write(`${String(i).padStart(3, "0")}\t${step}\t${trainLoss.toFixed(6)}\t${trainAcc.toFixed(6)}\t${valLoss.toFixed(6)}\t${valAcc.toFixed(6)}\t${timestamp}\n`);
 }
 NODE
-)"
+}
 
+run_variant=0
 for run_target in "$project_one_name:$baseline_run_name" "$project_two_name:$distilbert_run_name" "$project_two_name:$llama_eval_run_name"; do
   project_name="${run_target%%:*}"
   run_name="${run_target#*:}"
+  scalar_rows="$(scalar_rows_for_run "$run_variant")"
   start_line=0
   while IFS=$'\t' read -r _ step train_loss train_acc val_loss val_acc timestamp; do
     json_request POST "/accounts/$user_handle/projects/$project_name/runs/$run_name/scalars" "{\"startLine\":$start_line,\"scalars\":[{\"step\":$step,\"values\":{\"train/loss\":$train_loss,\"train/acc\":$train_acc,\"val/loss\":$val_loss,\"val/acc\":$val_acc},\"timestamp\":\"$timestamp\"}]}" >/dev/null
     start_line=$((start_line + 1))
   done <<<"$scalar_rows"
+  run_variant=$((run_variant + 1))
 done
 
 seed_logs_for_worker "$project_one_name" "$baseline_run_name" worker-0

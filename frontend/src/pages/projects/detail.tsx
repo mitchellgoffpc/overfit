@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { useParams } from "wouter";
+import { Link, useParams } from "wouter";
 
 import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";
@@ -55,9 +55,12 @@ export default function ProjectDetailRoute(): ReactElement {
               {project?.description ? <p className="mt-1 text-sm text-brand-textMuted">{project.description}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 font-semibold text-brand-text shadow-none" type="button">
+              <Link
+                className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 font-semibold text-brand-text no-underline shadow-none"
+                href={`/${handle}/${projectName}/compare`}
+              >
                 View reports
-              </button>
+              </Link>
               <button className="rounded-xl bg-brand-accent px-4 py-2.5 font-semibold text-white shadow-soft" type="button">
                 + New run
               </button>

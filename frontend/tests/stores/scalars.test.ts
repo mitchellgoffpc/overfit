@@ -2,7 +2,7 @@ import { API_VERSION } from "@underfit/types";
 import type { Scalar } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useScalarStore } from "stores/scalars";
+import { fetchRunScalars, useScalarStore } from "stores/scalars";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
 
@@ -40,6 +40,18 @@ describe("scalar store", () => {
     expect(useScalarStore.getState().scalars).toEqual([scalar]);
     expect(useScalarStore.getState().isLoading).toBe(false);
     expect(useScalarStore.getState().error).toBeNull();
+  });
+
+  it("exports a scalar request helper for multi-run pages", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse([scalar]));
+
+    const response = await fetchRunScalars("ada", "demo", "run-1");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${apiBase}/accounts/ada/projects/demo/runs/run-1/scalars`,
+      { credentials: "include" }
+    );
+    expect(response.ok).toBe(true);
   });
 
   it("stores the error when the request fails", async () => {

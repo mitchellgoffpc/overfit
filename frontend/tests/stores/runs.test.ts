@@ -82,6 +82,17 @@ describe("run store", () => {
     expect(useRunStore.getState().isLoading).toBe(false);
   });
 
+  it("fetches project runs and merges them by run key", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse([run]));
+
+    await useRunStore.getState().fetchProjectRuns("ada", "demo");
+
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/accounts/ada/projects/demo/runs`, { credentials: "include" });
+    expect(useRunStore.getState().runsByKey).toEqual({ [buildRunKey("ada", "demo", "run-a")]: run });
+    expect(useRunStore.getState().isLoading).toBe(false);
+    expect(useRunStore.getState().error).toBeNull();
+  });
+
   it("stores backend errors when fetching a run fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Run not found" }, { ok: false, status: 404 }));
 

@@ -6,6 +6,7 @@ import { Router, Redirect, Route, Switch, useLocation } from "wouter";
 import HomePage from "pages/home";
 import LoginPage from "pages/login";
 import ProfilePage from "pages/profile";
+import ProjectComparePage from "pages/projects/compare";
 import ProjectDetailPage from "pages/projects/detail";
 import RunDetailPage from "pages/projects/run";
 import SettingsPage from "pages/settings/index";
@@ -48,6 +49,7 @@ export function AppRouter(): ReactElement {
               <Route path="/" component={HomePage} />
               <Route path="/profile" component={CurrentUserProfileRedirect} />
               <Route path="/settings/*" component={SettingsPage} />
+              <Route path="/:handle/:projectName/compare" component={ProjectComparePage} />
               <Route path="/:handle/:projectName" component={ProjectDetailPage} />
               <Route path="/:handle/:projectName/runs/:runName" component={RunDetailPage} />
               <Route path="/:handle" component={ProfilePage} />
