@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   API_VERSION,
   EMAIL_IN_USE_ERROR,
@@ -182,10 +182,10 @@ describe("SignupRoute", () => {
     if (!form) {
       throw new Error("Expected signup form to exist");
     }
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith("/");
+    await act(async () => {
+      fireEvent.submit(form);
+      await Promise.resolve();
     });
+    expect(navigateMock).toHaveBeenCalledWith("/");
   });
 });

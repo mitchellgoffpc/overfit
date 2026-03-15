@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -57,15 +57,12 @@ describe("Navbar logout", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Ada Lovelace/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Sign Out" }));
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, {
-        credentials: "include",
-        method: "POST"
-      });
-      expect(navigateMock).toHaveBeenCalledWith("/login");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Sign Out" }));
+      await Promise.resolve();
     });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, { credentials: "include", method: "POST" });
+    expect(navigateMock).toHaveBeenCalledWith("/login");
 
     expect(useAuthStore.getState().status).toBe("unauthenticated");
     expect(useAuthStore.getState().currentHandle).toBeNull();
@@ -83,15 +80,12 @@ describe("Navbar logout", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Ada Lovelace/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Sign Out" }));
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, {
-        credentials: "include",
-        method: "POST"
-      });
-      expect(navigateMock).toHaveBeenCalledWith("/login");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: "Sign Out" }));
+      await Promise.resolve();
     });
+    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, { credentials: "include", method: "POST" });
+    expect(navigateMock).toHaveBeenCalledWith("/login");
 
     expect(useAuthStore.getState().status).toBe("unauthenticated");
     expect(useAuthStore.getState().currentHandle).toBeNull();

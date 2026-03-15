@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { User } from "@underfit/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -40,16 +40,14 @@ describe("SettingsProfileContent", () => {
     cleanup();
   });
 
-  it("Update profile calls updateProfile with the current form values", async () => {
+  it("Update profile calls updateProfile with the current form values", () => {
     render(<SettingsProfileContent />);
 
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Ada Byron" } });
     fireEvent.change(screen.getByLabelText("Bio"), { target: { value: "Pioneer" } });
     fireEvent.click(screen.getByRole("button", { name: "Update profile" }));
 
-    await waitFor(() => {
-      expect(updateProfileMock).toHaveBeenCalledWith("Ada Byron", "Pioneer");
-    });
+    expect(updateProfileMock).toHaveBeenCalledWith("Ada Byron", "Pioneer");
   });
 
   it("Update profile shows Saved on success", async () => {
@@ -57,9 +55,7 @@ describe("SettingsProfileContent", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Update profile" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Saved")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Saved")).toBeInTheDocument();
   });
 
   it("Update profile shows error message on failure", async () => {
@@ -68,19 +64,15 @@ describe("SettingsProfileContent", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Update profile" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Something went wrong")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Something went wrong")).toBeInTheDocument();
   });
 
-  it("Remove button calls deleteCurrentUserAvatar", async () => {
+  it("Remove button calls deleteCurrentUserAvatar", () => {
     render(<SettingsProfileContent />);
 
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
 
-    await waitFor(() => {
-      expect(deleteAvatarMock).toHaveBeenCalled();
-    });
+    expect(deleteAvatarMock).toHaveBeenCalled();
   });
 
   it("Remove button shows success status after deletion", async () => {
@@ -88,9 +80,7 @@ describe("SettingsProfileContent", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Profile picture removed")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Profile picture removed")).toBeInTheDocument();
   });
 
   it("Remove button shows error message on failure", async () => {
@@ -99,9 +89,7 @@ describe("SettingsProfileContent", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Delete failed")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Delete failed")).toBeInTheDocument();
   });
 
   it("selecting a file calls uploadCurrentUserAvatar with the file", async () => {
@@ -112,9 +100,7 @@ describe("SettingsProfileContent", () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
     expect(uploadAvatarMock).toHaveBeenCalledTimes(1);
     expect(uploadAvatarMock.mock.calls[0]?.[0]).toBe(file);
-    await waitFor(() => {
-      expect(screen.getByText("Profile picture updated")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Profile picture updated")).toBeInTheDocument();
   });
 
   it("uploading a file shows success status", async () => {
@@ -124,9 +110,7 @@ describe("SettingsProfileContent", () => {
     const fileInput = document.querySelector<HTMLInputElement>("input[type='file']")!;
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    await waitFor(() => {
-      expect(screen.getByText("Profile picture updated")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Profile picture updated")).toBeInTheDocument();
   });
 
   it("uploading a file shows error message on failure", async () => {
@@ -137,8 +121,6 @@ describe("SettingsProfileContent", () => {
     const fileInput = document.querySelector<HTMLInputElement>("input[type='file']")!;
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    await waitFor(() => {
-      expect(screen.getByText("Upload failed")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Upload failed")).toBeInTheDocument();
   });
 });

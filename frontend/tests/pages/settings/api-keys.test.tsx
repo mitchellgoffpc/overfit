@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitForElementToBeRemoved } from "@testing-library/react";
 import type { ApiKey, ApiKeyWithToken } from "@underfit/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -44,20 +44,16 @@ describe("SettingsKeysContent", () => {
   it("loads and displays existing API keys on mount", async () => {
     render(<SettingsKeysContent />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Local training rig")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Local training rig")).toBeInTheDocument();
   });
 
-  it("adding a key calls createApiKey with the entered label", async () => {
+  it("adding a key calls createApiKey with the entered label", () => {
     render(<SettingsKeysContent />);
 
     fireEvent.change(screen.getByPlaceholderText("Local training rig"), { target: { value: "CI runner" } });
     fireEvent.click(screen.getByRole("button", { name: "Add key" }));
 
-    await waitFor(() => {
-      expect(createApiKeyMock).toHaveBeenCalledWith("CI runner");
-    });
+    expect(createApiKeyMock).toHaveBeenCalledWith("CI runner");
   });
 
   it("new key appears in the active keys section after creation", async () => {
@@ -66,9 +62,7 @@ describe("SettingsKeysContent", () => {
     fireEvent.change(screen.getByPlaceholderText("Local training rig"), { target: { value: "CI runner" } });
     fireEvent.click(screen.getByRole("button", { name: "Add key" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("CI runner")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("CI runner")).toBeInTheDocument();
   });
 
   it("newly created key token is displayed after creation", async () => {
@@ -77,9 +71,7 @@ describe("SettingsKeysContent", () => {
     fireEvent.change(screen.getByPlaceholderText("Local training rig"), { target: { value: "CI runner" } });
     fireEvent.click(screen.getByRole("button", { name: "Add key" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("uf_secret_abc123")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("uf_secret_abc123")).toBeInTheDocument();
   });
 
   it("adding a key shows an error on failure", async () => {
@@ -89,9 +81,7 @@ describe("SettingsKeysContent", () => {
     fireEvent.change(screen.getByPlaceholderText("Local training rig"), { target: { value: "CI runner" } });
     fireEvent.click(screen.getByRole("button", { name: "Add key" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Could not create key")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Could not create key")).toBeInTheDocument();
   });
 
   it("adding a key with an empty label shows a validation error", () => {
@@ -105,35 +95,29 @@ describe("SettingsKeysContent", () => {
 
   it("deleting a key calls deleteApiKey with the key id", async () => {
     render(<SettingsKeysContent />);
-    await waitFor(() => screen.getByText("Local training rig"));
+    expect(await screen.findByText("Local training rig")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-    await waitFor(() => {
-      expect(deleteApiKeyMock).toHaveBeenCalledWith("key-1");
-    });
+    expect(deleteApiKeyMock).toHaveBeenCalledWith("key-1");
   });
 
   it("deleted key is removed from the active keys section", async () => {
     render(<SettingsKeysContent />);
-    await waitFor(() => screen.getByText("Local training rig"));
+    expect(await screen.findByText("Local training rig")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-    await waitFor(() => {
-      expect(screen.queryByText("Local training rig")).toBeNull();
-    });
+    await waitForElementToBeRemoved(() => screen.queryByText("Local training rig"));
   });
 
   it("deleting a key shows an error on failure", async () => {
     deleteApiKeyMock.mockResolvedValue({ ok: false, error: "Could not delete key" });
     render(<SettingsKeysContent />);
-    await waitFor(() => screen.getByText("Local training rig"));
+    expect(await screen.findByText("Local training rig")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-    await waitFor(() => {
-      expect(screen.getByText("Could not delete key")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Could not delete key")).toBeInTheDocument();
   });
 });

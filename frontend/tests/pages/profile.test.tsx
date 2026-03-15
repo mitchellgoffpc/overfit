@@ -17,6 +17,9 @@ vi.mock("wouter", async () => {
   return { ...actual, useLocation: () => ["/ada", navigateMock] };
 });
 
+vi.mock("components/Navbar", () => ({ default: () => <div data-testid="mock-navbar" /> }));
+vi.mock("components/profile/ProfileActivityHeatmap", () => ({ default: () => <div data-testid="mock-activity-heatmap" /> }));
+
 const user: User = {
   id: "user-1",
   handle: "ada",

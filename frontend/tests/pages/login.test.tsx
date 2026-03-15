@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { API_VERSION, CREDENTIALS_INVALID_ERROR } from "@underfit/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
@@ -73,8 +73,7 @@ describe("LoginRoute", () => {
   });
 
   it("navigates on successful login", async () => {
-    useAuthStore.setState({ status: "idle", currentHandle: null });
-    fetchMock.mockResolvedValueOnce(createResponse({ error: "Session token is required" }, { ok: false, status: 401 }));
+    useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" }, user }));
     const { hook } = memoryLocation({ path: "/login" });
 
@@ -92,10 +91,10 @@ describe("LoginRoute", () => {
     if (!form) {
       throw new Error("Expected login form to exist");
     }
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith("/");
+    await act(async () => {
+      fireEvent.submit(form);
+      await Promise.resolve();
     });
+    expect(navigateMock).toHaveBeenCalledWith("/");
   });
 });
