@@ -41,6 +41,10 @@ export default function SettingsKeysContent(): ReactElement {
 
   const handleCreateKey = async () => {
     if (status !== "authenticated") { return; }
+    if (!newKeyLabel.trim()) {
+      setApiKeysError("Label is required.");
+      return;
+    }
     setIsCreatingKey(true);
     setApiKeysError(null);
     setCreatedKeyToken(null);
@@ -73,32 +77,26 @@ export default function SettingsKeysContent(): ReactElement {
   return (
     <section className="grid gap-4">
       <div className="grid gap-3 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
-        <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
-          New key label
-          <input
-            className={inputClass}
-            type="text"
-            placeholder="Local training rig"
-            value={newKeyLabel}
-            onChange={(event) => {
-              setNewKeyLabel(event.target.value);
-            }}
-          />
-        </label>
-        <div className="flex items-center justify-between">
-          {apiKeysError
-            ? <p className="text-xs text-[#b42318]">{apiKeysError}</p>
-            : <p className="text-xs text-brand-textMuted">Create a new API key for scripts or automation.</p>}
-          <button
-            className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
-            type="button"
-            onClick={() => {
-              void handleCreateKey();
-            }}
-            disabled={isCreatingKey}
-          >
-            {isCreatingKey ? "Creating..." : "Add key"}
-          </button>
+        <div className="grid gap-1.5">
+          <p className="text-sm font-semibold">New key</p>
+          <div className="flex gap-2">
+            <input
+              className={inputClass + " flex-1"}
+              type="text"
+              placeholder="Local training rig"
+              value={newKeyLabel}
+              onChange={(event) => { setNewKeyLabel(event.target.value); }}
+            />
+            <button
+              className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+              type="button"
+              onClick={() => { void handleCreateKey(); }}
+              disabled={isCreatingKey}
+            >
+              {isCreatingKey ? "Creating..." : "Add key"}
+            </button>
+          </div>
+          {apiKeysError ? <p className="text-xs text-[#b42318]">{apiKeysError}</p> : null}
         </div>
         {createdKeyToken ? (
           <div className="grid gap-1.5 rounded-[12px] border border-brand-border bg-white p-3">

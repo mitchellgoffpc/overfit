@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import type { ApiKey, ApiKeyWithToken } from "@underfit/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SettingsKeysContent from "pages/settings/keys";
+import SettingsKeysContent from "pages/settings/api-keys";
 import { useAuthStore } from "stores/auth";
 
 const loadApiKeysMock = vi.hoisted(() => vi.fn());
@@ -86,11 +86,21 @@ describe("SettingsKeysContent", () => {
     createApiKeyMock.mockResolvedValue({ ok: false, error: "Could not create key" });
     render(<SettingsKeysContent />);
 
+    fireEvent.change(screen.getByPlaceholderText("Local training rig"), { target: { value: "CI runner" } });
     fireEvent.click(screen.getByRole("button", { name: "Add key" }));
 
     await waitFor(() => {
       expect(screen.getByText("Could not create key")).toBeInTheDocument();
     });
+  });
+
+  it("adding a key with an empty label shows a validation error", async () => {
+    render(<SettingsKeysContent />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add key" }));
+
+    expect(screen.getByText("Label is required.")).toBeInTheDocument();
+    expect(createApiKeyMock).not.toHaveBeenCalled();
   });
 
   it("deleting a key calls deleteApiKey with the key id", async () => {
