@@ -45,7 +45,7 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
               <a
                 className={runItemClass}
                 key={run.id}
-                href={`/${userHandle}/projects/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
+                href={`/${userHandle}/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
               >
                 <div className="grid gap-1.5">
                   <div className="font-semibold">{run.name}</div>

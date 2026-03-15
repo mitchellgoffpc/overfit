@@ -33,7 +33,13 @@ export default function RunDetailRoute(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar locationLabel={runName} parentLabel={projectName} parentHref={`/${handle}/projects/${projectName}`} />
+      <Navbar
+        locationLabel={runName}
+        ownerLabel={handle}
+        ownerHref={`/${handle}`}
+        parentLabel={projectName}
+        parentHref={`/${handle}/${projectName}`}
+      />
 
       <div>
         <main className={`p-6 lg:p-8 ${activeTab === "logs" ? "flex min-h-[calc(100vh-83px)] flex-col" : ""}`}>
@@ -41,7 +47,7 @@ export default function RunDetailRoute(): ReactElement {
             <div>
               <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle}</p>
               <div className="mt-1 flex items-center gap-1.5 text-sm">
-                <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={`/${handle}/projects/${projectName}`}>
+                <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={`/${handle}/${projectName}`}>
                   {projectName}
                 </Link>
                 <span className="text-brand-textMuted">/</span>

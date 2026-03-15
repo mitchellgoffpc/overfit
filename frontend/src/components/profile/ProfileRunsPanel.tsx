@@ -44,7 +44,7 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
             {runs.map((run) => (
               <Link
                 className={runCardClass}
-                href={`/${userHandle}/projects/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
+                href={`/${userHandle}/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
                 key={run.id}
               >
                 <div className="grid gap-1">

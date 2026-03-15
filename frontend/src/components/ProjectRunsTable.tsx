@@ -61,7 +61,7 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
                 <Link
                   className={runRowClass}
                   key={run.id}
-                  href={`/${ownerHandle}/projects/${project.name}/runs/${run.name}`}
+                  href={`/${ownerHandle}/${project.name}/runs/${run.name}`}
                 >
                   <div>
                     <p className="font-semibold">{run.name}</p>

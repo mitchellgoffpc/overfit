@@ -26,6 +26,11 @@ function AuthLayout({ children }: { readonly children: ReactNode }): ReactElemen
   return children as ReactElement;
 }
 
+function CurrentUserProfileRedirect(): ReactElement {
+  const currentHandle = useAuthStore((state) => state.currentHandle);
+  return <Redirect to={currentHandle ? `/${currentHandle}` : "/"} />;
+}
+
 export function AppRouter(): ReactElement {
   const [location] = useLocation();
   const aroundNav: AroundNavHandler = (navigate, to, options) => {
@@ -41,10 +46,11 @@ export function AppRouter(): ReactElement {
           <AuthLayout>
             <Switch>
               <Route path="/" component={HomePage} />
-              <Route path="/profile" component={ProfilePage} />
+              <Route path="/profile" component={CurrentUserProfileRedirect} />
               <Route path="/settings/*" component={SettingsPage} />
-              <Route path="/:handle/projects/:projectName" component={ProjectDetailPage} />
-              <Route path="/:handle/projects/:projectName/runs/:runName" component={RunDetailPage} />
+              <Route path="/:handle/:projectName" component={ProjectDetailPage} />
+              <Route path="/:handle/:projectName/runs/:runName" component={RunDetailPage} />
+              <Route path="/:handle" component={ProfilePage} />
             </Switch>
           </AuthLayout>
         </Route>

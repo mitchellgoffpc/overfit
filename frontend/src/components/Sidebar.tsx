@@ -36,7 +36,7 @@ export default function Sidebar({ user, projects, isLoading, error }: SidebarPro
                 {projects.map((project) => (
                   <Link
                     className={projectLinkClass}
-                    href={`/${user.handle}/projects/${project.name}`}
+                    href={`/${user.handle}/${project.name}`}
                     key={project.id}
                   >
                     <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[#d9ecec] text-[13px] font-semibold text-brand-accentStrong">

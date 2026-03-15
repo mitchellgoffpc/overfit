@@ -35,7 +35,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => ({
   me: () => {
     const currentHandle = useAuthStore.getState().currentHandle;
     const account = currentHandle ? get().accounts[currentHandle] ?? null : null;
-    return account && account.type === "USER" ? account : null;
+    return account?.type === "USER" ? account : null;
   },
 
   fetchAccount: async (handle: string) => {

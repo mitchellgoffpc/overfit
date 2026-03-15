@@ -17,6 +17,18 @@ request() {
   RESP_BODY="${res%$'\n'*}"
 }
 json_request() { request "$1" "$2" "${3:-}"; (( RESP_STATUS >= 200 && RESP_STATUS < 300 )) || fail; echo "$RESP_BODY"; }
+auth_user() {
+  local email="$1" handle="$2" password="$3" payload
+  payload="$(jq -cn --arg email "$email" --arg handle "$handle" --arg password "$password" '{email:$email,handle:$handle,password:$password}')"
+  request POST /auth/register "$payload"
+  if [[ "$RESP_STATUS" == "409" ]]; then
+    json_request POST /auth/login "$(jq -cn --arg email "$email" --arg password "$password" '{email:$email,password:$password}')"
+  elif (( RESP_STATUS >= 200 && RESP_STATUS < 300 )); then
+    echo "$RESP_BODY"
+  else
+    fail
+  fi
+}
 
 for _ in {1..120}; do curl -sS -o /dev/null -f "$base_url/health" && break || sleep 0.25; done
 curl -sS -o /dev/null -f "$base_url/health" || { echo "Backend not reachable at $base_url" >&2; exit 1; }
@@ -85,14 +97,7 @@ NODE
   json_request POST "/accounts/$user_handle/projects/$project_name/runs/$run_name/logs/flush" "{\"workerId\":\"$worker_id\"}" >/dev/null
 }
 
-request POST /auth/register '{"email":"test@test.com","handle":"test","password":"test1234"}'
-if [[ "$RESP_STATUS" == "409" ]]; then
-  auth_body="$(json_request POST /auth/login '{"email":"test@test.com","password":"test1234"}')"
-elif (( RESP_STATUS >= 200 && RESP_STATUS < 300 )); then
-  auth_body="$RESP_BODY"
-else
-  fail
-fi
+auth_body="$(auth_user "test@test.com" "test" "test1234")"
 
 user_handle="$(jq -r '.user.handle' <<<"$auth_body")"
 organization_handle="acme-labs"
@@ -138,3 +143,8 @@ seed_logs_for_worker "$project_one_name" "$baseline_run_name" worker-1
 seed_logs_for_worker "$project_two_name" "$distilbert_run_name" worker-0
 seed_logs_for_worker "$project_two_name" "$distilbert_run_name" worker-1
 seed_logs_for_worker "$project_two_name" "$llama_eval_run_name" worker-0
+
+john_auth_body="$(auth_user "john@test.com" "john" "test1234")"
+john_handle="$(jq -r '.user.handle' <<<"$john_auth_body")"
+ensure_project "$john_handle" "showcase" '"Reference project for cross-account profile testing."'
+ensure_project "$john_handle" "experiments" '"Secondary project for validating account/project navigation."'

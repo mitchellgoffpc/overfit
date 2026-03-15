@@ -57,7 +57,7 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
             {projectStats.map(({ project, runCount, latestRun }) => (
                 <Link
                   className={projectCardClass}
-                  href={`/${userHandle}/projects/${project.name}`}
+                  href={`/${userHandle}/${project.name}`}
                   key={project.id}
                 >
                 <div className="flex items-center justify-between">

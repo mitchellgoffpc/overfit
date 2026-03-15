@@ -11,15 +11,19 @@ const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offs
 
 interface NavbarProps {
   readonly locationLabel: string;
+  readonly ownerLabel?: string;
+  readonly ownerHref?: string;
   readonly parentLabel?: string;
   readonly parentHref?: string;
 }
 
-export default function Navbar({ locationLabel, parentLabel, parentHref }: NavbarProps): ReactElement {
+export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLabel, parentHref }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
   const user = useAccountsStore((state) => state.me());
   const logout = useAuthStore((state) => state.logout);
-  const ownerLabel = user?.handle ?? "workspace";
+  const profileHref = user ? `/${user.handle}` : "/";
+  const currentOwnerLabel = ownerLabel ?? user?.handle ?? "workspace";
+  const currentOwnerHref = ownerHref ?? profileHref;
   const name = user?.name ?? "";
   const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -80,8 +84,8 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
         <div className="hidden h-8 w-px bg-brand-border sm:block" />
 
         <div className="flex items-center gap-1 text-sm">
-          <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href="/profile">
-            {ownerLabel}
+          <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={currentOwnerHref}>
+            {currentOwnerLabel}
           </Link>
           <span className="text-brand-textMuted">/</span>
           {parentLabel && parentHref ? (
@@ -129,13 +133,13 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
               className="absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2 shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
               role="menu"
             >
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/profile">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href={profileHref}>
                 Profile
               </Link>
               <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/">
                 Projects
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/profile">
+              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href={profileHref}>
                 Runs
               </Link>
               <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/settings/profile">
