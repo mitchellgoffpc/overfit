@@ -2,8 +2,8 @@ import type { User } from "@underfit/types";
 import { create } from "zustand";
 
 import { request, send } from "helpers";
+import { useAuthStore } from "stores/auth";
 
-type UserStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type UserResult = { ok: true } | { ok: false; error: string };
 
 export const uploadCurrentUserAvatar = async (file: File): Promise<UserResult> => {
@@ -22,43 +22,32 @@ export const deleteCurrentUserAvatar = async (): Promise<UserResult> => {
 };
 
 interface UsersState {
-  user: User | null;
-  status: UserStatus;
-  loadUser: () => Promise<void>;
+  users: Record<string, User>;
+  me: () => User | null;
   updateUser: (name: string, bio: string) => Promise<UserResult>;
-  setAuthenticatedUser: (user: User) => void;
-  clearUser: (status?: UserStatus) => void;
+  setUser: (user: User) => void;
 }
 
-export const useUsersStore = create<UsersState>((set) => ({
-  user: null,
-  status: "idle",
-
-  loadUser: async () => {
-    set({ status: "loading" });
-    const { ok, body, status: statusCode } = await request<User>("me");
-    if (ok) {
-      set({ user: body, status: "authenticated" });
-    } else if (statusCode === 401) {
-      set({ user: null, status: "unauthenticated" });
-    }
-  },
+export const useUsersStore = create<UsersState>((set, get) => ({
+  users: {},
 
   updateUser: async (name: string, bio: string) => {
+    if (!useAuthStore.getState().currentHandle) { return { ok: false, error: "Not authenticated." }; }
     const { ok, error, body } = await send<User>("me", "PATCH", { name, bio });
     if (ok) {
-      set({ user: body, status: "authenticated" });
+      set((state) => ({ users: { ...state.users, [body.handle]: body } }));
       return { ok: true };
     } else {
       return { ok: false, error };
     }
   },
 
-  setAuthenticatedUser: (user: User) => {
-    set({ user, status: "authenticated" });
+  setUser: (user: User) => {
+    set((state) => ({ users: { ...state.users, [user.handle]: user } }));
   },
 
-  clearUser: (status = "idle") => {
-    set({ user: null, status });
+  me: () => {
+    const currentHandle = useAuthStore.getState().currentHandle;
+    return currentHandle ? get().users[currentHandle] ?? null : null;
   },
 }));

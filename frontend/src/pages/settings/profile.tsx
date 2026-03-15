@@ -3,6 +3,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { apiBase } from "helpers";
+import { useAuthStore } from "stores/auth";
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useUsersStore } from "stores/users";
 
 const smallButtonClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold"
@@ -173,7 +174,8 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
 }
 
 export default function SettingsProfileContent(): ReactElement {
-  const user = useUsersStore((state) => state.user);
+  const currentHandle = useAuthStore((state) => state.currentHandle);
+  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
   const updateUser = useUsersStore((state) => state.updateUser);
 
   return user ? <ProfileSettingsCard key={user.id} user={user} updateUser={updateUser} /> : <div />;

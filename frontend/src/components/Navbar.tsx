@@ -17,7 +17,8 @@ interface NavbarProps {
 
 export default function Navbar({ locationLabel, parentLabel, parentHref }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
-  const user = useUsersStore((state) => state.user);
+  const currentHandle = useAuthStore((state) => state.currentHandle);
+  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
   const logout = useAuthStore((state) => state.logout);
   const ownerLabel = user?.handle ?? "workspace";
   const name = user?.name ?? "";

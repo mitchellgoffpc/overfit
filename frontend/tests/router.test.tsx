@@ -4,11 +4,11 @@ import { Router, Route, Switch } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import LoginPage from "pages/login";
-import { useUsersStore } from "stores/users";
+import { useAuthStore } from "stores/auth";
 
 describe("IndexRoute", () => {
   beforeEach(() => {
-    useUsersStore.setState({ user: null, status: "unauthenticated" });
+    useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
   });
 
   it("redirects to login when unauthenticated", () => {

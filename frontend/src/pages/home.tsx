@@ -4,12 +4,14 @@ import { useEffect } from "react";
 import Navbar from "components/Navbar";
 import RunsPanel from "components/RunsPanel";
 import Sidebar from "components/Sidebar";
+import { useAuthStore } from "stores/auth";
 import { useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { useUsersStore } from "stores/users";
 
 export default function IndexRoute(): ReactElement {
-  const user = useUsersStore((state) => state.user);
+  const currentHandle = useAuthStore((state) => state.currentHandle);
+  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);

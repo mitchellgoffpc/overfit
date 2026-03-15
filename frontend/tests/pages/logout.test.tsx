@@ -6,6 +6,7 @@ import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
 import Navbar from "components/Navbar";
+import { useAuthStore } from "stores/auth";
 import { useUsersStore } from "stores/users";
 
 const navigateMock = vi.hoisted(() => vi.fn());
@@ -35,7 +36,8 @@ describe("Navbar logout", () => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
     navigateMock.mockReset();
-    useUsersStore.setState({ user: null, status: "idle" });
+    useAuthStore.setState({ status: "idle", currentHandle: null });
+    useUsersStore.setState({ users: {} });
   });
 
   afterEach(() => {
@@ -44,7 +46,8 @@ describe("Navbar logout", () => {
 
   it("logs out and clears auth state", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true });
-    useUsersStore.setState({ user, status: "authenticated" });
+    useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+    useUsersStore.getState().setUser(user);
     const { hook } = memoryLocation({ path: "/" });
 
     render(
@@ -64,11 +67,13 @@ describe("Navbar logout", () => {
       expect(navigateMock).toHaveBeenCalledWith("/login");
     });
 
-    expect(useUsersStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().status).toBe("unauthenticated");
+    expect(useAuthStore.getState().currentHandle).toBeNull();
   });
 
   it("logs out with the session cookie even when no token is stored in memory", async () => {
-    useUsersStore.setState({ user, status: "authenticated" });
+    useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+    useUsersStore.getState().setUser(user);
     const { hook } = memoryLocation({ path: "/" });
 
     render(
@@ -88,6 +93,7 @@ describe("Navbar logout", () => {
       expect(navigateMock).toHaveBeenCalledWith("/login");
     });
 
-    expect(useUsersStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().status).toBe("unauthenticated");
+    expect(useAuthStore.getState().currentHandle).toBeNull();
   });
 });

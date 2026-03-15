@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
-import { useUsersStore } from "stores/users";
 
 const inputErrorClass = "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20";
@@ -21,15 +20,13 @@ export default function SignupRoute(): ReactElement {
   const [usernameHintError, setUsernameHintError] = useState<string | null>(null);
   const [passwordHintError, setPasswordHintError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const status = useUsersStore((state) => state.status);
-  const loadUser = useUsersStore((state) => state.loadUser);
+  const status = useAuthStore((state) => state.status);
+  const loadAuth = useAuthStore((state) => state.loadAuth);
   const signup = useAuthStore((state) => state.signup);
 
   useEffect(() => {
-    if (status === "idle") {
-      void loadUser();
-    }
-  }, [loadUser, status]);
+    if (status === "idle") { void loadAuth(); }
+  }, [loadAuth, status]);
 
   if (status === "authenticated") {
     return <Redirect to="/" />;

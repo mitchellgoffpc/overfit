@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { request, send } from "helpers";
 import { useUsersStore } from "stores/users";
 
+export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };
 type ApiKeysResult = { ok: true; body: ApiKey[] } | { ok: false; error: string };
 type CreateApiKeyResult = { ok: true; body: ApiKeyWithToken } | { ok: false; error: string };
@@ -45,16 +46,36 @@ export const deleteApiKey = async (id: string): Promise<AuthResult> => {
 };
 
 interface AuthState {
+  status: AuthStatus;
+  currentHandle: string | null;
+  loadAuth: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthResult>;
   signup: (email: string, handle: string, password: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>(() => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
+  status: "idle",
+  currentHandle: null,
+
+  loadAuth: async () => {
+    set({ status: "loading" });
+    const { ok, body, status } = await request<User>("me");
+    if (ok) {
+      useUsersStore.getState().setUser(body);
+      set({ status: "authenticated", currentHandle: body.handle });
+    } else if (status === 401) {
+      set({ status: "unauthenticated", currentHandle: null });
+    } else {
+      set({ status: "unauthenticated", currentHandle: null });
+    }
+  },
+
   login: async (email: string, password: string) => {
     const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
     if (ok) {
-      useUsersStore.getState().setAuthenticatedUser(body.user);
+      useUsersStore.getState().setUser(body.user);
+      set({ status: "authenticated", currentHandle: body.user.handle });
       return { ok: true };
     } else {
       return { ok: false, error };
@@ -64,7 +85,8 @@ export const useAuthStore = create<AuthState>(() => ({
   signup: async (email: string, handle: string, password: string) => {
     const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
     if (ok) {
-      useUsersStore.getState().setAuthenticatedUser(body.user);
+      useUsersStore.getState().setUser(body.user);
+      set({ status: "authenticated", currentHandle: body.user.handle });
       return { ok: true };
     } else {
       return { ok: false, error };
@@ -72,7 +94,7 @@ export const useAuthStore = create<AuthState>(() => ({
   },
 
   logout: async () => {
-    if (useUsersStore.getState().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
-    useUsersStore.getState().clearUser("idle");
+    if (get().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
+    set({ status: "unauthenticated", currentHandle: null });
   },
 }));

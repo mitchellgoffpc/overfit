@@ -2,14 +2,13 @@ import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
-import { createApiKey, deleteApiKey, loadApiKeys } from "stores/auth";
-import { useUsersStore } from "stores/users";
+import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
 
 const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
 
 export default function SettingsKeysContent(): ReactElement {
-  const status = useUsersStore((state) => state.status);
+  const status = useAuthStore((state) => state.status);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [apiKeysLoaded, setApiKeysLoaded] = useState(false);
   const [apiKeysError, setApiKeysError] = useState<string | null>(null);

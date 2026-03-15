@@ -30,7 +30,8 @@ describe("auth store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useUsersStore.setState({ user: null, status: "idle" });
+    useAuthStore.setState({ status: "idle", currentHandle: null });
+    useUsersStore.setState({ users: {} });
     vi.restoreAllMocks();
   });
 
@@ -46,8 +47,9 @@ describe("auth store", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "ada@underfit.local", password: "password" })
     });
-    expect(useUsersStore.getState().status).toBe("authenticated");
-    expect(useUsersStore.getState().user).toEqual(user);
+    expect(useAuthStore.getState().status).toBe("authenticated");
+    expect(useAuthStore.getState().currentHandle).toBe(user.handle);
+    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
   });
 
   it("returns an error when login fails", async () => {
@@ -70,8 +72,9 @@ describe("auth store", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "ada@underfit.local", handle: "ada", password: "password" })
     });
-    expect(useUsersStore.getState().status).toBe("authenticated");
-    expect(useUsersStore.getState().user).toEqual(user);
+    expect(useAuthStore.getState().status).toBe("authenticated");
+    expect(useAuthStore.getState().currentHandle).toBe(user.handle);
+    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
   });
 
   it("returns a conflict error when email is already in use", async () => {
@@ -115,22 +118,24 @@ describe("auth store", () => {
   });
 
   it("logs out and clears user state", async () => {
-    useUsersStore.setState({ user, status: "authenticated" });
+    useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+    useUsersStore.getState().setUser(user);
     fetchMock.mockResolvedValueOnce(createResponse({}));
 
     await useAuthStore.getState().logout();
 
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/auth/logout`, { credentials: "include", method: "POST" });
-    expect(useUsersStore.getState().user).toBeNull();
-    expect(useUsersStore.getState().status).toBe("idle");
+    expect(useAuthStore.getState().status).toBe("unauthenticated");
+    expect(useAuthStore.getState().currentHandle).toBeNull();
+    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
   });
 
   it("skips logout request when not authenticated", async () => {
-    useUsersStore.setState({ user: null, status: "unauthenticated" });
+    useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
 
     await useAuthStore.getState().logout();
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(useUsersStore.getState().status).toBe("idle");
+    expect(useAuthStore.getState().status).toBe("unauthenticated");
   });
 });

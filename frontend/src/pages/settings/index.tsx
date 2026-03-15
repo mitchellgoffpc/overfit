@@ -4,6 +4,7 @@ import { Link, Redirect, Route, Switch, useLocation } from "wouter";
 import Navbar from "components/Navbar";
 import SettingsKeysContent from "pages/settings/keys";
 import SettingsProfileContent from "pages/settings/profile";
+import { useAuthStore } from "stores/auth";
 import { useUsersStore } from "stores/users";
 
 const tabs = [
@@ -12,7 +13,8 @@ const tabs = [
 ] as const;
 
 export default function SettingsPage(): ReactElement {
-  const user = useUsersStore((state) => state.user);
+  const currentHandle = useAuthStore((state) => state.currentHandle);
+  const user = useUsersStore((state) => (currentHandle ? state.users[currentHandle] ?? null : null));
   const [location] = useLocation();
   const name = user?.name ?? "workspace";
   const handle = user?.handle ?? "workspace";

@@ -2,6 +2,7 @@ import { API_VERSION } from "@underfit/types";
 import type { User } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useAuthStore } from "stores/auth";
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useUsersStore } from "stores/users";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -29,32 +30,22 @@ describe("users store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useUsersStore.setState({ user: null, status: "idle" });
+    useAuthStore.setState({ status: "idle", currentHandle: null });
+    useUsersStore.setState({ users: {} });
     vi.restoreAllMocks();
   });
 
-  it("loads the user from the session cookie", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse(user));
+  it("stores and retrieves users by handle", () => {
+    useUsersStore.getState().setUser(user);
 
-    await useUsersStore.getState().loadUser();
-
-    expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/me`, { credentials: "include" });
-    expect(useUsersStore.getState().status).toBe("authenticated");
-    expect(useUsersStore.getState().user).toEqual(user);
-  });
-
-  it("sets unauthenticated when the user request fails", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 401 }));
-
-    await useUsersStore.getState().loadUser();
-
-    expect(useUsersStore.getState().status).toBe("unauthenticated");
-    expect(useUsersStore.getState().user).toBeNull();
+    expect(useUsersStore.getState().users["ada"]).toEqual(user);
+    expect(useUsersStore.getState().users["missing"]).toBeUndefined();
   });
 
   it("updates the user", async () => {
     const updated = { ...user, name: "Ada", bio: "Math pioneer" };
-    useUsersStore.setState({ user, status: "authenticated" });
+    useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+    useUsersStore.getState().setUser(user);
     fetchMock.mockResolvedValueOnce(createResponse(updated));
 
     const result = await useUsersStore.getState().updateUser("Ada", "Math pioneer");
@@ -66,18 +57,25 @@ describe("users store", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "Ada", bio: "Math pioneer" })
     });
-    expect(useUsersStore.getState().user).toEqual(updated);
+    expect(useUsersStore.getState().users[user.handle]).toEqual(updated);
   });
 
   it("returns an error when updating the user fails", async () => {
-    useUsersStore.setState({ user, status: "authenticated" });
+    useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+    useUsersStore.getState().setUser(user);
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Invalid profile" }, { ok: false, status: 400 }));
 
     const result = await useUsersStore.getState().updateUser("", "Math pioneer");
 
     expect(result).toEqual({ ok: false, error: "Invalid profile" });
-    expect(useUsersStore.getState().user).toEqual(user);
-    expect(useUsersStore.getState().status).toBe("authenticated");
+    expect(useUsersStore.getState().users[user.handle]).toEqual(user);
+  });
+
+  it("returns the current user through me()", () => {
+    useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+    useUsersStore.getState().setUser(user);
+
+    expect(useUsersStore.getState().me()).toEqual(user);
   });
 
   it("uploads the current user avatar", async () => {

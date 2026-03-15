@@ -10,15 +10,15 @@ import ProjectDetailPage from "pages/projects/detail";
 import RunDetailPage from "pages/projects/run";
 import SettingsPage from "pages/settings/index";
 import SignupPage from "pages/signup";
-import { useUsersStore } from "stores/users";
+import { useAuthStore } from "stores/auth";
 
 function AuthLayout({ children }: { readonly children: ReactNode }): ReactElement {
-  const status = useUsersStore((state) => state.status);
-  const loadUser = useUsersStore((state) => state.loadUser);
+  const status = useAuthStore((state) => state.status);
+  const loadAuth = useAuthStore((state) => state.loadAuth);
 
   useEffect(() => {
-    void loadUser();
-  }, [loadUser]);
+    if (status === "idle") { void loadAuth(); }
+  }, [loadAuth, status]);
 
   if (status === "loading" || status === "idle") { return <div />; }
   if (status === "unauthenticated") { return <Redirect to="/login" />; }
