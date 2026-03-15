@@ -41,7 +41,8 @@ describe("organizations routes", () => {
   });
 
   it("creates an organization and makes creator an admin", async () => {
-    const response = await request(app).post(`${API_BASE}/organizations`).set("Authorization", `Bearer ${ownerToken}`).send({ handle: "core2", name: "Core2" }).expect(201);
+    const response = await request(app)
+      .post(`${API_BASE}/organizations`).set("Authorization", `Bearer ${ownerToken}`).send({ handle: "core2", name: "Core2" }).expect(201);
     expect(response.body).toMatchObject({ handle: "core2", name: "Core2" });
 
     const members = await request(app).get(`${API_BASE}/organizations/core2/members`).expect(200);
@@ -49,17 +50,20 @@ describe("organizations routes", () => {
   });
 
   it("updates organizations for admins and preserves ids", async () => {
-    const updated = await request(app).patch(`${API_BASE}/organizations/core`).set("Authorization", `Bearer ${ownerToken}`).send({ name: "Core Team" }).expect(200);
+    const updated = await request(app)
+      .patch(`${API_BASE}/organizations/core`).set("Authorization", `Bearer ${ownerToken}`).send({ name: "Core Team" }).expect(200);
     expect(updated.body).toMatchObject({ id: organizationId, handle: "core", name: "Core Team" });
   });
 
   it("rejects organization updates from non-admins", async () => {
-    const response = await request(app).patch(`${API_BASE}/organizations/core`).set("Authorization", `Bearer ${outsiderToken}`).send({ name: "Core Team" }).expect(403);
+    const response = await request(app)
+      .patch(`${API_BASE}/organizations/core`).set("Authorization", `Bearer ${outsiderToken}`).send({ name: "Core Team" }).expect(403);
     expect(response.body).toMatchObject({ error: "Forbidden" });
   });
 
   it("rejects duplicate organization creates", async () => {
-    const response = await request(app).post(`${API_BASE}/organizations`).set("Authorization", `Bearer ${ownerToken}`).send({ handle: "core", name: "Core Team" }).expect(409);
+    const response = await request(app)
+      .post(`${API_BASE}/organizations`).set("Authorization", `Bearer ${ownerToken}`).send({ handle: "core", name: "Core Team" }).expect(409);
     expect(response.body).toMatchObject({ error: "Organization already exists" });
   });
 
@@ -81,14 +85,16 @@ describe("organizations routes", () => {
   });
 
   it("rejects invalid membership roles", async () => {
-    const response = await request(app).put(`${API_BASE}/organizations/core/members/ada`).set("Authorization", `Bearer ${ownerToken}`).send({ role: "OWNER" }).expect(400);
+    const response = await request(app)
+      .put(`${API_BASE}/organizations/core/members/ada`).set("Authorization", `Bearer ${ownerToken}`).send({ role: "OWNER" }).expect(400);
     expect((response.body as { error: string }).error).toContain("role:");
   });
 
   it("rejects membership changes from non-admins", async () => {
     await request(app).put(`${API_BASE}/organizations/core/members/ada`).set("Authorization", `Bearer ${ownerToken}`).send({ role: "MEMBER" }).expect(200);
 
-    const update = await request(app).put(`${API_BASE}/organizations/core/members/owner`).set("Authorization", `Bearer ${adaToken}`).send({ role: "MEMBER" }).expect(403);
+    const update = await request(app)
+      .put(`${API_BASE}/organizations/core/members/owner`).set("Authorization", `Bearer ${adaToken}`).send({ role: "MEMBER" }).expect(403);
     expect(update.body).toMatchObject({ error: "Forbidden" });
 
     const remove = await request(app).delete(`${API_BASE}/organizations/core/members/owner`).set("Authorization", `Bearer ${adaToken}`).expect(403);
@@ -103,7 +109,8 @@ describe("organizations routes", () => {
   });
 
   it("rejects removing or demoting the only admin", async () => {
-    const demote = await request(app).put(`${API_BASE}/organizations/core/members/owner`).set("Authorization", `Bearer ${ownerToken}`).send({ role: "MEMBER" }).expect(400);
+    const demote = await request(app)
+      .put(`${API_BASE}/organizations/core/members/owner`).set("Authorization", `Bearer ${ownerToken}`).send({ role: "MEMBER" }).expect(400);
     expect(demote.body).toMatchObject({ error: "Cannot remove the only admin" });
 
     const remove = await request(app).delete(`${API_BASE}/organizations/core/members/owner`).set("Authorization", `Bearer ${ownerToken}`).expect(400);

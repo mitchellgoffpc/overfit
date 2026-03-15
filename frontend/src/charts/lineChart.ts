@@ -156,7 +156,11 @@ const getNiceTicks = (min: number, max: number, targetCount: number): number[] =
       const lastTick = ticks[ticks.length - 1];
       if (firstTick === undefined || lastTick === undefined) { continue; }
       const coverageDiff = Math.abs((lastTick - firstTick) - range);
-      if (!best || countDiff < best.countDiff || (countDiff === best.countDiff && (coverageDiff < best.coverageDiff || (coverageDiff === best.coverageDiff && step < best.step)))) {
+      const isBetter = !best
+        || countDiff < best.countDiff
+        || (countDiff === best.countDiff && coverageDiff < best.coverageDiff)
+        || (countDiff === best.countDiff && coverageDiff === best.coverageDiff && step < best.step);
+      if (isBetter) {
         best = { step, countDiff, coverageDiff, ticks };
       }
     }
@@ -185,7 +189,9 @@ export const getLineChartGeometry = (series: LineSeries[], options: LineChartOpt
   return { width, height, padding, plotWidth, plotHeight, xMin, xMax, yMinAdjusted, yMaxAdjusted, xScale, yScale, xUnscale, yUnscale };
 };
 
-export const drawLineChart = (canvas: HTMLCanvasElement, series: LineSeries[], options: LineChartOptions, hoverOverlay?: LineChartHoverOverlay | null): void => {
+export const drawLineChart = (
+  canvas: HTMLCanvasElement, series: LineSeries[], options: LineChartOptions, hoverOverlay?: LineChartHoverOverlay | null
+): void => {
   const ctx = canvas.getContext("2d");
   if (!ctx) { return; }
 

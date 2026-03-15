@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { createApiKey, deleteApiKey, loadApiKeys } from "stores/auth";
 import { useUsersStore } from "stores/users";
 
+const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
+  + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+
 export default function SettingsKeysContent(): ReactElement {
   const status = useUsersStore((state) => state.status);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -72,7 +75,7 @@ export default function SettingsKeysContent(): ReactElement {
         <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
           New key label
           <input
-            className="rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+            className={inputClass}
             type="text"
             placeholder="Local training rig"
             value={newKeyLabel}
@@ -115,7 +118,9 @@ export default function SettingsKeysContent(): ReactElement {
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-brand-border bg-white px-4 py-3" key={key.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{key.label ?? "Untitled key"}</p>
-                <p className="text-[11px] text-brand-textMuted">Created {new Date(key.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                <p className="text-[11px] text-brand-textMuted">
+                  Created {new Date(key.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                </p>
               </div>
               <button
                 className="rounded-[10px] border border-brand-border px-3 py-2 text-xs font-semibold text-brand-text hover:border-brand-accent"

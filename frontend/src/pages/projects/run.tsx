@@ -63,7 +63,10 @@ export default function RunDetailRoute(): ReactElement {
                     key={tab.id}
                     type="button"
                     onClick={() => { setActiveTab(tab.id as RunDetailTab); }}
-                    className={`relative -mb-px border-b-2 px-0 py-2 text-[15px] font-medium transition-colors ${isActive ? "border-[#1a7b7d] text-brand-text" : "border-transparent text-brand-textMuted hover:text-brand-text"}`}
+                    className={[
+                      "relative -mb-px border-b-2 px-0 py-2 text-[15px] font-medium transition-colors",
+                      isActive ? "border-[#1a7b7d] text-brand-text" : "border-transparent text-brand-textMuted hover:text-brand-text"
+                    ].join(" ")}
                     aria-current={isActive ? "page" : undefined}
                   >
                     {tab.label}
@@ -80,7 +83,11 @@ export default function RunDetailRoute(): ReactElement {
           <div className={activeTab === "logs" ? "min-h-0 flex-1" : ""}>
             {activeTab === "charts" ? <ChartsTab scalars={scalars} runName={runName} isLoading={isScalarsLoading} /> : null}
             {activeTab === "logs" ? <LogsTab handle={handle} projectName={projectName} runName={runName} /> : null}
-            {activeTab === "artifacts" ? <section className="rounded-[16px] border border-brand-border bg-brand-surface p-4 text-[13px] text-brand-textMuted shadow-soft">Artifacts coming soon.</section> : null}
+            {activeTab === "artifacts" ? (
+              <section className="rounded-[16px] border border-brand-border bg-brand-surface p-4 text-[13px] text-brand-textMuted shadow-soft">
+                Artifacts coming soon.
+              </section>
+            ) : null}
           </div>
         </main>
       </div>

@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 
+const tooltipClass = "pointer-events-none absolute z-10 max-w-[240px] rounded-[10px] border border-brand-border"
+  + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
+
 interface ChartSeries {
   readonly id: string;
   readonly points: { x: number; y: number }[];
@@ -83,7 +86,8 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
     const hovered = hoveredSections[prefix] ?? null;
     const closest = hovered ? getClosestPoint(series, hovered.step) : null;
     const isLeft = (hovered?.xRatio ?? 0) < 0.5;
-    const tooltipStyle = hovered ? { left: `${String(hovered.cursorX)}px`, top: "8px", transform: isLeft ? "translateX(12px)" : "translateX(calc(-100% - 12px))" } : undefined;
+    const tooltipStyle = !hovered ? undefined
+      : { left: `${String(hovered.cursorX)}px`, top: "8px", transform: isLeft ? "translateX(12px)" : "translateX(calc(-100% - 12px))" };
 
     return (
       <div className="relative rounded-[12px] border border-brand-border bg-brand-surface px-2 pb-[6px] pt-2 shadow-soft" key={series.id}>
@@ -97,7 +101,7 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
         {!hasPoints && !isLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
         <div className="relative">
           {hovered && closest ? (
-            <div className="pointer-events-none absolute z-10 max-w-[240px] rounded-[10px] border border-brand-border bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur" style={tooltipStyle}>
+            <div className={tooltipClass} style={tooltipStyle}>
               <div className="flex items-center justify-between gap-3 text-[12px] text-brand-text">
                 <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />

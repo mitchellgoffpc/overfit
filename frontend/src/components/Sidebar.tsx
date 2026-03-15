@@ -2,6 +2,9 @@ import type { Project, User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { Link } from "wouter";
 
+const projectLinkClass = "grid grid-cols-[32px_1fr] items-center gap-2.5 rounded-xl border border-transparent"
+  + " px-2 py-2 text-left text-inherit hover:border-brand-border hover:bg-brand-surface";
+
 interface SidebarProps {
   readonly user: User | null;
   readonly projects: Project[];
@@ -32,7 +35,7 @@ export default function Sidebar({ user, projects, isLoading, error }: SidebarPro
               <div className="grid gap-2">
                 {projects.map((project) => (
                   <Link
-                    className="grid grid-cols-[32px_1fr] items-center gap-2.5 rounded-xl border border-transparent px-2 py-2 text-left text-inherit hover:border-brand-border hover:bg-brand-surface"
+                    className={projectLinkClass}
                     href={`/${user.handle}/projects/${project.name}`}
                     key={project.id}
                   >

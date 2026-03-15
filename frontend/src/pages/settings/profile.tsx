@@ -5,6 +5,13 @@ import { useMemo, useRef, useState } from "react";
 import { apiBase } from "helpers";
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useUsersStore } from "stores/users";
 
+const smallButtonClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold"
+  + " text-brand-text disabled:cursor-wait disabled:opacity-70";
+const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
+  + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+const textareaClass = "min-h-[96px] resize-none rounded-[10px] border border-brand-border bg-white px-3 py-2.5"
+  + " text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+
 interface ProfileSettingsCardProps {
   readonly user: User;
   readonly updateUser: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -106,7 +113,7 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
         <div className="flex items-center gap-2">
           <input ref={fileInputRef} className="hidden" type="file" accept="image/*" onChange={(event) => { void handleAvatarUpload(event); }} />
           <button
-            className="rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold text-brand-text disabled:cursor-wait disabled:opacity-70"
+            className={smallButtonClass}
             type="button"
             onClick={() => {
               fileInputRef.current?.click();
@@ -116,7 +123,7 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
             {isAvatarSaving ? "Uploading..." : "Upload"}
           </button>
           <button
-            className="rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold text-brand-text disabled:cursor-wait disabled:opacity-70"
+            className={smallButtonClass}
             type="button"
             onClick={() => {
               void handleAvatarDelete();
@@ -130,7 +137,7 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
       <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
         Name
         <input
-          className="rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+          className={inputClass}
           type="text"
           value={name}
           onChange={(event) => {
@@ -141,7 +148,7 @@ function ProfileSettingsCard({ user, updateUser }: ProfileSettingsCardProps): Re
       <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
         Bio
         <textarea
-          className="min-h-[96px] resize-none rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+          className={textareaClass}
           value={bio}
           onChange={(event) => {
             setBio(event.target.value);

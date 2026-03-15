@@ -34,7 +34,10 @@ describe("runs routes", () => {
   });
 
   it("inserts and fetches a run", async () => {
-    const insertResponse = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs`).set("Cookie", `underfit_session=${sessionToken}`).send({ status: "running", metadata: { lr: 0.001 } }).expect(200);
+    const insertResponse = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/runs`)
+      .set("Cookie", `underfit_session=${sessionToken}`)
+      .send({ status: "running", metadata: { lr: 0.001 } }).expect(200);
     const inserted = insertResponse.body as RunResponse;
     expect(insertResponse.body).toMatchObject({ projectId, user: "ada", status: "running", metadata: { lr: 0.001 } });
     expect(typeof inserted.name).toBe("string");
@@ -51,7 +54,9 @@ describe("runs routes", () => {
   });
 
   it("rejects unknown projects when inserting", async () => {
-    const response = await request(app).post(`${API_BASE}/accounts/ada/projects/missing/runs`).set("Cookie", `underfit_session=${sessionToken}`).send({ status: "running" }).expect(404);
+    const response = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/missing/runs`)
+      .set("Cookie", `underfit_session=${sessionToken}`).send({ status: "running" }).expect(404);
     expect(response.body).toMatchObject({ error: "Project not found" });
   });
 
@@ -63,7 +68,8 @@ describe("runs routes", () => {
   it("updates a run", async () => {
     const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null }))!;
 
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ status: "finished", metadata: { loss: 0.12 } }).expect(200);
+    const response = await request(app)
+      .put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ status: "finished", metadata: { loss: 0.12 } }).expect(200);
     expect(response.body).toMatchObject({ id: run.id, status: "finished", metadata: { loss: 0.12 } });
   });
 

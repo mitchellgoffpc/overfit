@@ -63,7 +63,9 @@ export const createOrganization = async (db: Database, organization: Organizatio
   }
 };
 
-export const updateOrganization = async (db: Database, id: string, organization: Partial<Omit<OrganizationInput, "handle">>): Promise<Organization | undefined> => {
+export const updateOrganization = async (
+  db: Database, id: string, organization: Partial<Omit<OrganizationInput, "handle">>
+): Promise<Organization | undefined> => {
   const updatedAt = nowIso();
   const result = await db.updateTable(table).set({ ...organization, updatedAt }).where("id", "=", id).executeTakeFirst();
   if (!result.numUpdatedRows) {

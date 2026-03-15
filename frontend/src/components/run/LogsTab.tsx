@@ -63,12 +63,21 @@ export default function LogsTab({ handle, projectName, runName }: LogsTabProps):
       <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 items-center gap-2 rounded-xl border border-brand-border bg-white px-3 py-2">
           <span className="text-[11px] uppercase tracking-[0.08em] text-brand-textMuted">Search</span>
-          <input className="w-full bg-transparent text-[13px] outline-none" placeholder="Filter log lines" value={search} onChange={(event) => { setSearch(event.target.value); }} />
+          <input
+            className="w-full bg-transparent text-[13px] outline-none"
+            placeholder="Filter log lines"
+            value={search}
+            onChange={(event) => { setSearch(event.target.value); }}
+          />
         </div>
         {workerIds.length > 1 ? (
           <label className="flex items-center gap-2 text-[12px] text-brand-textMuted">
             <span className="uppercase tracking-[0.08em]">Worker</span>
-            <select className="rounded-xl border border-brand-border bg-white px-3 py-2 text-[13px] text-brand-text" value={workerId} onChange={(event) => { setWorkerId(event.target.value); }}>
+            <select
+              className="rounded-xl border border-brand-border bg-white px-3 py-2 text-[13px] text-brand-text"
+              value={workerId}
+              onChange={(event) => { setWorkerId(event.target.value); }}
+            >
               {workerIds.map((id) => (
                 <option key={id} value={id}>
                   {id}

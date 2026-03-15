@@ -6,6 +6,9 @@ import { apiBase } from "helpers";
 import { useAuthStore } from "stores/auth";
 import { useUsersStore } from "stores/users";
 
+const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition"
+  + " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
+
 interface NavbarProps {
   readonly locationLabel: string;
   readonly parentLabel?: string;
@@ -97,7 +100,7 @@ export default function Navbar({ locationLabel, parentLabel, parentHref }: Navba
         <div className="relative" ref={menuRef}>
           <button
             type="button"
-            className="flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent"
+            className={navButtonClass}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
             onClick={() => {

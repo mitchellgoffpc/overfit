@@ -5,6 +5,9 @@ import { Link, Redirect, useLocation } from "wouter";
 import { useAuthStore } from "stores/auth";
 import { useUsersStore } from "stores/users";
 
+const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
+  + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+
 export default function LoginRoute(): ReactElement {
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
@@ -64,7 +67,7 @@ export default function LoginRoute(): ReactElement {
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Email address
             <input
-              className="rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+              className={inputClass}
               type="email"
               name="email"
               autoComplete="email"
@@ -79,7 +82,7 @@ export default function LoginRoute(): ReactElement {
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Password
             <input
-              className="rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"
+              className={inputClass}
               type="password"
               name="password"
               autoComplete="current-password"
@@ -91,7 +94,11 @@ export default function LoginRoute(): ReactElement {
             />
           </label>
 
-          <button className="rounded-[10px] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70" type="submit" disabled={isLoading}>
+          <button
+            className="rounded-[10px] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+            type="submit"
+            disabled={isLoading}
+          >
             {isLoading ? "Signing in..." : "Sign in"}
           </button>
         </form>

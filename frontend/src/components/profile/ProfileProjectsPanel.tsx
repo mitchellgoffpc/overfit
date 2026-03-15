@@ -5,6 +5,9 @@ import { Link } from "wouter";
 
 import { formatDate } from "helpers";
 
+const projectCardClass = "grid gap-3 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4"
+  + " text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]";
+
 interface ProfileProjectsPanelProps {
   readonly projects: Project[];
   readonly runs: Run[];
@@ -53,7 +56,7 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
           <div className="grid gap-3 md:grid-cols-2">
             {projectStats.map(({ project, runCount, latestRun }) => (
                 <Link
-                  className="grid gap-3 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4 text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]"
+                  className={projectCardClass}
                   href={`/${userHandle}/projects/${project.name}`}
                   key={project.id}
                 >

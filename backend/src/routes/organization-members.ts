@@ -34,7 +34,9 @@ export function registerOrganizationMembershipRoutes(app: RouteApp, db: Database
     }
   };
 
-  const upsertOrganizationMemberHandler: RouteHandler<{ handle: string; userHandle: string }, OrganizationMember, OrganizationMemberPayload> = async (req, res) => {
+  const upsertOrganizationMemberHandler: RouteHandler<
+    { handle: string; userHandle: string }, OrganizationMember, OrganizationMemberPayload
+  > = async (req, res) => {
     const { success, error, data } = OrganizationMemberPayloadSchema.safeParse(req.body);
     const handle = req.params.handle.trim().toLowerCase();
     const userHandle = req.params.userHandle.trim().toLowerCase();

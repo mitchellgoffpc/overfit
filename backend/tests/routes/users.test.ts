@@ -59,7 +59,8 @@ describe("users routes", () => {
 
   it("updates the current user profile", async () => {
     const { session } = await registerUser(app, "sam@example.com", "sam");
-    const response = await request(app).patch(`${API_BASE}/me`).set("Cookie", sessionCookie(session.token)).send({ name: "Sam Tester", bio: "Building models." }).expect(200);
+    const response = await request(app)
+      .patch(`${API_BASE}/me`).set("Cookie", sessionCookie(session.token)).send({ name: "Sam Tester", bio: "Building models." }).expect(200);
     expect(response.body).toMatchObject({ name: "Sam Tester", bio: "Building models." });
   });
 

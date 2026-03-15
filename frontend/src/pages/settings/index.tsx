@@ -30,15 +30,18 @@ export default function SettingsPage(): ReactElement {
             <p className="text-xs text-brand-textMuted">@{handle}</p>
           </div>
           <div className="grid gap-2">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.path}
-                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${tab.path === activeTab.path ? "border-brand-accent bg-white text-brand-text" : "border-transparent text-brand-textMuted hover:border-brand-border hover:bg-white"}`}
-                href={tab.path}
-              >
-                {tab.label}
-              </Link>
-            ))}
+            {tabs.map((tab) => {
+              const isActive = tab.path === activeTab.path;
+              const activeClass = isActive
+                ? "border-brand-accent bg-white text-brand-text"
+                : "border-transparent text-brand-textMuted hover:border-brand-border hover:bg-white";
+              const linkClass = `rounded-xl border px-3 py-2 text-sm font-semibold transition ${activeClass}`;
+              return (
+                <Link key={tab.path} className={linkClass} href={tab.path}>
+                  {tab.label}
+                </Link>
+              );
+            })}
           </div>
         </aside>
 

@@ -5,6 +5,12 @@ import { Link } from "wouter";
 import RunStatusBadge from "components/RunStatusBadge";
 import { formatDuration, formatMetadataValue, formatRunTime } from "helpers";
 
+const runsGridCols = "grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr]";
+const headerRowClass = `grid ${runsGridCols} items-center gap-3 border-b border-brand-border px-3 py-2`
+  + " text-xs uppercase tracking-[0.08em] text-brand-textMuted";
+const runRowClass = `grid ${runsGridCols} items-center gap-3 rounded-xl border border-transparent`
+  + " bg-brand-surfaceMuted px-3 py-2 transition hover:border-brand-border";
+
 interface ProjectRunsTableProps {
   readonly runs: Run[];
   readonly project: Project;
@@ -36,7 +42,7 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
         ) : (
           <div className="overflow-x-auto pb-2">
             <div className="min-w-[1240px]">
-              <div className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 border-b border-brand-border px-3 py-2 text-xs uppercase tracking-[0.08em] text-brand-textMuted">
+              <div className={headerRowClass}>
                 <span>Name</span>
                 <span>State</span>
                 <span>Notes</span>
@@ -53,7 +59,7 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
               </div>
               {runs.map((run) => (
                 <Link
-                  className="grid grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr] items-center gap-3 rounded-xl border border-transparent bg-brand-surfaceMuted px-3 py-2 transition hover:border-brand-border"
+                  className={runRowClass}
                   key={run.id}
                   href={`/${ownerHandle}/projects/${project.name}/runs/${run.name}`}
                 >

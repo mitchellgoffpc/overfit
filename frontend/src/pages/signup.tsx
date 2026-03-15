@@ -6,6 +6,11 @@ import { Link, Redirect, useLocation } from "wouter";
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
 import { useUsersStore } from "stores/users";
 
+const inputErrorClass = "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none"
+  + " focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20";
+const inputNormalClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
+  + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+
 export default function SignupRoute(): ReactElement {
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
@@ -86,9 +91,7 @@ export default function SignupRoute(): ReactElement {
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Email address
             <input
-              className={emailHintError
-                ? "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20"
-                : "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"}
+              className={emailHintError ? inputErrorClass : inputNormalClass}
               type="email"
               name="email"
               autoComplete="email"
@@ -110,9 +113,7 @@ export default function SignupRoute(): ReactElement {
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Password
             <input
-              className={passwordHintError
-                ? "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20"
-                : "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"}
+              className={passwordHintError ? inputErrorClass : inputNormalClass}
               type="password"
               name="password"
               autoComplete="new-password"
@@ -134,9 +135,7 @@ export default function SignupRoute(): ReactElement {
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Username
             <input
-              className={usernameHintError
-                ? "rounded-[10px] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20"
-                : "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20"}
+              className={usernameHintError ? inputErrorClass : inputNormalClass}
               type="text"
               name="username"
               autoComplete="username"

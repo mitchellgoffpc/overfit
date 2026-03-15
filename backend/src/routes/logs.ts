@@ -35,7 +35,8 @@ type CreateLogLinesResponse = { status: "buffered" } | { error: string; expected
 
 interface RunPathParams { handle: string; projectName: string; runName: string; }
 
-const normalizeLogLines = (lines: LogLine[]): LogLine[] => lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
+const normalizeLogLines = (lines: LogLine[]): LogLine[] =>
+  lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
 
 const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, startLine: number, endLine: number): Promise<string> => {
   const content = (await storage.read(storageKey)).toString("utf8");

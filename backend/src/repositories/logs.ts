@@ -41,7 +41,9 @@ export const getLatestLogSegment = async (db: Database, runId: ID, workerId: str
     .executeTakeFirst();
 };
 
-export const listLogSegmentsForCursor = async (db: Database, runId: ID, workerId: string, cursor: number, count = Number.MAX_SAFE_INTEGER): Promise<LogSegment[]> => {
+export const listLogSegmentsForCursor = async (
+  db: Database, runId: ID, workerId: string, cursor: number, count = Number.MAX_SAFE_INTEGER
+): Promise<LogSegment[]> => {
   return await db
     .selectFrom(table)
     .selectAll()

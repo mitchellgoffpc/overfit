@@ -5,6 +5,9 @@ import QuickstartGuide from "components/QuickstartGuide";
 import RunStatusBadge from "components/RunStatusBadge";
 import { buildProjectNameMap, formatRunTime } from "helpers";
 
+const runItemClass = "flex items-center justify-between gap-3 rounded-[14px] border border-transparent"
+  + " bg-brand-surfaceMuted px-4 py-3 hover:border-brand-border";
+
 interface RunsPanelProps {
   readonly runs: Run[];
   readonly projects: Project[];
@@ -40,7 +43,7 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
           <div className="grid gap-2">
             {runs.map((run) => (
               <a
-                className="flex items-center justify-between gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-4 py-3 hover:border-brand-border"
+                className={runItemClass}
                 key={run.id}
                 href={`/${userHandle}/projects/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
               >

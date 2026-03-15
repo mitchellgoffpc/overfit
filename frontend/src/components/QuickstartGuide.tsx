@@ -1,5 +1,8 @@
 import type { ReactElement } from "react";
 
+const stepClass = "grid grid-cols-[32px_1fr] items-start gap-3 rounded-[14px] border border-transparent"
+  + " bg-brand-surfaceMuted px-3.5 py-3 hover:border-brand-border";
+
 export default function QuickstartGuide(): ReactElement {
   return (
     <div className="grid gap-4 px-1 pb-2 pt-3">
@@ -8,7 +11,7 @@ export default function QuickstartGuide(): ReactElement {
         <p className="text-[13px] text-brand-textMuted">Create a project, log a run, and watch metrics stream in.</p>
       </div>
 
-      <div className="grid grid-cols-[32px_1fr] items-start gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-3.5 py-3 hover:border-brand-border">
+      <div className={stepClass}>
         <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-[#e1f2f2] text-[13px] font-semibold text-brand-accentStrong">1</div>
         <div>
           <p className="mb-2 font-semibold">Install the Underfit SDK</p>
@@ -16,7 +19,7 @@ export default function QuickstartGuide(): ReactElement {
         </div>
       </div>
 
-      <div className="grid grid-cols-[32px_1fr] items-start gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-3.5 py-3 hover:border-brand-border">
+      <div className={stepClass}>
         <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-[#e1f2f2] text-[13px] font-semibold text-brand-accentStrong">2</div>
         <div>
           <p className="mb-2 font-semibold">Authenticate with your workspace</p>
@@ -24,7 +27,7 @@ export default function QuickstartGuide(): ReactElement {
         </div>
       </div>
 
-      <div className="grid grid-cols-[32px_1fr] items-start gap-3 rounded-[14px] border border-transparent bg-brand-surfaceMuted px-3.5 py-3 hover:border-brand-border">
+      <div className={stepClass}>
         <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-[#e1f2f2] text-[13px] font-semibold text-brand-accentStrong">3</div>
         <div>
           <p className="mb-2 font-semibold">Log your first run</p>

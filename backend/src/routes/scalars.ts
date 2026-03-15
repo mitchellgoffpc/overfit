@@ -38,7 +38,9 @@ export function registerScalarRoutes(app: RouteApp, db: Database, scalarBuffer: 
     return await getRun(db, params.handle.trim().toLowerCase(), params.projectName.trim().toLowerCase(), params.runName.trim().toLowerCase());
   };
 
-  const createScalarHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, CreateScalarsResponse, CreateScalarsBody> = async (req, res) => {
+  const createScalarHandler: RouteHandler<
+    { handle: string; projectName: string; runName: string }, CreateScalarsResponse, CreateScalarsBody
+  > = async (req, res) => {
     const { success, error, data } = CreateScalarsBodySchema.safeParse(req.body);
     const run = await getPathRun(req.params);
     if (!success) {

@@ -26,7 +26,8 @@ const UpdateRunPayloadSchema = z.strictObject({
 type CreateRunPayload = z.infer<typeof CreateRunPayloadSchema>;
 type UpdateRunPayload = z.infer<typeof UpdateRunPayloadSchema>;
 
-const parseWordList = (relativePath: string): string[] => fs.readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf-8").split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
+const parseWordList = (relativePath: string): string[] =>
+  fs.readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf-8").split(/\r?\n/).map((word) => word.trim()).filter(Boolean);
 const adjectives = parseWordList("../../src/wordlists/adjectives.txt");
 const nouns = parseWordList("../../src/wordlists/nouns.txt");
 const randomWord = (words: string[]): string => {

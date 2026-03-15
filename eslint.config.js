@@ -4,7 +4,6 @@ import eslint from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import importPlugin from "eslint-plugin-import";
-import a11yPlugin from "eslint-plugin-jsx-a11y";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import globals from "globals";
@@ -54,15 +53,7 @@ const additionalRules = {
       "patterns": ["./*", "../*"]
     }
   ],
-  "curly": "error",
-  "eqeqeq": "error",
-  "eol-last": ["error", "always"],
-  "no-console": "warn",
-  "no-multi-spaces": "error",
-  "no-trailing-spaces": "error",
-  "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0 }],
-  "object-curly-spacing": ["error", "always"],
-  "semi": ["error", "always"],
+
   "react/jsx-boolean-value": ["error", "never"],
   "react/jsx-no-constructed-context-values": "error",
   "react/jsx-no-useless-fragment": "error",
@@ -77,8 +68,18 @@ const additionalRules = {
   "react/no-unstable-nested-components": "error",
   "react/prefer-read-only-props": "error",
   "react/self-closing-comp": "error",
-  "jsx-a11y/alt-text": "error",
-  "jsx-a11y/anchor-is-valid": "error",
+
+  "curly": "error",
+  "eqeqeq": "error",
+  "eol-last": ["error", "always"],
+  "max-len": ["error", { code: 160 }],
+  "no-console": "warn",
+  "no-multi-spaces": "error",
+  "no-trailing-spaces": "error",
+  "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0 }],
+  "object-curly-spacing": ["error", "always"],
+  "prefer-const": "error",
+  "semi": ["error", "always"],
 };
 
 const overrideRules = {
@@ -130,7 +131,6 @@ export default [
       "import": importPlugin,
       "react": reactPlugin,
       "react-hooks": reactHooksPlugin,
-      "jsx-a11y": a11yPlugin,
     },
     rules: {
       ...baseRules,
