@@ -7,15 +7,9 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { createSession } from "repositories/sessions";
+import { createUser } from "repositories/users";
 
-interface RegisterResponse {
-  session: { token: string };
-}
-
-const registerUser = async (app: ReturnType<typeof createApp>, email: string, handle: string) => {
-  const response = await request(app).post(`${API_BASE}/auth/register`).send({ email, handle, password: "password123" }).expect(200);
-  return response.body as RegisterResponse;
-};
 const sessionCookie = (token: string) => `underfit_session=${token}`;
 
 describe("user avatars routes", () => {
@@ -25,14 +19,15 @@ describe("user avatars routes", () => {
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
-    await registerUser(app, "ada@example.com", "ada");
+    await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null });
   });
 
   it("uploads, normalizes, and fetches an avatar", async () => {
-    const { session } = await registerUser(app, "sam@example.com", "sam");
+    const { id: userId } = (await createUser(db, { email: "sam@example.com", handle: "sam", name: "Sam", bio: null }))!;
+    const { id: sessionToken } = await createSession(db, { userId, expiresAt: "2099-01-01T00:00:00.000Z" });
     const png = await sharp({ create: { width: 512, height: 256, channels: 3, background: { r: 20, g: 120, b: 200 } } }).png().toBuffer();
 
-    await request(app).put(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(session.token)).set("Content-Type", "image/png").send(png).expect(200);
+    await request(app).put(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(sessionToken)).set("Content-Type", "image/png").send(png).expect(200);
 
     const response = await request(app).get(`${API_BASE}/users/sam/avatar`).expect(200);
     expect(response.headers["content-type"]).toBe("image/jpeg");
@@ -43,10 +38,11 @@ describe("user avatars routes", () => {
   });
 
   it("rejects invalid avatar bytes", async () => {
-    const { session } = await registerUser(app, "alex@example.com", "alex");
+    const { id: userId } = (await createUser(db, { email: "alex@example.com", handle: "alex", name: "Alex", bio: null }))!;
+    const { id: sessionToken } = await createSession(db, { userId, expiresAt: "2099-01-01T00:00:00.000Z" });
     const response = await request(app)
       .put(`${API_BASE}/me/avatar`)
-      .set("Cookie", sessionCookie(session.token))
+      .set("Cookie", sessionCookie(sessionToken))
       .set("Content-Type", "application/octet-stream")
       .send(Buffer.from("not an image"))
       .expect(400);
@@ -54,11 +50,12 @@ describe("user avatars routes", () => {
   });
 
   it("deletes an avatar", async () => {
-    const { session } = await registerUser(app, "maya@example.com", "maya");
+    const { id: userId } = (await createUser(db, { email: "maya@example.com", handle: "maya", name: "Maya", bio: null }))!;
+    const { id: sessionToken } = await createSession(db, { userId, expiresAt: "2099-01-01T00:00:00.000Z" });
     const png = await sharp({ create: { width: 128, height: 128, channels: 3, background: { r: 255, g: 0, b: 0 } } }).png().toBuffer();
-    await request(app).put(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(session.token)).set("Content-Type", "image/png").send(png).expect(200);
+    await request(app).put(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(sessionToken)).set("Content-Type", "image/png").send(png).expect(200);
 
-    await request(app).delete(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(session.token)).expect(200);
+    await request(app).delete(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(sessionToken)).expect(200);
     const response = await request(app).get(`${API_BASE}/users/maya/avatar`).expect(404);
     expect(response.body).toMatchObject({ error: "Avatar not found" });
   });
