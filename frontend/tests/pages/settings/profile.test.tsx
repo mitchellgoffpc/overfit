@@ -110,9 +110,10 @@ describe("SettingsProfileContent", () => {
     const file = new File(["img"], "avatar.png", { type: "image/png" });
     const fileInput = document.querySelector<HTMLInputElement>("input[type='file']")!;
     fireEvent.change(fileInput, { target: { files: [file] } });
-
+    expect(uploadAvatarMock).toHaveBeenCalledTimes(1);
+    expect(uploadAvatarMock.mock.calls[0]?.[0]).toBe(file);
     await waitFor(() => {
-      expect(uploadAvatarMock).toHaveBeenCalledWith(file);
+      expect(screen.getByText("Profile picture updated")).toBeInTheDocument();
     });
   });
 

@@ -94,7 +94,7 @@ describe("SettingsKeysContent", () => {
     });
   });
 
-  it("adding a key with an empty label shows a validation error", async () => {
+  it("adding a key with an empty label shows a validation error", () => {
     render(<SettingsKeysContent />);
 
     fireEvent.click(screen.getByRole("button", { name: "Add key" }));

@@ -1,6 +1,6 @@
 import type { User } from "@underfit/types";
 import type { ChangeEvent, ReactElement } from "react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { apiBase } from "helpers";
 import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useAccountsStore } from "stores/accounts";
@@ -31,7 +31,6 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [avatarVersion, setAvatarVersion] = useState(() => Date.now());
   const [isAvatarMissing, setIsAvatarMissing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const initials = useMemo(() => user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(), [user.name]);
   const avatarSrc = useMemo(() => `${apiBase}/users/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`, [avatarVersion, user.handle]);
 
@@ -146,26 +145,19 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
               />
             ) : initials}
           </div>
-<input
-            ref={fileInputRef}
-            className="hidden"
-            type="file"
-            accept="image/*"
-            onChange={(event) => {
-              void handleAvatarUpload(event);
-            }}
-          />
-          <div className="mt-2 flex gap-2">
-            <button
-              className={uploadButtonClass}
-              type="button"
-              onClick={() => {
-                fileInputRef.current?.click();
-              }}
-              disabled={isAvatarSaving}
-            >
+<div className="mt-2 flex gap-2">
+            <label className={`${uploadButtonClass} cursor-pointer ${isAvatarSaving ? "cursor-wait opacity-70" : ""}`}>
               {isAvatarSaving ? "Uploading..." : "Upload"}
-            </button>
+              <input
+                className="hidden"
+                type="file"
+                accept="image/*"
+                disabled={isAvatarSaving}
+                onChange={(event) => {
+                  void handleAvatarUpload(event);
+                }}
+              />
+            </label>
             <button
               className={smallButtonClass}
               type="button"
@@ -187,5 +179,5 @@ export default function SettingsProfileContent(): ReactElement {
   const user = useAccountsStore((state) => state.me());
   const updateProfile = useAccountsStore((state) => state.updateProfile);
 
-  return user ? <ProfileSettingsCard key={user.id} user={user} updateProfile={updateProfile} /> : <div />;
+  return user ? <ProfileSettingsCard user={user} updateProfile={updateProfile} /> : <div />;
 }
