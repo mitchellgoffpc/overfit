@@ -39,6 +39,7 @@ Thumbs.db
 
 # Tests
 .vitest/
+.eslintcache
 
 # Worktrees
 .worktrees/

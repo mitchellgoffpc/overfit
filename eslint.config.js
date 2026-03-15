@@ -33,6 +33,7 @@ const additionalRules = {
   "@typescript-eslint/promise-function-async": "error",
   "@typescript-eslint/require-array-sort-compare": "error",
   "@typescript-eslint/strict-void-return": "error",
+
   "import/first": "error",
   "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
   "import/no-extraneous-dependencies": ["error", { "packageDir": [".", "./frontend", "./backend", "./packages/types"] }],
