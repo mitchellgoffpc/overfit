@@ -1,15 +1,20 @@
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faBuilding, faKey, faUser } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
 import { Link, Redirect, Route, Switch, useLocation } from "wouter";
 
 import Navbar from "components/Navbar";
 import SettingsKeysContent from "pages/settings/api-keys";
+import SettingsOrganizationsContent from "pages/settings/organizations";
 import SettingsProfileContent from "pages/settings/profile";
 import { useAccountsStore } from "stores/accounts";
 
 const tabs = [
-  { path: "/settings/profile", label: "Profile", title: "Profile", description: "Update the name and bio shown across your workspace." },
-  { path: "/settings/api-keys", label: "API Keys", title: "API Keys", description: "Manage the API keys used to authenticate scripts and agents." },
-] as const;
+  { path: "/settings/profile", label: "Profile", icon: faUser, title: "Profile", description: "Update the name and bio shown across your workspace." },
+  { path: "/settings/organizations", label: "Organizations", icon: faBuilding, title: "Organizations", description: "Manage the organizations you belong to." },
+  { path: "/settings/api-keys", label: "API Keys", icon: faKey, title: "API Keys", description: "Manage API keys used to authenticate scripts and agents." },
+] as const satisfies readonly { path: string; label: string; icon: IconDefinition; title: string; description: string }[];
 
 export default function SettingsPage(): ReactElement {
   const user = useAccountsStore((state) => state.me());
@@ -39,6 +44,7 @@ export default function SettingsPage(): ReactElement {
               return (
                 <Link key={tab.path} className={linkClass} href={tab.path}>
                   {isActive ? <span className="absolute inset-y-1.5 -left-2 w-1 rounded-full bg-brand-accent" /> : null}
+                  <FontAwesomeIcon icon={tab.icon} className="mr-2 h-3.5 w-3.5" />
                   {tab.label}
                 </Link>
               );
@@ -55,6 +61,7 @@ export default function SettingsPage(): ReactElement {
 
           <Switch>
             <Route path="/settings/profile" component={SettingsProfileContent} />
+            <Route path="/settings/organizations" component={SettingsOrganizationsContent} />
             <Route path="/settings/api-keys" component={SettingsKeysContent} />
             <Route path="/settings/*"><Redirect to="/settings/profile" /></Route>
           </Switch>
