@@ -21,7 +21,7 @@ export default function SettingsPage(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar locationLabel="Settings" />
+      <Navbar breadcrumbs={[{ label: "Settings" }]} />
 
       <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[260px_1fr]">
         <aside className="border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">

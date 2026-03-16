@@ -35,7 +35,7 @@ function SnakeGame(): ReactElement {
   const [score, setScore] = useState(0);
   const [started, setStarted] = useState(false);
 
-  const reset = useCallback(() => {
+  const reset = () => {
     const start = [{ x: 7, y: 7 }];
     setSnake(start);
     setFood(randomPoint(start));
@@ -43,7 +43,7 @@ function SnakeGame(): ReactElement {
     setGameOver(false);
     setScore(0);
     setStarted(false);
-  }, []);
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -57,7 +57,7 @@ function SnakeGame(): ReactElement {
         setDir((prev) => (newDir === OPPOSITES[prev] ? prev : newDir));
         setStarted(true);
       }
-      if (e.key === "r") { reset(); }
+      if (e.key === "r" && !e.ctrlKey && !e.metaKey) { reset(); }
     };
     window.addEventListener("keydown", handler);
     return () => { window.removeEventListener("keydown", handler); };
@@ -122,7 +122,7 @@ export default function NotFoundPage(): ReactElement {
 
   return (
     <div className="flex flex-col h-screen bg-brand-bg">
-      <Navbar locationLabel="Not Found" />
+      <Navbar breadcrumbs={[{ label: "Not Found" }]} />
       <div className="flex-1 flex flex-col items-center justify-center gap-8 p-8">
         <div className="text-center">
           <h1 className="text-6xl font-bold text-brand-text mb-2">404</h1>

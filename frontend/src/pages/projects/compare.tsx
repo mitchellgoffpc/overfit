@@ -264,13 +264,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar
-        locationLabel="compare"
-        ownerLabel={handle}
-        ownerHref={`/${handle}`}
-        parentLabel={projectName}
-        parentHref={`/${handle}/${projectName}`}
-      />
+      <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: "compare" }]} />
       <div className="flex-1 lg:grid lg:grid-cols-[280px_1fr]">
         {!showProjectNotFound ? (
           <aside className="flex h-full flex-col border-b border-brand-border bg-[#f0f6f7] px-4 py-4 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">

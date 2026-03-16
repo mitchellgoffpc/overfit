@@ -52,7 +52,7 @@ describe("Navbar logout", () => {
 
     render(
       <Router hook={hook}>
-        <Navbar locationLabel="Projects" />
+        <Navbar breadcrumbs={[{ label: "Projects" }]} />
       </Router>
     );
 
@@ -75,7 +75,7 @@ describe("Navbar logout", () => {
 
     render(
       <Router hook={hook}>
-        <Navbar locationLabel="Projects" />
+        <Navbar breadcrumbs={[{ label: "Projects" }]} />
       </Router>
     );
 

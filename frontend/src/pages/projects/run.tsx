@@ -33,13 +33,7 @@ export default function RunDetailRoute(): ReactElement {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar
-        locationLabel={runName}
-        ownerLabel={handle}
-        ownerHref={`/${handle}`}
-        parentLabel={projectName}
-        parentHref={`/${handle}/${projectName}`}
-      />
+      <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: runName }]} />
 
       <div>
         <main className={`p-6 lg:p-8 ${activeTab === "logs" ? "flex min-h-[calc(100vh-83px)] flex-col" : ""}`}>

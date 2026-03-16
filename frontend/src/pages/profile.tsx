@@ -46,11 +46,12 @@ export default function ProfileRoute(): ReactElement {
   }, [fetchRuns, handle, isProjectsLoading]);
 
   if (notFound) { return <NotFoundPage />; }
+  if (!account) { return <div />; }
   if (organization) { return <OrganizationPage organization={organization} />; }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar locationLabel="Profile" ownerLabel={handle} ownerHref={`/${handle}`} />
+      <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Profile" }]} />
 
       <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[280px_1fr]">
         <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />

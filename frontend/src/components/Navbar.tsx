@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
 import { apiBase } from "helpers";
@@ -8,22 +8,22 @@ import { useAuthStore } from "stores/auth";
 
 const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition"
   + " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
+const menuItemClass = "block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]";
 
-interface NavbarProps {
-  readonly locationLabel: string;
-  readonly ownerLabel?: string;
-  readonly ownerHref?: string;
-  readonly parentLabel?: string;
-  readonly parentHref?: string;
+export interface Breadcrumb {
+  readonly label: string;
+  readonly href?: string;
 }
 
-export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLabel, parentHref }: NavbarProps): ReactElement {
+interface NavbarProps {
+  readonly breadcrumbs: Breadcrumb[];
+}
+
+export default function Navbar({ breadcrumbs }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
   const user = useAccountsStore((state) => state.me());
   const logout = useAuthStore((state) => state.logout);
   const profileHref = user ? `/${user.handle}` : "/";
-  const currentOwnerLabel = ownerLabel ?? user?.handle ?? "workspace";
-  const currentOwnerHref = ownerHref ?? profileHref;
   const name = user?.name ?? "";
   const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,17 +36,10 @@ export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLab
     }
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!menuRef.current) {
-        return;
+      if (menuRef.current && event.target instanceof Node && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
       }
-
-      if (event.target instanceof Node && menuRef.current.contains(event.target)) {
-        return;
-      }
-
-      setIsMenuOpen(false);
     };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsMenuOpen(false);
@@ -55,7 +48,6 @@ export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLab
 
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
@@ -81,23 +73,30 @@ export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLab
           </div>
         </Link>
 
-        <div className="hidden h-8 w-px bg-brand-border sm:block" />
-
-        <div className="flex items-center gap-1 text-sm">
-          <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={currentOwnerHref}>
-            {currentOwnerLabel}
-          </Link>
-          <span className="text-brand-textMuted">/</span>
-          {parentLabel && parentHref ? (
-            <>
-              <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={parentHref}>
-                {parentLabel}
-              </Link>
-              <span className="text-brand-textMuted">/</span>
-            </>
-          ) : null}
-          <span className="font-semibold">{locationLabel}</span>
-        </div>
+        {breadcrumbs.length > 0 ? (
+          <>
+            <div className="hidden h-8 w-px bg-brand-border sm:block" />
+            <div className="flex items-center gap-1 text-sm">
+              {breadcrumbs.map((crumb, i) => {
+                const isLast = i === breadcrumbs.length - 1;
+                return (
+                  <Fragment key={crumb.label}>
+                    {i > 0 ? <span className="text-brand-textMuted">/</span> : null}
+                    {isLast ? (
+                      <span className="font-semibold">{crumb.label}</span>
+                    ) : crumb.href ? (
+                      <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={crumb.href}>
+                        {crumb.label}
+                      </Link>
+                    ) : (
+                      <span className="text-brand-textMuted">{crumb.label}</span>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
       </div>
 
       {user ? (
@@ -107,9 +106,7 @@ export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLab
             className={navButtonClass}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
-            onClick={() => {
-              setIsMenuOpen((prev) => !prev);
-            }}
+            onClick={() => { setIsMenuOpen((prev) => !prev); }}
           >
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold">{name}</p>
@@ -122,9 +119,7 @@ export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLab
                 className="absolute inset-0 h-full w-full object-cover"
                 src={avatarSrc}
                 alt={`${name} avatar`}
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
+                onError={(event) => { event.currentTarget.style.display = "none"; }}
               />
             </div>
           </button>
@@ -133,26 +128,24 @@ export default function Navbar({ locationLabel, ownerLabel, ownerHref, parentLab
               className="absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2 shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
               role="menu"
             >
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href={profileHref}>
+              <Link className={menuItemClass} role="menuitem" href={profileHref}>
                 Profile
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/">
+              <Link className={menuItemClass} role="menuitem" href="/">
                 Projects
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href={profileHref}>
+              <Link className={menuItemClass} role="menuitem" href={profileHref}>
                 Runs
               </Link>
-              <Link className="block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]" role="menuitem" href="/settings/profile">
+              <Link className={menuItemClass} role="menuitem" href="/settings/profile">
                 Settings
               </Link>
               <div className="my-2 border-t border-brand-border" />
               <button
                 type="button"
-                className="block w-full px-4 py-2 text-left text-sm text-brand-text hover:bg-[#f3f7f7]"
+                className={`w-full text-left ${menuItemClass}`}
                 role="menuitem"
-                onClick={() => {
-                  void handleLogout();
-                }}
+                onClick={() => { void handleLogout(); }}
               >
                 Sign Out
               </button>
