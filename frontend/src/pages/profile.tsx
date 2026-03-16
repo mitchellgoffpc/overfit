@@ -7,6 +7,7 @@ import ProfileActivityHeatmap from "components/profile/ProfileActivityHeatmap";
 import ProfileProjectsPanel from "components/profile/ProfileProjectsPanel";
 import ProfileRunsPanel from "components/profile/ProfileRunsPanel";
 import ProfileSidebar from "components/profile/ProfileSidebar";
+import NotFoundPage from "pages/not-found";
 import OrganizationPage from "pages/organization";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
@@ -16,6 +17,7 @@ import { useRunStore } from "stores/runs";
 export default function ProfileRoute(): ReactElement {
   const { handle } = useParams<{ handle: string }>();
   const account = useAccountsStore((state) => state.accounts[handle]);
+  const notFound = useAccountsStore((state) => state.notFoundHandles.has(handle));
   const fetchAccount = useAccountsStore((state) => state.fetchAccount);
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
@@ -32,8 +34,8 @@ export default function ProfileRoute(): ReactElement {
   const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle);
 
   useEffect(() => {
-    if (!account) { void fetchAccount(handle); }
-  }, [account, fetchAccount, handle]);
+    if (!account && !notFound) { void fetchAccount(handle); }
+  }, [account, fetchAccount, handle, notFound]);
 
   useEffect(() => {
     if (handle) { void fetchProjects(handle); }
@@ -43,6 +45,7 @@ export default function ProfileRoute(): ReactElement {
     if (handle && !isProjectsLoading) { void fetchRuns(handle); }
   }, [fetchRuns, handle, isProjectsLoading]);
 
+  if (notFound) { return <NotFoundPage />; }
   if (organization) { return <OrganizationPage organization={organization} />; }
 
   return (
@@ -62,7 +65,6 @@ export default function ProfileRoute(): ReactElement {
           </header>
 
           <div className="grid gap-5">
-            {!user && !isProjectsLoading && !isRunsLoading ? <div className="text-[13px] text-brand-textMuted">User not found.</div> : null}
             <ProfileProjectsPanel
               projects={projects}
               runs={runs}

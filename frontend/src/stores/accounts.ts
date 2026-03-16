@@ -23,6 +23,7 @@ export const deleteCurrentUserAvatar = async (): Promise<UserResult> => {
 
 interface AccountsState {
   accounts: Record<string, User | Organization>;
+  notFoundHandles: Set<string>;
   me: () => User | null;
   fetchAccount: (handle: string) => Promise<User | Organization | null>;
   updateProfile: (name: string, bio: string) => Promise<UserResult>;
@@ -31,6 +32,7 @@ interface AccountsState {
 
 export const useAccountsStore = create<AccountsState>((set, get) => ({
   accounts: {},
+  notFoundHandles: new Set(),
 
   me: () => {
     const currentHandle = useAuthStore.getState().currentHandle;
@@ -44,6 +46,7 @@ export const useAccountsStore = create<AccountsState>((set, get) => ({
       set((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
       return body;
     } else {
+      set((state) => ({ notFoundHandles: new Set(state.notFoundHandles).add(handle) }));
       return null;
     }
   },

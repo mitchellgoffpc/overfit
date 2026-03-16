@@ -5,6 +5,7 @@ import { Router, Redirect, Route, Switch, useLocation } from "wouter";
 
 import HomePage from "pages/home";
 import LoginPage from "pages/login";
+import NotFoundPage from "pages/not-found";
 import ProfilePage from "pages/profile";
 import ProjectComparePage from "pages/projects/compare";
 import ProjectDetailPage from "pages/projects/detail";
@@ -53,6 +54,7 @@ export function AppRouter(): ReactElement {
               <Route path="/:handle/:projectName" component={ProjectDetailPage} />
               <Route path="/:handle/:projectName/runs/:runName" component={RunDetailPage} />
               <Route path="/:handle" component={ProfilePage} />
+              <Route component={NotFoundPage} />
             </Switch>
           </AuthLayout>
         </Route>
