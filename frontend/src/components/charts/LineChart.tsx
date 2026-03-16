@@ -20,27 +20,36 @@ export interface LineChartHover {
   xRatio: number;
 }
 
-const findClosestPoint = (series: LineSeries[], targetX: number): LinePoint | null => {
-  let closest: LinePoint | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
+const findClosestPoint = (series: LineSeries[], targetX: number, targetY?: number | null): { point: LinePoint; seriesIndex: number } | null => {
+  let best: { point: LinePoint; seriesIndex: number } | null = null;
+  let bestXDist = Number.POSITIVE_INFINITY;
+  let bestYDist = Number.POSITIVE_INFINITY;
 
-  for (const line of series) {
-    for (const point of line.points) {
-      const distance = Math.abs(point.x - targetX);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        closest = point;
+  for (let i = 0; i < series.length; i++) {
+    for (const point of series[i]!.points) {
+      const xDist = Math.abs(point.x - targetX);
+      if (xDist < bestXDist) {
+        bestXDist = xDist;
+        bestYDist = targetY !== null && targetY !== undefined ? Math.abs(point.y - targetY) : Number.POSITIVE_INFINITY;
+        best = { point, seriesIndex: i };
+      } else if (xDist === bestXDist && targetY !== null && targetY !== undefined) {
+        const yDist = Math.abs(point.y - targetY);
+        if (yDist < bestYDist) {
+          bestYDist = yDist;
+          best = { point, seriesIndex: i };
+        }
       }
     }
   }
 
-  return closest;
+  return best;
 };
 
 export default function LineChart({ series, height = 220, className, xLabelFormatter, yLabelFormatter, onHover, hoverStep }: LineChartProps): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [width, setWidth] = useState(0);
+  const [cursorDataY, setCursorDataY] = useState<number | null>(null);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -84,10 +93,10 @@ export default function LineChart({ series, height = 220, className, xLabelForma
 
   const hoverOverlay = useMemo<LineChartHoverOverlay | null>(() => {
     if (hoverStep === null || hoverStep === undefined || series.length === 0) { return null; }
-    const closest = findClosestPoint(series, hoverStep);
-    if (!closest) { return null; }
-    return { point: closest, color: series[0]?.color ?? "#1a7b7d" };
-  }, [hoverStep, series]);
+    const match = findClosestPoint(series, hoverStep, cursorDataY);
+    if (!match) { return null; }
+    return { point: match.point, color: series[match.seriesIndex]?.color ?? "#1a7b7d" };
+  }, [cursorDataY, hoverStep, series]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -114,18 +123,22 @@ export default function LineChart({ series, height = 220, className, xLabelForma
 
     const clampedPlotX = Math.min(Math.max(localX, geometry.padding.left), geometry.padding.left + geometry.plotWidth);
     const targetX = geometry.xUnscale(clampedPlotX);
-    const closest = findClosestPoint(series, targetX);
-    if (!closest) {
+    const targetY = geometry.yUnscale(localY);
+    const match = findClosestPoint(series, targetX, targetY);
+    if (!match) {
+      setCursorDataY(null);
       if (typeof onHover === "function") { onHover(null); }
       return;
     }
 
-    const cursorX = geometry.xScale(closest.x);
+    setCursorDataY(targetY);
+    const cursorX = geometry.xScale(match.point.x);
     const xRatio = geometry.width > 0 ? cursorX / geometry.width : 0;
-    if (typeof onHover === "function") { onHover({ step: closest.x, cursorX, xRatio }); }
+    if (typeof onHover === "function") { onHover({ step: match.point.x, cursorX, xRatio }); }
   }, [geometry, onHover, series]);
 
   const handlePointerLeave = useCallback(() => {
+    setCursorDataY(null);
     if (typeof onHover === "function") { onHover(null); }
   }, [onHover]);
 
