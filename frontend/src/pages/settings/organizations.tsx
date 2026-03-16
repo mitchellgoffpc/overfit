@@ -19,8 +19,10 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [newHandle, setNewHandle] = useState("");
   const [newName, setNewName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isLeaving, setIsLeaving] = useState<string | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
@@ -44,20 +46,28 @@ export default function SettingsOrganizationsContent(): ReactElement {
 
   const handleCreate = async () => {
     if (!newHandle.trim() || !newName.trim()) {
-      setError("Handle and name are required.");
+      setCreateError("Handle and name are required.");
       return;
     }
     setIsCreating(true);
-    setError(null);
+    setCreateError(null);
     const result = await createOrganization(newHandle, newName);
     if (result.ok) {
       setMemberships((current) => [...current, { ...result.body, role: "ADMIN" }]);
       setNewHandle("");
       setNewName("");
+      setShowCreate(false);
     } else {
-      setError(result.error);
+      setCreateError(result.error);
     }
     setIsCreating(false);
+  };
+
+  const openCreateModal = () => {
+    setNewHandle("");
+    setNewName("");
+    setCreateError(null);
+    setShowCreate(true);
   };
 
   const handleLeave = async (orgHandle: string) => {
@@ -74,33 +84,15 @@ export default function SettingsOrganizationsContent(): ReactElement {
 
   return (
     <section className="grid gap-4">
-      <div className="grid gap-3 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
-        <p className="text-sm font-semibold">New organization</p>
-        {error ? <p className="text-xs text-[#b42318]">{error}</p> : null}
-        <div className="flex gap-2">
-          <input
-            className={inputClass + " flex-1"}
-            type="text"
-            placeholder="Handle (e.g. acme)"
-            value={newHandle}
-            onChange={(e) => { setNewHandle(e.target.value); }}
-          />
-          <input
-            className={inputClass + " flex-1"}
-            type="text"
-            placeholder="Display name"
-            value={newName}
-            onChange={(e) => { setNewName(e.target.value); }}
-          />
-          <button
-            className="rounded-[10px] bg-brand-accent px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
-            type="button"
-            onClick={() => { void handleCreate(); }}
-            disabled={isCreating}
-          >
-            {isCreating ? "Creating..." : "New organization"}
-          </button>
-        </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Organizations</h1>
+        <button
+          className="rounded-[10px] bg-brand-accent px-3 py-2 text-sm font-semibold text-white shadow-soft"
+          type="button"
+          onClick={openCreateModal}
+        >
+          New organization
+        </button>
       </div>
 
       <div className="grid gap-4 rounded-[18px] border border-brand-border bg-brand-surface px-5 pb-3 pt-5 shadow-soft">
@@ -108,6 +100,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
           <p className="text-sm font-semibold">Your organizations</p>
           <p className="text-xs text-brand-textMuted">{memberships.length} total</p>
         </div>
+        {error ? <div className="text-xs text-[#b42318]">{error}</div> : null}
         {isLoading ? <div className="text-xs text-brand-textMuted">Loading organizations...</div> : null}
         {!isLoading && memberships.length === 0 ? <div className="text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
         <div className={memberships.length > 0 ? "border-t border-brand-border" : ""}>
@@ -132,6 +125,37 @@ export default function SettingsOrganizationsContent(): ReactElement {
           ))}
         </div>
       </div>
+
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); }}>
+        <div className="grid gap-3.5">
+          <div className="grid place-items-center gap-2.5 text-center">
+            <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-brand-text text-[22px] text-white">
+              <span className="font-display">U</span>
+            </div>
+            <div>
+              <p className="text-xl font-semibold">New organization</p>
+              <p className="mt-1 text-[13px] text-brand-textMuted">Create a shared workspace for your team.</p>
+            </div>
+          </div>
+          {createError ? <div className="rounded-[10px] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{createError}</div> : null}
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+            Handle
+            <input className={inputClass} type="text" placeholder="acme" value={newHandle} onChange={(e) => { setNewHandle(e.target.value); }} />
+          </label>
+          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+            Display name
+            <input className={inputClass} type="text" placeholder="Acme Corp" value={newName} onChange={(e) => { setNewName(e.target.value); }} />
+          </label>
+          <button
+            className="rounded-[10px] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+            type="button"
+            onClick={() => { void handleCreate(); }}
+            disabled={isCreating}
+          >
+            {isCreating ? "Creating..." : "Create organization"}
+          </button>
+        </div>
+      </Modal>
 
       <Modal open={leaveTarget !== null} onClose={() => { setLeaveTarget(null); }}>
         <div className="grid gap-4">

@@ -179,5 +179,5 @@ export default function SettingsProfileContent(): ReactElement {
   const user = useAccountsStore((state) => state.me());
   const updateProfile = useAccountsStore((state) => state.updateProfile);
 
-  return user ? <ProfileSettingsCard user={user} updateProfile={updateProfile} /> : <div />;
+  return user ? <><h1 className="mb-6 text-2xl font-semibold">Profile</h1><ProfileSettingsCard user={user} updateProfile={updateProfile} /></> : <div />;
 }

@@ -8,19 +8,15 @@ import Navbar from "components/Navbar";
 import SettingsKeysContent from "pages/settings/api-keys";
 import SettingsOrganizationsContent from "pages/settings/organizations";
 import SettingsProfileContent from "pages/settings/profile";
-import { useAccountsStore } from "stores/accounts";
 
 const tabs = [
-  { path: "/settings/profile", label: "Profile", icon: faUser, title: "Profile", description: "Update the name and bio shown across your workspace." },
-  { path: "/settings/organizations", label: "Organizations", icon: faBuilding, title: "Organizations", description: "Manage the organizations you belong to." },
-  { path: "/settings/api-keys", label: "API Keys", icon: faKey, title: "API Keys", description: "Manage API keys used to authenticate scripts and agents." },
-] as const satisfies readonly { path: string; label: string; icon: IconDefinition; title: string; description: string }[];
+  { path: "/settings/profile", label: "Profile", icon: faUser },
+  { path: "/settings/organizations", label: "Organizations", icon: faBuilding },
+  { path: "/settings/api-keys", label: "API Keys", icon: faKey },
+] as const satisfies readonly { path: string; label: string; icon: IconDefinition }[];
 
 export default function SettingsPage(): ReactElement {
-  const user = useAccountsStore((state) => state.me());
   const [location] = useLocation();
-  const name = user?.name ?? "workspace";
-  const handle = user?.handle ?? "workspace";
   const activeTab = tabs.find((tab) => tab.path === location) ?? tabs[0];
 
   return (
@@ -28,13 +24,8 @@ export default function SettingsPage(): ReactElement {
       <Navbar locationLabel="Settings" />
 
       <div className="mx-auto w-full max-w-6xl lg:grid lg:grid-cols-[260px_1fr]">
-        <aside className="flex flex-col gap-6 border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
-          <div className="grid gap-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-textMuted">Settings</p>
-            <p className="text-sm font-semibold">{name}</p>
-            <p className="text-xs text-brand-textMuted">@{handle}</p>
-          </div>
-          <div className="grid gap-2">
+        <aside className="border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
+          <div className="grid gap-0.5">
             {tabs.map((tab) => {
               const isActive = tab.path === activeTab.path;
               const activeClass = isActive
@@ -53,12 +44,6 @@ export default function SettingsPage(): ReactElement {
         </aside>
 
         <main className="p-6 lg:p-8">
-          <header className="mb-6">
-            <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle}</p>
-            <h1 className="mt-1 font-display text-3xl">{activeTab.title}</h1>
-            <p className="mt-2 text-[13px] text-brand-textMuted">{activeTab.description}</p>
-          </header>
-
           <Switch>
             <Route path="/settings/profile" component={SettingsProfileContent} />
             <Route path="/settings/organizations" component={SettingsOrganizationsContent} />

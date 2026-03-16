@@ -76,6 +76,7 @@ export default function SettingsKeysContent(): ReactElement {
 
   return (
     <section className="grid gap-4">
+      <h1 className="text-2xl font-semibold">API Keys</h1>
       <div className="grid gap-3 rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
         <div className="grid gap-1.5">
           <p className="text-sm font-semibold">New key</p>
