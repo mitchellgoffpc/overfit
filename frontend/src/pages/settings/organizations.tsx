@@ -2,6 +2,7 @@ import type { Organization, OrganizationRole } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
+import Modal from "components/Modal";
 import { useAuthStore } from "stores/auth";
 import { createOrganization, fetchMyMemberships, leaveOrganization } from "stores/organizations";
 
@@ -22,6 +23,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const [newName, setNewName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isLeaving, setIsLeaving] = useState<string | null>(null);
+  const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
 
   useEffect(() => {
     if (loaded || status !== "authenticated") { return; }
@@ -121,7 +123,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
               <button
                 className={leaveButtonClass}
                 type="button"
-                onClick={() => { void handleLeave(membership.handle); }}
+                onClick={() => { setLeaveTarget(membership); }}
                 disabled={isLeaving === membership.handle}
               >
                 {isLeaving === membership.handle ? "Leaving..." : "Leave"}
@@ -130,6 +132,37 @@ export default function SettingsOrganizationsContent(): ReactElement {
           ))}
         </div>
       </div>
+
+      <Modal open={leaveTarget !== null} onClose={() => { setLeaveTarget(null); }}>
+        <div className="grid gap-4">
+          <p className="text-sm font-semibold">Leave {leaveTarget?.name}?</p>
+          <p className="text-xs text-brand-textMuted">
+            Once you leave this organization, you won&apos;t be able to rejoin unless you are invited by an existing member.
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              className="rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold hover:bg-brand-hover"
+              type="button"
+              onClick={() => { setLeaveTarget(null); }}
+            >
+              Cancel
+            </button>
+            <button
+              className={leaveButtonClass}
+              type="button"
+              disabled={isLeaving !== null}
+              onClick={() => {
+                if (!leaveTarget) { return; }
+                const handle = leaveTarget.handle;
+                setLeaveTarget(null);
+                void handleLeave(handle);
+              }}
+            >
+              {isLeaving !== null ? "Leaving..." : "Leave organization"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 }
