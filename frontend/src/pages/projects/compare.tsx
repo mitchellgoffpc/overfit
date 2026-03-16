@@ -238,30 +238,32 @@ export default function ProjectCompareRoute(): ReactElement {
   const renderRunItem = (run: Run, index: number) => {
     const isVisible = hiddenRunNames[run.name] !== true;
     const color = runColors[index % runColors.length] ?? "#1a7b7d";
+    const isActive = run.status === "running";
     return (
       <button
         className={[
-          "w-full rounded-xl border px-3 py-2 text-left transition",
-          isVisible ? "border-brand-border bg-brand-surface" : "border-brand-border/70 bg-brand-surfaceMuted opacity-70"
+          "relative w-full px-4 py-2 text-left transition lg:px-5",
+          "after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-brand-border/70 after:content-['']",
+          "lg:after:left-5 lg:after:right-5 last:after:hidden",
+          isVisible ? "bg-transparent hover:bg-brand-surface/70" : "bg-transparent opacity-65"
         ].join(" ")}
         key={run.id}
         onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
         type="button"
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <span className="truncate text-sm font-semibold">{run.name}</span>
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+            <span className="truncate text-[13px] font-medium leading-5">{run.name}</span>
           </div>
-          <span className={`h-2 w-2 rounded-full ${isVisible ? "bg-brand-accent" : "bg-brand-border"}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-[#24b26b]" : "bg-brand-border"}`} />
         </div>
-        <p className="mt-1 text-xs text-brand-textMuted">{run.status}</p>
       </button>
     );
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
       <Navbar
         locationLabel="compare"
         ownerLabel={handle}
@@ -269,56 +271,58 @@ export default function ProjectCompareRoute(): ReactElement {
         parentLabel={projectName}
         parentHref={`/${handle}/${projectName}`}
       />
-      <main className="p-6 lg:p-8">
-        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle}</p>
-            <div className="mt-1 flex items-center gap-1.5 text-sm">
-              <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={`/${handle}/${projectName}`}>
-                {projectName}
-              </Link>
-              <span className="text-brand-textMuted">/</span>
-              <span className="font-semibold text-brand-text">compare</span>
-            </div>
-          </div>
-          <div className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-sm text-brand-textMuted">
-            plotting {visibleRuns.length} / {projectRuns.length} runs
-          </div>
-        </header>
-
-        {showProjectNotFound ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
-        {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
-        {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
+      <div className="flex-1 lg:grid lg:grid-cols-[280px_1fr]">
         {!showProjectNotFound ? (
-          <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-            <aside className="rounded-[18px] border border-brand-border bg-brand-surface p-4 shadow-soft">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] text-brand-textMuted">Runs</h2>
-                <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] text-brand-textMuted">{projectRuns.length}</span>
-              </div>
-              <div className="mb-3 flex gap-2">
-                <button
-                  className="flex-1 rounded-lg border border-brand-border bg-brand-surfaceMuted px-2 py-1.5 text-xs font-semibold text-brand-text"
-                  onClick={() => { setHiddenRunNames({}); }}
-                  type="button"
-                >
-                  Show all
-                </button>
-                <button
-                  className="flex-1 rounded-lg border border-brand-border bg-brand-surfaceMuted px-2 py-1.5 text-xs font-semibold text-brand-text"
-                  onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
-                  type="button"
-                >
-                  Hide all
-                </button>
-              </div>
-              <div className="space-y-2">
-                {projectRuns.length === 0 && !isRunsLoading ? <div className="text-[13px] text-brand-textMuted">No runs yet.</div> : null}
-                {projectRuns.map(renderRunItem)}
-              </div>
-            </aside>
+          <aside className="flex h-full flex-col border-b border-brand-border bg-[#f0f6f7] px-4 py-4 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-textMuted">Runs</h2>
+              <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] text-brand-textMuted">{projectRuns.length}</span>
+            </div>
+            <div className="mb-3 flex gap-2">
+              <button
+                className="flex-1 rounded-md border border-brand-border bg-brand-surface px-2 py-1.5 text-[11px] font-semibold text-brand-text"
+                onClick={() => { setHiddenRunNames({}); }}
+                type="button"
+              >
+                Show all
+              </button>
+              <button
+                className="flex-1 rounded-md border border-brand-border bg-brand-surface px-2 py-1.5 text-[11px] font-semibold text-brand-text"
+                onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
+                type="button"
+              >
+                Hide all
+              </button>
+            </div>
+            <div className="-mx-4 border-y border-brand-border/70 lg:-mx-5">
+              {projectRuns.length === 0 && !isRunsLoading ? <div className="px-4 py-2 text-[13px] text-brand-textMuted lg:px-5">No runs yet.</div> : null}
+              {projectRuns.map(renderRunItem)}
+            </div>
+          </aside>
+        ) : null}
 
-            <section>
+        <main className="p-6 lg:p-8">
+          <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle}</p>
+              <div className="mt-1 flex items-center gap-1.5 text-sm">
+                <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={`/${handle}/${projectName}`}>
+                  {projectName}
+                </Link>
+                <span className="text-brand-textMuted">/</span>
+                <span className="font-semibold text-brand-text">compare</span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-sm text-brand-textMuted">
+              plotting {visibleRuns.length} / {projectRuns.length} runs
+            </div>
+          </header>
+
+          {showProjectNotFound ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
+          {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
+          {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
+          {!showProjectNotFound ? (
+            <section className="lg:py-1">
               {isRunsLoading || isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">Loading charts...</div> : null}
               {visibleRuns.length === 0 ? <div className="mb-4 text-[13px] text-brand-textMuted">Select at least one run to view charts.</div> : null}
               {sections.map(({ prefix, charts }) => (
@@ -349,9 +353,9 @@ export default function ProjectCompareRoute(): ReactElement {
               ))}
               {!isScalarsLoading && sections.length === 0 ? <div className="text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
             </section>
-          </div>
-        ) : null}
-      </main>
+          ) : null}
+        </main>
+      </div>
     </div>
   );
 }
