@@ -1,7 +1,9 @@
-import type { Organization, OrganizationRole } from "@underfit/types";
+import type { Organization, OrganizationRole, User } from "@underfit/types";
 
 import { request, send } from "helpers";
 import { useAuthStore } from "stores/auth";
+
+export type OrganizationMemberWithRole = User & { role: OrganizationRole };
 
 type OrgResult = { ok: true } | { ok: false; error: string };
 type Membership = Organization & { role: OrganizationRole };
@@ -15,6 +17,11 @@ export const fetchMyMemberships = async (): Promise<{ ok: true; body: Membership
 
 export const createOrganization = async (handle: string, name: string): Promise<{ ok: true; body: Organization } | { ok: false; error: string }> => {
   const result = await send<Organization>("organizations", "POST", { handle, name });
+  return result.ok ? { ok: true, body: result.body } : { ok: false, error: result.error };
+};
+
+export const fetchOrganizationMembers = async (orgHandle: string): Promise<{ ok: true; body: OrganizationMemberWithRole[] } | { ok: false; error: string }> => {
+  const result = await request<OrganizationMemberWithRole[]>(`organizations/${orgHandle}/members`);
   return result.ok ? { ok: true, body: result.body } : { ok: false, error: result.error };
 };
 

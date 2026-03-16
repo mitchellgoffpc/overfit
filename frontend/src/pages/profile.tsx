@@ -7,6 +7,7 @@ import ProfileActivityHeatmap from "components/profile/ProfileActivityHeatmap";
 import ProfileProjectsPanel from "components/profile/ProfileProjectsPanel";
 import ProfileRunsPanel from "components/profile/ProfileRunsPanel";
 import ProfileSidebar from "components/profile/ProfileSidebar";
+import OrganizationPage from "pages/organization";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 import { useProjectStore } from "stores/projects";
@@ -26,6 +27,7 @@ export default function ProfileRoute(): ReactElement {
   const fetchRuns = useRunStore((state) => state.fetchRuns);
   const currentHandle = useAuthStore((state) => state.currentHandle);
   const user = account?.type === "USER" ? account : null;
+  const organization = account?.type === "ORGANIZATION" ? account : null;
   const projects = Object.values(projectsByKey).filter((project) => project.owner === handle);
   const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle);
 
@@ -40,6 +42,8 @@ export default function ProfileRoute(): ReactElement {
   useEffect(() => {
     if (handle && !isProjectsLoading) { void fetchRuns(handle); }
   }, [fetchRuns, handle, isProjectsLoading]);
+
+  if (organization) { return <OrganizationPage organization={organization} />; }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
