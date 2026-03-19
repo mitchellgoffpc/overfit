@@ -52,7 +52,7 @@ function ProjectRunsContent(): ReactElement {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName }]} tabs={tabs} activeTabId="runs" />
 
-      <main className="mx-auto w-full max-w-6xl px-6 py-6 lg:px-8">
+      <main className="w-full px-6 py-6 lg:px-8">
         <header className="mb-5">
           <h1 className="flex flex-wrap items-center gap-2.5 text-xl font-semibold">
             <div className="relative grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-[#d9ecec] text-xs font-semibold text-brand-accentStrong">

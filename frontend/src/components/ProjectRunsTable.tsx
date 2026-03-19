@@ -1,15 +1,18 @@
 import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
+import { useMemo } from "react";
 import { Link } from "wouter";
 
 import RunStatusBadge from "components/RunStatusBadge";
 import { formatDuration, formatRunConfigValue, formatRunTime } from "helpers";
 
-const runsGridCols = "grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr]";
-const headerRowClass = `grid ${runsGridCols} items-center gap-3 border-b border-brand-border px-3 py-2`
-  + " text-xs uppercase tracking-[0.08em] text-brand-textMuted";
-const runRowClass = `grid ${runsGridCols} items-center gap-3 rounded-xl border border-transparent`
-  + " bg-brand-surfaceMuted px-3 py-2 transition hover:border-brand-border";
+const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
+const tableGridCols = "grid-cols-[260px_132px_120px_120px_120px_140px_110px_80px_90px_90px_100px_100px_90px]";
+const headerCellClass = "border-b border-brand-border px-3 py-2 text-[11px] uppercase tracking-[0.08em] text-brand-textMuted";
+const bodyCellClass = "px-3 py-2 text-[13px]";
+const stickyBaseClass = `${bodyCellClass} sticky left-0 z-10 flex min-w-0 items-center gap-2.5 border-r border-brand-border bg-brand-surface`;
+const stickyNameCellClass = `${stickyBaseClass} no-underline transition`
+  + " group-hover:bg-[#f5f9f9]";
 
 interface ProjectRunsTableProps {
   readonly runs: Run[];
@@ -21,18 +24,10 @@ interface ProjectRunsTableProps {
 }
 
 export default function ProjectRunsTable({ runs, project, user, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
-  return (
-    <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-xl">Runs</h2>
-          <p className="mt-1.5 text-[13px] text-brand-textMuted">All runs logged in this project.</p>
-        </div>
-        <div className="flex items-center">
-          <div className="text-xs text-brand-textMuted">showing {runs.length}</div>
-        </div>
-      </div>
+  const colorByRunName = useMemo(() => new Map(runs.map((run, index) => [run.name, runColors[index % runColors.length] ?? "#1a7b7d"])), [runs]);
 
+  return (
+    <section className="w-full">
       {error ? <div className="py-3 text-[13px] text-brand-textMuted">{error}</div> : null}
       {!error && isLoading ? <div className="py-3 text-[13px] text-brand-textMuted">Loading runs...</div> : null}
 
@@ -40,47 +35,49 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
         runs.length === 0 ? (
           <div className="py-3 text-[13px] text-brand-textMuted">No runs yet for {project.name}.</div>
         ) : (
-          <div className="overflow-x-auto pb-2">
-            <div className="min-w-[1240px]">
-              <div className={headerRowClass}>
-                <span>Name</span>
-                <span>State</span>
-                <span>Notes</span>
-                <span>User</span>
-                <span>Tags</span>
-                <span>Created</span>
-                <span>Runtime</span>
-                <span>Sweep</span>
-                <span>Batch</span>
-                <span>D FF</span>
-                <span>D Model</span>
-                <span>Device</span>
-                <span>Dropout</span>
+          <div className="overflow-x-auto rounded-[12px] border border-brand-border bg-brand-surface shadow-soft">
+            <div className="min-w-[1440px]">
+              <div className={`grid ${tableGridCols} items-center`}>
+                <span className={`${headerCellClass} sticky left-0 z-20 border-r bg-brand-surface`}>Name</span>
+                <span className={headerCellClass}>State</span>
+                <span className={headerCellClass}>Notes</span>
+                <span className={headerCellClass}>User</span>
+                <span className={headerCellClass}>Tags</span>
+                <span className={headerCellClass}>Created</span>
+                <span className={headerCellClass}>Runtime</span>
+                <span className={headerCellClass}>Sweep</span>
+                <span className={headerCellClass}>Batch</span>
+                <span className={headerCellClass}>D FF</span>
+                <span className={headerCellClass}>D Model</span>
+                <span className={headerCellClass}>Device</span>
+                <span className={headerCellClass}>Dropout</span>
               </div>
-              {runs.map((run) => (
-                <Link
-                  className={runRowClass}
-                  key={run.id}
-                  href={`/${ownerHandle}/${project.name}/runs/${run.name}`}
-                >
-                  <div>
-                    <p className="font-semibold">{run.name}</p>
-                    <p className="mt-1 text-xs text-brand-textMuted">{project.name}</p>
+              {runs.map((run, index) => {
+                const runColor = colorByRunName.get(run.name) ?? runColors[index % runColors.length] ?? "#1a7b7d";
+                return (
+                  <div className={`group grid ${tableGridCols} items-center border-b border-brand-border/70 last:border-b-0`} key={run.id}>
+                    <Link
+                      className={stickyNameCellClass}
+                      href={`/${ownerHandle}/${project.name}/runs/${run.name}`}
+                    >
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: runColor }} />
+                      <p className="truncate font-semibold text-brand-text">{run.name}</p>
+                    </Link>
+                    <div className={bodyCellClass}><RunStatusBadge status={run.status} /></div>
+                    <span className={`${bodyCellClass} text-brand-textMuted`}>—</span>
+                    <span className={bodyCellClass}>{user?.handle ?? run.user}</span>
+                    <span className={`${bodyCellClass} text-brand-textMuted`}>—</span>
+                    <span className={bodyCellClass}>{formatRunTime(run.createdAt)}</span>
+                    <span className={bodyCellClass}>{formatDuration(run.createdAt, run.updatedAt)}</span>
+                    <span className={`${bodyCellClass} text-brand-textMuted`}>—</span>
+                    <span className={bodyCellClass}>{formatRunConfigValue(run.config, "batch_size")}</span>
+                    <span className={bodyCellClass}>{formatRunConfigValue(run.config, "d_ff")}</span>
+                    <span className={bodyCellClass}>{formatRunConfigValue(run.config, "d_model")}</span>
+                    <span className={bodyCellClass}>{formatRunConfigValue(run.config, "device")}</span>
+                    <span className={bodyCellClass}>{formatRunConfigValue(run.config, "dropout")}</span>
                   </div>
-                  <RunStatusBadge status={run.status} />
-                  <span className="text-[13px] text-brand-textMuted">—</span>
-                  <span>{user?.handle ?? run.user}</span>
-                  <span className="text-[13px] text-brand-textMuted">—</span>
-                  <span>{formatRunTime(run.createdAt)}</span>
-                  <span>{formatDuration(run.createdAt, run.updatedAt)}</span>
-                  <span className="text-[13px] text-brand-textMuted">—</span>
-                  <span>{formatRunConfigValue(run.config, "batch_size")}</span>
-                  <span>{formatRunConfigValue(run.config, "d_ff")}</span>
-                  <span>{formatRunConfigValue(run.config, "d_model")}</span>
-                  <span>{formatRunConfigValue(run.config, "device")}</span>
-                  <span>{formatRunConfigValue(run.config, "dropout")}</span>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         )
