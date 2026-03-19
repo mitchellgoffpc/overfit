@@ -1,5 +1,5 @@
 import { API_VERSION } from "@underfit/types";
-import type { Project, Run } from "@underfit/types";
+import type { Project } from "@underfit/types";
 
 interface APISuccessResponse<T> { ok: true; body: T; error?: never; status: number };
 interface APIFailureResponse { ok: false; body?: never; error: string; status: number };
@@ -57,18 +57,6 @@ export const formatDuration = (start: string, end: string): string => {
   if (hours > 0) { return `${hours.toString()}h ${minutes.toString()}m`; }
   if (minutes > 0) { return `${minutes.toString()}m ${seconds.toString()}s`; }
   return `${seconds.toString()}s`;
-};
-
-export const formatRunConfigValue = (config: Run["config"], key: string): string => {
-  if (!config || typeof config !== "object") { return "—"; }
-  const value = config[key];
-  if (value === null || value === undefined) { return "—"; }
-  if (typeof value === "number") {
-    const fixed = Number.isInteger(value) ? String(value) : value.toFixed(4);
-    return fixed.replace(/\.0+$/, "").replace(/\.$/, "");
-  }
-  if (typeof value === "string" || typeof value === "boolean") { return String(value); }
-  return "—";
 };
 
 export const buildProjectNameMap = (projects: Project[]): Map<string, string> => {
