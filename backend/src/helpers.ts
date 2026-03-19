@@ -17,8 +17,8 @@ export const formatZodError = (error: ZodError): string => {
   return path ? `${path}: ${issue.message}` : issue.message;
 };
 
-export const getMetadataSizeError = (metadata: Record<string, unknown> | null | undefined, maxBytes: number | null): string | undefined => {
-  if (maxBytes === null || metadata === null || metadata === undefined) { return undefined; }
-  const byteSize = Buffer.byteLength(JSON.stringify(metadata), "utf8");
-  return byteSize > maxBytes ? `metadata: Serialized JSON exceeds ${String(maxBytes)} bytes` : undefined;
+export const getJsonSizeError = (field: string, value: Record<string, unknown> | null | undefined, maxBytes: number | null): string | undefined => {
+  if (maxBytes === null || value === null || value === undefined) { return undefined; }
+  const byteSize = Buffer.byteLength(JSON.stringify(value), "utf8");
+  return byteSize > maxBytes ? `${field}: Serialized JSON exceeds ${String(maxBytes)} bytes` : undefined;
 };

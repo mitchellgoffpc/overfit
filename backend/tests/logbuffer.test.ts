@@ -31,7 +31,7 @@ describe("logbuffer", () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     const userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
     const projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
-    runId = (await createRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null }))!.id;
+    runId = (await createRun(db, { projectId, userId, name: "run-1", status: "running", config: null }))!.id;
   });
 
   it("buffers lines and flushes explicitly", async () => {

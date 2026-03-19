@@ -25,7 +25,7 @@ const run: Run = {
   status: "running",
   createdAt: "2025-01-02T00:00:00.000Z",
   updatedAt: "2025-01-03T00:00:00.000Z",
-  metadata: null
+  config: null
 };
 
 const createResponse = (body: unknown, init?: { ok?: boolean; status?: number }) => ({

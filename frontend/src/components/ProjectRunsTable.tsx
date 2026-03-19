@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import { Link } from "wouter";
 
 import RunStatusBadge from "components/RunStatusBadge";
-import { formatDuration, formatMetadataValue, formatRunTime } from "helpers";
+import { formatDuration, formatRunConfigValue, formatRunTime } from "helpers";
 
 const runsGridCols = "grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_0.9fr_0.9fr_0.8fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr_0.7fr]";
 const headerRowClass = `grid ${runsGridCols} items-center gap-3 border-b border-brand-border px-3 py-2`
@@ -74,11 +74,11 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
                   <span>{formatRunTime(run.createdAt)}</span>
                   <span>{formatDuration(run.createdAt, run.updatedAt)}</span>
                   <span className="text-[13px] text-brand-textMuted">—</span>
-                  <span>{formatMetadataValue(run.metadata, "batch_size")}</span>
-                  <span>{formatMetadataValue(run.metadata, "d_ff")}</span>
-                  <span>{formatMetadataValue(run.metadata, "d_model")}</span>
-                  <span>{formatMetadataValue(run.metadata, "device")}</span>
-                  <span>{formatMetadataValue(run.metadata, "dropout")}</span>
+                  <span>{formatRunConfigValue(run.config, "batch_size")}</span>
+                  <span>{formatRunConfigValue(run.config, "d_ff")}</span>
+                  <span>{formatRunConfigValue(run.config, "d_model")}</span>
+                  <span>{formatRunConfigValue(run.config, "device")}</span>
+                  <span>{formatRunConfigValue(run.config, "dropout")}</span>
                 </Link>
               ))}
             </div>

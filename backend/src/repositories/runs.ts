@@ -8,9 +8,9 @@ import { table as accountsTable } from "repositories/accounts";
 import { table as projectsTable } from "repositories/projects";
 import { table as usersTable } from "repositories/users";
 
-export type RunRow = Omit<Run, "user" | "projectName" | "projectOwner" | "metadata"> & { userId: ID; metadata: string | null };
-type CreateRunRow = Pick<Run, "projectId" | "name" | "status" | "metadata"> & { userId: ID };
-type UpdateRunRow = Partial<Pick<Run, "status" | "metadata">>;
+export type RunRow = Omit<Run, "user" | "projectName" | "projectOwner" | "config"> & { userId: ID; config: string | null };
+type CreateRunRow = Pick<Run, "projectId" | "name" | "status" | "config"> & { userId: ID };
+type UpdateRunRow = Partial<Pick<Run, "status" | "config">>;
 
 export const table = "runs";
 
@@ -30,7 +30,7 @@ const selectRuns = (db: Database) => db
     `${table}.status as status`,
     `${table}.createdAt as createdAt`,
     `${table}.updatedAt as updatedAt`,
-    `${table}.metadata as metadata`
+    `${table}.config as config`
   ]);
 
 export const createRunsTable = async (db: Database): Promise<void> => {
@@ -44,14 +44,14 @@ export const createRunsTable = async (db: Database): Promise<void> => {
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
-    .addColumn("metadata", "text")
+    .addColumn("config", "text")
     .addUniqueConstraint("runs_project_id_name_unique", ["projectId", "name"])
     .execute();
 };
 
 export const listUserRuns = async (db: Database, userId: ID): Promise<Run[]> => {
   const rows = await selectRuns(db).where(`${table}.userId`, "=", userId).orderBy(`${table}.createdAt`, "desc").execute();
-  return rows.map((row) => ({ ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null }));
+  return rows.map((row) => ({ ...row, config: row.config ? JSON.parse(row.config) as Record<string, unknown> : null }));
 };
 
 export const listProjectRuns = async (db: Database, handle: string, projectName: string): Promise<Run[]> => {
@@ -60,12 +60,12 @@ export const listProjectRuns = async (db: Database, handle: string, projectName:
     .where(`${projectsTable}.name`, "=", projectName)
     .orderBy(`${table}.createdAt`, "desc")
     .execute();
-  return rows.map((row) => ({ ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null }));
+  return rows.map((row) => ({ ...row, config: row.config ? JSON.parse(row.config) as Record<string, unknown> : null }));
 };
 
 const getRunById = async (db: Database, id: ID): Promise<Run | undefined> => {
   const row = await selectRuns(db).where(`${table}.id`, "=", id).executeTakeFirst();
-  return row ? { ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null } : undefined;
+  return row ? { ...row, config: row.config ? JSON.parse(row.config) as Record<string, unknown> : null } : undefined;
 };
 
 export const getRun = async (db: Database, handle: string, projectName: string, runName: string): Promise<Run | undefined> => {
@@ -74,18 +74,18 @@ export const getRun = async (db: Database, handle: string, projectName: string, 
     .where(`${projectsTable}.name`, "=", projectName)
     .where(`${table}.name`, "=", runName)
     .executeTakeFirst();
-  return row ? { ...row, metadata: row.metadata ? JSON.parse(row.metadata) as Record<string, unknown> : null } : undefined;
+  return row ? { ...row, config: row.config ? JSON.parse(row.config) as Record<string, unknown> : null } : undefined;
 };
 
 export const createRun = async (db: Database, run: CreateRunRow): Promise<Run | undefined> => {
-  const payload = { ...run, id: randomBytes(16).toString("hex"), createdAt: nowIso(), updatedAt: nowIso(), metadata: JSON.stringify(run.metadata) };
+  const payload = { ...run, id: randomBytes(16).toString("hex"), createdAt: nowIso(), updatedAt: nowIso(), config: JSON.stringify(run.config) };
   const result = await db.insertInto(table).values(payload).onConflict((oc) => oc.columns(["projectId", "name"]).doNothing()).executeTakeFirst();
   return result.numInsertedOrUpdatedRows ? await getRunById(db, payload.id) : undefined;
 };
 
 export const updateRun = async (db: Database, handle: string, projectName: string, runName: string, updates: UpdateRunRow): Promise<Run | undefined> => {
-  const metadata = updates.metadata ? JSON.stringify(updates.metadata) : null;
-  const payload = { status: updates.status, updatedAt: nowIso(), ...metadata && { metadata } };
+  const config = updates.config === undefined ? undefined : JSON.stringify(updates.config);
+  const payload = { status: updates.status, updatedAt: nowIso(), ...config !== undefined && { config } };
   const result = await db.updateTable(table)
     .set(payload)
     .where("id", "in", db.selectFrom(table)

@@ -35,7 +35,7 @@ describe("artifacts routes", () => {
     app = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir } }), db);
     userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
     projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
-    runId = (await createRun(db, { projectId, userId, name: "Run 1", status: "running", metadata: null }))!.id;
+    runId = (await createRun(db, { projectId, userId, name: "Run 1", status: "running", config: null }))!.id;
   });
 
   it("inserts and fetches an artifact", async () => {

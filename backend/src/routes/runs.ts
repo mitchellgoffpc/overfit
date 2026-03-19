@@ -7,7 +7,7 @@ import type { Run } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { formatZodError, getMetadataSizeError } from "helpers";
+import { formatZodError, getJsonSizeError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import { getProject } from "repositories/projects";
 import { createRun, getRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
@@ -16,11 +16,11 @@ import { requireAuth } from "routes/auth";
 
 const CreateRunPayloadSchema = z.strictObject({
   status: z.enum(runStatus).exactOptional().prefault("queued"),
-  metadata: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
+  config: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
 });
 const UpdateRunPayloadSchema = z.strictObject({
   status: z.enum(runStatus).exactOptional(),
-  metadata: z.record(z.string(), z.unknown()).nullable().exactOptional()
+  config: z.record(z.string(), z.unknown()).nullable().exactOptional()
 });
 
 type CreateRunPayload = z.infer<typeof CreateRunPayloadSchema>;
@@ -75,9 +75,9 @@ export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes:
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
-    const metadataSizeError = getMetadataSizeError(data.metadata, metadataMaxBytes);
-    if (metadataSizeError) {
-      res.status(400).json({ error: metadataSizeError });
+    const configSizeError = getJsonSizeError("config", data.config, metadataMaxBytes);
+    if (configSizeError) {
+      res.status(400).json({ error: configSizeError });
       return;
     }
 
@@ -106,9 +106,9 @@ export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes:
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
-    const metadataSizeError = getMetadataSizeError(data.metadata, metadataMaxBytes);
-    if (metadataSizeError) {
-      res.status(400).json({ error: metadataSizeError });
+    const configSizeError = getJsonSizeError("config", data.config, metadataMaxBytes);
+    if (configSizeError) {
+      res.status(400).json({ error: configSizeError });
       return;
     }
 

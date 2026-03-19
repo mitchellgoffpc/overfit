@@ -90,10 +90,10 @@ describe("projects routes", () => {
     const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null }))!.id;
     const project1 = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!;
     const project2 = (await createProject(db, { accountId: userId, name: "telemetry", description: null }))!;
-    await createRun(db, { projectId: project1.id, userId, name: "Run 1", status: "running", metadata: null });
-    await createRun(db, { projectId: project2.id, userId, name: "Run 2", status: "finished", metadata: null });
-    await createRun(db, { projectId: project2.id, userId, name: "Run 3", status: "running", metadata: null });
-    await createRun(db, { projectId: project1.id, userId: user2Id, name: "Run 4", status: "running", metadata: null });
+    await createRun(db, { projectId: project1.id, userId, name: "Run 1", status: "running", config: null });
+    await createRun(db, { projectId: project2.id, userId, name: "Run 2", status: "finished", config: null });
+    await createRun(db, { projectId: project2.id, userId, name: "Run 3", status: "running", config: null });
+    await createRun(db, { projectId: project1.id, userId: user2Id, name: "Run 4", status: "running", config: null });
     const session = await createSession(db, { userId, expiresAt: "2099-01-01T00:00:00.000Z" });
 
     const response = await request(app).get(`${API_BASE}/me/projects`).set("Cookie", `underfit_session=${session.id}`).expect(200);

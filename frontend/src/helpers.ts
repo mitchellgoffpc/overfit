@@ -59,9 +59,9 @@ export const formatDuration = (start: string, end: string): string => {
   return `${seconds.toString()}s`;
 };
 
-export const formatMetadataValue = (metadata: Run["metadata"], key: string): string => {
-  if (!metadata || typeof metadata !== "object") { return "—"; }
-  const value = metadata[key];
+export const formatRunConfigValue = (config: Run["config"], key: string): string => {
+  if (!config || typeof config !== "object") { return "—"; }
+  const value = config[key];
   if (value === null || value === undefined) { return "—"; }
   if (typeof value === "number") {
     const fixed = Number.isInteger(value) ? String(value) : value.toFixed(4);

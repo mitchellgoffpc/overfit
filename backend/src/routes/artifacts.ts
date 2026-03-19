@@ -4,7 +4,7 @@ import express from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { formatZodError, getMetadataSizeError } from "helpers";
+import { formatZodError, getJsonSizeError } from "helpers";
 import type { RouteApp, RouteHandler, RouteParams } from "helpers";
 import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { getArtifactStorageKey } from "storage";
@@ -31,7 +31,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
-    const metadataSizeError = getMetadataSizeError(data.metadata, metadataMaxBytes);
+    const metadataSizeError = getJsonSizeError("metadata", data.metadata, metadataMaxBytes);
     if (metadataSizeError) {
       res.status(400).json({ error: metadataSizeError });
       return;

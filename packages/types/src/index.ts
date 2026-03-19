@@ -85,7 +85,7 @@ export interface Run {
   status: RunStatus;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  metadata: Record<string, unknown> | null;
+  config: Record<string, unknown> | null;
 }
 
 export interface Artifact {

@@ -59,10 +59,10 @@ ensure_run() {
   local project_name="$1" desired_name="$2" status_value="$3" metadata_json="$4"
   request GET "/accounts/$user_handle/projects/$project_name/runs/$desired_name"
   if [[ "$RESP_STATUS" == "200" ]]; then
-    json_request PUT "/accounts/$user_handle/projects/$project_name/runs/$desired_name" "{\"status\":\"$status_value\",\"metadata\":$metadata_json}" >/dev/null
+    json_request PUT "/accounts/$user_handle/projects/$project_name/runs/$desired_name" "{\"status\":\"$status_value\",\"config\":$metadata_json}" >/dev/null
     echo "$desired_name"
   elif [[ "$RESP_STATUS" == "404" ]]; then
-    json_request POST "/accounts/$user_handle/projects/$project_name/runs" "{\"status\":\"$status_value\",\"metadata\":$metadata_json}" | jq -r '.name'
+    json_request POST "/accounts/$user_handle/projects/$project_name/runs" "{\"status\":\"$status_value\",\"config\":$metadata_json}" | jq -r '.name'
   else
     fail
   fi

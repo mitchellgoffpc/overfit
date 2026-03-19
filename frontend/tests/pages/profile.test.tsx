@@ -49,7 +49,7 @@ const run: Run = {
   projectName: "mnist-classifier",
   user: "ada",
   status: "finished",
-  metadata: null,
+  config: null,
   createdAt: "2025-01-02T00:00:00.000Z",
   updatedAt: "2025-01-02T00:00:00.000Z"
 };

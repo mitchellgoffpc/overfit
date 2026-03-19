@@ -23,7 +23,7 @@ describe("scalar routes", () => {
     app = createApp(AppConfigSchema.parse({}), db);
     userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
     projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
-    await createRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null });
+    await createRun(db, { projectId, userId, name: "run-1", status: "running", config: null });
   });
 
   it("buffers scalar batches", async () => {
@@ -50,7 +50,7 @@ describe("scalar routes", () => {
   });
 
   it("fetches scalars by account handle, project name, and run name", async () => {
-    await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null });
+    await createRun(db, { projectId, userId, name: "baseline", status: "running", config: null });
     await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline/scalars`).send({
       startLine: 0,
       scalars: [{ step: 1, values: { loss: 0.5 }, timestamp: testTimestamp }]

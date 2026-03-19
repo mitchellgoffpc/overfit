@@ -37,15 +37,15 @@ describe("runs routes", () => {
     const insertResponse = await request(app)
       .post(`${API_BASE}/accounts/ada/projects/underfit/runs`)
       .set("Cookie", `underfit_session=${sessionToken}`)
-      .send({ status: "running", metadata: { lr: 0.001 } }).expect(200);
+      .send({ status: "running", config: { lr: 0.001 } }).expect(200);
     const inserted = insertResponse.body as RunResponse;
-    expect(insertResponse.body).toMatchObject({ projectId, user: "ada", status: "running", metadata: { lr: 0.001 } });
+    expect(insertResponse.body).toMatchObject({ projectId, user: "ada", status: "running", config: { lr: 0.001 } });
     expect(typeof inserted.name).toBe("string");
     expect(inserted.name).not.toHaveLength(0);
     expect(inserted.name).toMatch(/^[a-z]+-[a-z]+$/);
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs/${inserted.name}`).expect(200);
-    expect(response.body).toMatchObject({ id: inserted.id, projectId, user: "ada", status: "running", metadata: { lr: 0.001 } });
+    expect(response.body).toMatchObject({ id: inserted.id, projectId, user: "ada", status: "running", config: { lr: 0.001 } });
   });
 
   it("rejects unknown runs", async () => {
@@ -66,22 +66,22 @@ describe("runs routes", () => {
   });
 
   it("updates a run", async () => {
-    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null }))!;
+    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", config: null }))!;
 
     const response = await request(app)
-      .put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ status: "finished", metadata: { loss: 0.12 } }).expect(200);
-    expect(response.body).toMatchObject({ id: run.id, status: "finished", metadata: { loss: 0.12 } });
+      .put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ status: "finished", config: { loss: 0.12 } }).expect(200);
+    expect(response.body).toMatchObject({ id: run.id, status: "finished", config: { loss: 0.12 } });
   });
 
   it("partially updates a run", async () => {
-    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: { loss: 0.13 } }))!;
+    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", config: { loss: 0.13 } }))!;
 
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ metadata: { loss: 0.12 } }).expect(200);
-    expect(response.body).toMatchObject({ id: run.id, status: "running", metadata: { loss: 0.12 } });
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`).send({ config: { loss: 0.12 } }).expect(200);
+    expect(response.body).toMatchObject({ id: run.id, status: "running", config: { loss: 0.12 } });
   });
 
   it("fetches a run", async () => {
-    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null }))!;
+    const run = (await createRun(db, { projectId, userId, name: "baseline", status: "running", config: null }))!;
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/Underfit/runs/baseline`).expect(200);
     expect(response.body).toMatchObject({ id: run.id, projectId, user: "ada", name: "baseline", status: "running" });
@@ -92,9 +92,9 @@ describe("runs routes", () => {
 
   it("lists runs for a project", async () => {
     const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null }))!.id;
-    const firstRun = (await createRun(db, { projectId, userId, name: "a", status: "running", metadata: null }))!;
+    const firstRun = (await createRun(db, { projectId, userId, name: "a", status: "running", config: null }))!;
     await delay(5);
-    const secondRun = (await createRun(db, { projectId, userId: user2Id, name: "b", status: "finished", metadata: null }))!;
+    const secondRun = (await createRun(db, { projectId, userId: user2Id, name: "b", status: "finished", config: null }))!;
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit/runs`).expect(200);
     expect(response.body).toMatchObject([{ id: secondRun.id }, { id: firstRun.id }]);
   });
@@ -106,10 +106,10 @@ describe("runs routes", () => {
 
   it("lists runs for a user handle by created date", async () => {
     const user2Id = (await createUser(db, { email: "grace@example.com", handle: "grace", name: "Grace Hopper", bio: null }))!.id;
-    const firstRun = (await createRun(db, { projectId, userId, name: "run-1", status: "running", metadata: null }))!;
+    const firstRun = (await createRun(db, { projectId, userId, name: "run-1", status: "running", config: null }))!;
     await delay(5);
-    const secondRun = (await createRun(db, { projectId, userId, name: "run-2", status: "finished", metadata: null }))!;
-    await createRun(db, { projectId, userId: user2Id, name: "run-3", status: "running", metadata: null });
+    const secondRun = (await createRun(db, { projectId, userId, name: "run-2", status: "finished", config: null }))!;
+    await createRun(db, { projectId, userId: user2Id, name: "run-3", status: "running", config: null });
 
     const response = await request(app).get(`${API_BASE}/users/ada/runs`).expect(200);
     expect(response.body).toMatchObject([{ id: secondRun.id }, { id: firstRun.id }]);
@@ -120,23 +120,23 @@ describe("runs routes", () => {
     expect(response.body).toMatchObject({ error: "User not found" });
   });
 
-  it("rejects run creation when metadata exceeds configured size", async () => {
+  it("rejects run creation when config exceeds configured size", async () => {
     const limitedApp = createApp(AppConfigSchema.parse({ server: { metadataMaxBytes: 16 } }), db);
     const response = await request(limitedApp)
       .post(`${API_BASE}/accounts/ada/projects/underfit/runs`)
       .set("Cookie", `underfit_session=${sessionToken}`)
-      .send({ status: "running", metadata: { key: "this is too large" } })
+      .send({ status: "running", config: { key: "this is too large" } })
       .expect(400);
-    expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
+    expect(response.body).toMatchObject({ error: "config: Serialized JSON exceeds 16 bytes" });
   });
 
-  it("rejects run update when metadata exceeds configured size", async () => {
-    await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null });
+  it("rejects run update when config exceeds configured size", async () => {
+    await createRun(db, { projectId, userId, name: "baseline", status: "running", config: null });
     const limitedApp = createApp(AppConfigSchema.parse({ server: { metadataMaxBytes: 16 } }), db);
     const response = await request(limitedApp)
       .put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`)
-      .send({ metadata: { key: "this is too large" } })
+      .send({ config: { key: "this is too large" } })
       .expect(400);
-    expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
+    expect(response.body).toMatchObject({ error: "config: Serialized JSON exceeds 16 bytes" });
   });
 });
