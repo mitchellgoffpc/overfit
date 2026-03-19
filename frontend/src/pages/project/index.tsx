@@ -1,14 +1,17 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { useParams } from "wouter";
+import { Redirect, Route, Switch, useParams } from "wouter";
 
 import Navbar from "components/Navbar";
 import ProjectRunsTable from "components/ProjectRunsTable";
 import { apiBase } from "helpers";
+import ProjectComparePage from "pages/project/compare";
+import RunDetailPage from "pages/project/run";
+import ProjectSettingsPage from "pages/project/settings";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 
-export default function ProjectDetailRoute(): ReactElement {
+function ProjectRunsContent(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
@@ -85,5 +88,19 @@ export default function ProjectDetailRoute(): ReactElement {
         ) : null}
       </main>
     </div>
+  );
+}
+
+export default function ProjectPage(): ReactElement {
+  const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
+
+  return (
+    <Switch>
+      <Route path="/:handle/:projectName/runs/:runName" component={RunDetailPage} />
+      <Route path="/:handle/:projectName/compare" component={ProjectComparePage} />
+      <Route path="/:handle/:projectName/settings" component={ProjectSettingsPage} />
+      <Route path="/:handle/:projectName" component={ProjectRunsContent} />
+      <Route path="/:handle/:projectName/*"><Redirect to={`/${handle}/${projectName}`} /></Route>
+    </Switch>
   );
 }
