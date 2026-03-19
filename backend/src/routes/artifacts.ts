@@ -4,7 +4,7 @@ import express from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { formatZodError } from "helpers";
+import { formatZodError, getMetadataSizeError } from "helpers";
 import type { RouteApp, RouteHandler, RouteParams } from "helpers";
 import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { getArtifactStorageKey } from "storage";
@@ -20,7 +20,7 @@ const CreateArtifactPayloadSchema = z.strictObject({
 });
 type CreateArtifactPayload = z.infer<typeof CreateArtifactPayloadSchema>;
 
-export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend): void {
+export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend, metadataMaxBytes: number | null): void {
   const listArtifactsHandler: RouteHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
@@ -29,6 +29,11 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     const { success, error, data } = CreateArtifactPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+    const metadataSizeError = getMetadataSizeError(data.metadata, metadataMaxBytes);
+    if (metadataSizeError) {
+      res.status(400).json({ error: metadataSizeError });
       return;
     }
 

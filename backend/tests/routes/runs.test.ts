@@ -119,4 +119,24 @@ describe("runs routes", () => {
     const response = await request(app).get(`${API_BASE}/users/missing/runs`).expect(404);
     expect(response.body).toMatchObject({ error: "User not found" });
   });
+
+  it("rejects run creation when metadata exceeds configured size", async () => {
+    const limitedApp = createApp(AppConfigSchema.parse({ server: { metadataMaxBytes: 16 } }), db);
+    const response = await request(limitedApp)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/runs`)
+      .set("Cookie", `underfit_session=${sessionToken}`)
+      .send({ status: "running", metadata: { key: "this is too large" } })
+      .expect(400);
+    expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
+  });
+
+  it("rejects run update when metadata exceeds configured size", async () => {
+    await createRun(db, { projectId, userId, name: "baseline", status: "running", metadata: null });
+    const limitedApp = createApp(AppConfigSchema.parse({ server: { metadataMaxBytes: 16 } }), db);
+    const response = await request(limitedApp)
+      .put(`${API_BASE}/accounts/ada/projects/underfit/runs/baseline`)
+      .send({ metadata: { key: "this is too large" } })
+      .expect(400);
+    expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
+  });
 });

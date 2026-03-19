@@ -7,7 +7,7 @@ import type { Run } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { formatZodError } from "helpers";
+import { formatZodError, getMetadataSizeError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import { getProject } from "repositories/projects";
 import { createRun, getRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
@@ -36,7 +36,7 @@ const randomWord = (words: string[]): string => {
 };
 const randomRunName = (): string => `${randomWord(adjectives)}-${randomWord(nouns)}`;
 
-export function registerRunRoutes(app: RouteApp, db: Database): void {
+export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes: number | null): void {
   const listUserRunsHandler: RouteHandler<{ handle: string }, Run[]> = async (req, res) => {
     const user = await getUserByHandle(db, req.params.handle.trim().toLowerCase());
     if (!user) {
@@ -75,6 +75,11 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
+    const metadataSizeError = getMetadataSizeError(data.metadata, metadataMaxBytes);
+    if (metadataSizeError) {
+      res.status(400).json({ error: metadataSizeError });
+      return;
+    }
 
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
@@ -99,6 +104,11 @@ export function registerRunRoutes(app: RouteApp, db: Database): void {
     const { success, error, data } = UpdateRunPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
+      return;
+    }
+    const metadataSizeError = getMetadataSizeError(data.metadata, metadataMaxBytes);
+    if (metadataSizeError) {
+      res.status(400).json({ error: metadataSizeError });
       return;
     }
 

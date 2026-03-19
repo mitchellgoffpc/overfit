@@ -89,4 +89,23 @@ describe("artifacts routes", () => {
     expect(downloadResponse.headers["content-type"]).toBe("application/octet-stream");
     expect(downloadResponse.body).toEqual(content);
   });
+
+  it("rejects artifact creation when metadata exceeds configured size", async () => {
+    const limitedApp = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: 16 } }), db);
+    const response = await request(limitedApp)
+      .put(`${API_BASE}/artifacts`)
+      .send({ runId, name: "model", type: "model", version: "v1", metadata: { key: "this is too large" } })
+      .expect(400);
+    expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
+  });
+
+  it("allows unbounded artifact metadata when metadataMaxBytes is null", async () => {
+    const unboundedApp = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: null } }), db);
+    const largeMetadata = { payload: "x".repeat(10_000) };
+    const response = await request(unboundedApp)
+      .put(`${API_BASE}/artifacts`)
+      .send({ runId, name: "model", type: "model", version: "v1", metadata: largeMetadata })
+      .expect(200);
+    expect(response.body).toMatchObject({ runId, metadata: largeMetadata });
+  });
 });

@@ -9,7 +9,8 @@ import { LogBufferConfigSchema } from "logbuffer";
 import { StorageConfigSchema } from "storage";
 
 const ServerConfigSchema = z.strictObject({
-  port: z.coerce.number().int().min(1).default(4000)
+  port: z.coerce.number().int().min(1).default(4000),
+  metadataMaxBytes: z.coerce.number().int().min(1).nullable().default(null)
 }).prefault({});
 
 export const AppConfigSchema = z.strictObject({
