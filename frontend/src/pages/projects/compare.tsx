@@ -1,7 +1,7 @@
 import type { Run, Scalar } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "wouter";
+import { useParams } from "wouter";
 
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
@@ -261,10 +261,19 @@ export default function ProjectCompareRoute(): ReactElement {
       </button>
     );
   };
+  const tabs = [
+    { id: "runs", label: "Runs", href: `/${handle}/${projectName}` },
+    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare` },
+    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings` }
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
-      <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: "compare" }]} />
+      <Navbar
+        breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: "compare" }]}
+        tabs={tabs}
+        activeTabId="compare"
+      />
       <div className="flex-1 lg:grid lg:grid-cols-[280px_1fr]">
         {!showProjectNotFound ? (
           <aside className="flex h-full flex-col border-b border-brand-border bg-[#f0f6f7] px-4 py-4 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
@@ -296,21 +305,9 @@ export default function ProjectCompareRoute(): ReactElement {
         ) : null}
 
         <main className="p-6 lg:p-8">
-          <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">{handle}</p>
-              <div className="mt-1 flex items-center gap-1.5 text-sm">
-                <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={`/${handle}/${projectName}`}>
-                  {projectName}
-                </Link>
-                <span className="text-brand-textMuted">/</span>
-                <span className="font-semibold text-brand-text">compare</span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-sm text-brand-textMuted">
-              plotting {visibleRuns.length} / {projectRuns.length} runs
-            </div>
-          </header>
+          <div className="mb-6 rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-sm text-brand-textMuted">
+            plotting {visibleRuns.length} / {projectRuns.length} runs
+          </div>
 
           {showProjectNotFound ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
