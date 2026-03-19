@@ -3,7 +3,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useState } from "react";
 
 import { apiBase } from "helpers";
-import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useAccountsStore } from "stores/accounts";
+import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 
 const uploadButtonClass = "rounded-[10px] bg-brand-accent px-3 py-2 text-xs font-semibold text-white disabled:cursor-wait disabled:opacity-70";
 const smallButtonClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold"
@@ -32,7 +32,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
   const [avatarVersion, setAvatarVersion] = useState(() => Date.now());
   const [isAvatarMissing, setIsAvatarMissing] = useState(false);
   const initials = useMemo(() => user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(), [user.name]);
-  const avatarSrc = useMemo(() => `${apiBase}/users/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`, [avatarVersion, user.handle]);
+  const avatarSrc = useMemo(() => `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`, [avatarVersion, user.handle]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -56,7 +56,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
     setIsAvatarSaving(true);
     setAvatarError(null);
     setAvatarStatus(null);
-    const result = await uploadCurrentUserAvatar(file);
+    const result = await uploadCurrentAccountAvatar(file);
     if (result.ok) {
       setAvatarStatus("Profile picture updated");
       setIsAvatarMissing(false);
@@ -72,7 +72,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
     setIsAvatarSaving(true);
     setAvatarError(null);
     setAvatarStatus(null);
-    const result = await deleteCurrentUserAvatar();
+    const result = await deleteCurrentAccountAvatar();
     if (result.ok) {
       setAvatarStatus("Profile picture removed");
       setIsAvatarMissing(true);

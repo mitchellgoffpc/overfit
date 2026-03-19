@@ -15,7 +15,7 @@ interface OrganizationPageProps {
 
 function MemberAvatar({ member }: { readonly member: OrganizationMemberWithRole }): ReactElement {
   const initials = member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  const avatarSrc = `${apiBase}/users/${encodeURIComponent(member.handle)}/avatar`;
+  const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(member.handle)}/avatar`;
 
   return (
     <Link href={`/${member.handle}`} title={member.name} className="no-underline">

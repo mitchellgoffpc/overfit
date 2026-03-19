@@ -11,7 +11,7 @@ const deleteAvatarMock = vi.hoisted(() => vi.fn());
 
 vi.mock("stores/accounts", async () => {
   const actual = await vi.importActual("stores/accounts");
-  return { ...actual, uploadCurrentUserAvatar: uploadAvatarMock, deleteCurrentUserAvatar: deleteAvatarMock };
+  return { ...actual, uploadCurrentAccountAvatar: uploadAvatarMock, deleteCurrentAccountAvatar: deleteAvatarMock };
 });
 
 const user: User = {
@@ -67,7 +67,7 @@ describe("SettingsProfileContent", () => {
     expect(await screen.findByText("Something went wrong")).toBeInTheDocument();
   });
 
-  it("Remove button calls deleteCurrentUserAvatar", () => {
+  it("Remove button calls deleteCurrentAccountAvatar", () => {
     render(<SettingsProfileContent />);
 
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
@@ -92,7 +92,7 @@ describe("SettingsProfileContent", () => {
     expect(await screen.findByText("Delete failed")).toBeInTheDocument();
   });
 
-  it("selecting a file calls uploadCurrentUserAvatar with the file", async () => {
+  it("selecting a file calls uploadCurrentAccountAvatar with the file", async () => {
     render(<SettingsProfileContent />);
 
     const file = new File(["img"], "avatar.png", { type: "image/png" });

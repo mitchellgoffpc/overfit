@@ -36,7 +36,7 @@ export default function Navbar({ breadcrumbs, tabs = [], activeTabId }: NavbarPr
   const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const avatarSrc = user ? `${apiBase}/users/${encodeURIComponent(user.handle)}/avatar` : "";
+  const avatarSrc = user ? `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar` : "";
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -134,7 +134,8 @@ export default function Navbar({ breadcrumbs, tabs = [], activeTabId }: NavbarPr
             </button>
             {isMenuOpen ? (
               <div
-                className="absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2 shadow-[0_16px_32px_rgba(15,23,42,0.14)]"
+                className={"absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2"
+                  + " shadow-[0_16px_32px_rgba(15,23,42,0.14)]"}
                 role="menu"
               >
                 <Link className={menuItemClass} role="menuitem" href={profileHref}>

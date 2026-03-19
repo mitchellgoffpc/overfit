@@ -7,12 +7,14 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { upsertAccountAvatar } from "repositories/account-avatars";
+import { createOrganization } from "repositories/organizations";
 import { createSession } from "repositories/sessions";
 import { createUser } from "repositories/users";
 
 const sessionCookie = (token: string) => `underfit_session=${token}`;
 
-describe("user avatars routes", () => {
+describe("account avatars routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
 
@@ -29,7 +31,7 @@ describe("user avatars routes", () => {
 
     await request(app).put(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(sessionToken)).set("Content-Type", "image/png").send(png).expect(200);
 
-    const response = await request(app).get(`${API_BASE}/users/sam/avatar`).expect(200);
+    const response = await request(app).get(`${API_BASE}/accounts/sam/avatar`).expect(200);
     expect(response.headers["content-type"]).toBe("image/jpeg");
     const metadata = await sharp(Buffer.from(response.body as Uint8Array)).metadata();
     expect(metadata.format).toBe("jpeg");
@@ -56,12 +58,22 @@ describe("user avatars routes", () => {
     await request(app).put(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(sessionToken)).set("Content-Type", "image/png").send(png).expect(200);
 
     await request(app).delete(`${API_BASE}/me/avatar`).set("Cookie", sessionCookie(sessionToken)).expect(200);
-    const response = await request(app).get(`${API_BASE}/users/maya/avatar`).expect(404);
+    const response = await request(app).get(`${API_BASE}/accounts/maya/avatar`).expect(404);
     expect(response.body).toMatchObject({ error: "Avatar not found" });
   });
 
-  it("returns user not found for unknown handles", async () => {
-    const response = await request(app).get(`${API_BASE}/users/missing/avatar`).expect(404);
-    expect(response.body).toMatchObject({ error: "User not found" });
+  it("fetches an organization avatar", async () => {
+    const organization = await createOrganization(db, { handle: "acme", name: "Acme" });
+    expect(organization).toBeDefined();
+    const jpg = await sharp({ create: { width: 160, height: 120, channels: 3, background: { r: 0, g: 128, b: 60 } } }).jpeg().toBuffer();
+    await upsertAccountAvatar(db, organization!.id, jpg);
+
+    const response = await request(app).get(`${API_BASE}/accounts/acme/avatar`).expect(200);
+    expect(response.headers["content-type"]).toBe("image/jpeg");
+  });
+
+  it("returns account not found for unknown account handles", async () => {
+    const response = await request(app).get(`${API_BASE}/accounts/missing/avatar`).expect(404);
+    expect(response.body).toMatchObject({ error: "Account not found" });
   });
 });

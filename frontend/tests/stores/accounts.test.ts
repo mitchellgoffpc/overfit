@@ -2,7 +2,7 @@ import { API_VERSION } from "@underfit/types";
 import type { Organization, User } from "@underfit/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteCurrentUserAvatar, uploadCurrentUserAvatar, useAccountsStore } from "stores/accounts";
+import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 
 const apiBase = `http://localhost:4000/api/${API_VERSION}`;
@@ -118,11 +118,11 @@ describe("accounts store", () => {
     expect(useAccountsStore.getState().me()).toEqual(user);
   });
 
-  it("uploads the current user avatar", async () => {
+  it("uploads the current account avatar", async () => {
     const file = new File(["avatar"], "avatar.png", { type: "image/png" });
     fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
 
-    const result = await uploadCurrentUserAvatar(file);
+    const result = await uploadCurrentAccountAvatar(file);
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/me/avatar`, {
@@ -133,10 +133,10 @@ describe("accounts store", () => {
     });
   });
 
-  it("deletes the current user avatar", async () => {
+  it("deletes the current account avatar", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
 
-    const result = await deleteCurrentUserAvatar();
+    const result = await deleteCurrentAccountAvatar();
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${apiBase}/me/avatar`, { credentials: "include", method: "DELETE" });

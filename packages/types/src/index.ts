@@ -33,8 +33,8 @@ export interface UserAuth {
   updatedAt: Timestamp;
 }
 
-export interface UserAvatar {
-  userId: ID;
+export interface AccountAvatar {
+  accountId: ID;
   image: Uint8Array;
   createdAt: Timestamp;
   updatedAt: Timestamp;

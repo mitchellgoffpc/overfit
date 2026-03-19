@@ -35,7 +35,7 @@ function SnakeGame(): ReactElement {
   const [score, setScore] = useState(0);
   const [started, setStarted] = useState(false);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     const start = [{ x: 7, y: 7 }];
     setSnake(start);
     setFood(randomPoint(start));
@@ -43,7 +43,7 @@ function SnakeGame(): ReactElement {
     setGameOver(false);
     setScore(0);
     setStarted(false);
-  };
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

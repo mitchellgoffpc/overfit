@@ -4,8 +4,8 @@ import sharp from "sharp";
 
 import type { Database } from "db";
 import type { RouteApp, RouteHandler } from "helpers";
-import { deleteUserAvatar, getUserAvatar, upsertUserAvatar } from "repositories/user-avatars";
-import { getUserByHandle } from "repositories/users";
+import { deleteAccountAvatar, getAccountAvatar, upsertAccountAvatar } from "repositories/account-avatars";
+import { getAccount } from "repositories/accounts";
 import { requireAuth } from "routes/auth";
 
 const AVATAR_OUTPUT_LIMIT_BYTES = 64 * 1024;
@@ -26,22 +26,27 @@ const processAvatar = async (input: Buffer): Promise<Buffer | undefined> => {
   return output.length <= AVATAR_OUTPUT_LIMIT_BYTES ? output : undefined;
 };
 
-export function registerUserAvatarRoutes(app: RouteApp, db: Database): void {
-  const getUserAvatarHandler: RouteHandler<{ handle: string }, Buffer> = async (req, res) => {
+const sendAvatar = (avatar: Buffer, res: express.Response) => {
+  res.setHeader("Content-Type", "image/jpeg");
+  res.send(Buffer.from(avatar));
+};
+
+export function registerAccountAvatarRoutes(app: RouteApp, db: Database): void {
+  const getAccountAvatarHandler: RouteHandler<{ handle: string }, Buffer> = async (req, res) => {
     const handle = req.params.handle.trim().toLowerCase();
-    const user = await getUserByHandle(db, handle);
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
+    const account = await getAccount(db, handle);
+    if (!account) {
+      res.status(404).json({ error: "Account not found" });
       return;
     }
 
-    const avatar = await getUserAvatar(db, handle);
+    const avatar = await getAccountAvatar(db, handle);
     if (!avatar) {
       res.status(404).json({ error: "Avatar not found" });
-    } else {
-      res.setHeader("Content-Type", "image/jpeg");
-      res.send(Buffer.from(avatar.image));
+      return;
     }
+
+    sendAvatar(Buffer.from(avatar.image), res);
   };
 
   const putCurrentUserAvatarHandler: RouteHandler<Record<string, string>, { status: "ok" }, Buffer> = async (req, res) => {
@@ -56,16 +61,16 @@ export function registerUserAvatarRoutes(app: RouteApp, db: Database): void {
       return;
     }
 
-    await upsertUserAvatar(db, req.user.id, image);
+    await upsertAccountAvatar(db, req.user.id, image);
     res.json({ status: "ok" });
   };
 
   const deleteCurrentUserAvatarHandler: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
-    await deleteUserAvatar(db, req.user.id);
+    await deleteAccountAvatar(db, req.user.id);
     res.json({ status: "ok" });
   };
 
-  app.get(`${API_BASE}/users/:handle/avatar`, getUserAvatarHandler);
+  app.get(`${API_BASE}/accounts/:handle/avatar`, getAccountAvatarHandler);
   app.put(`${API_BASE}/me/avatar`, requireAuth(db), express.raw({ type: "*/*", limit: AVATAR_UPLOAD_LIMIT }), putCurrentUserAvatarHandler);
   app.delete(`${API_BASE}/me/avatar`, requireAuth(db), deleteCurrentUserAvatarHandler);
 }

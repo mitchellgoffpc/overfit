@@ -6,7 +6,7 @@ import { useAuthStore } from "stores/auth";
 
 type UserResult = { ok: true } | { ok: false; error: string };
 
-export const uploadCurrentUserAvatar = async (file: File): Promise<UserResult> => {
+export const uploadCurrentAccountAvatar = async (file: File): Promise<UserResult> => {
   const body = await file.arrayBuffer();
   const { ok, error } = await request<{ status: "ok" }>("me/avatar", {
     method: "PUT",
@@ -16,7 +16,7 @@ export const uploadCurrentUserAvatar = async (file: File): Promise<UserResult> =
   return ok ? { ok: true } : { ok: false, error };
 };
 
-export const deleteCurrentUserAvatar = async (): Promise<UserResult> => {
+export const deleteCurrentAccountAvatar = async (): Promise<UserResult> => {
   const { ok, error } = await request<{ status: "ok" }>("me/avatar", { method: "DELETE" });
   return ok ? { ok: true } : { ok: false, error };
 };

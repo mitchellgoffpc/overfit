@@ -23,7 +23,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   const name = user.name;
   const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
-  const avatarSrc = `${apiBase}/users/${encodeURIComponent(user.handle)}/avatar`;
+  const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar`;
 
   return (
     <aside className="flex h-full flex-col gap-5 border-b border-brand-border px-5 py-6 lg:border-b-0 lg:border-r">
