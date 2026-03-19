@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 
 import type { ID, Project } from "@underfit/types";
+import { projectVisibility } from "@underfit/types";
 import { sql } from "kysely";
 
 import type { Database } from "db";
@@ -11,14 +12,15 @@ import { table as runsTable } from "repositories/runs";
 export const table = "projects";
 
 export type ProjectRow = Omit<Project, "owner"> & { accountId: ID };
-type CreateProjectRow = Pick<ProjectRow, "accountId" | "name" | "description">;
-type UpdateProjectRow = Partial<Pick<ProjectRow, "description">>;
+type CreateProjectRow = Pick<ProjectRow, "accountId" | "name" | "description"> & { visibility?: Project["visibility"] };
+type UpdateProjectRow = Partial<Pick<ProjectRow, "description" | "visibility">>;
 
 const projectSelect = [
   `${table}.id as id`,
   `${accountsTable}.handle as owner`,
   `${table}.name as name`,
   `${table}.description as description`,
+  `${table}.visibility as visibility`,
   `${table}.createdAt as createdAt`,
   `${table}.updatedAt as updatedAt`
 ] as const;
@@ -36,8 +38,10 @@ export const createProjectsTable = async (db: Database): Promise<void> => {
     .addColumn("accountId", "text", (col) => col.references("accounts.id").onDelete("cascade").onUpdate("cascade").notNull())
     .addColumn("name", "text", (col) => col.notNull())
     .addColumn("description", "text")
+    .addColumn("visibility", "text", (col) => col.notNull().defaultTo("private"))
     .addColumn("createdAt", "text", (col) => col.notNull())
     .addColumn("updatedAt", "text", (col) => col.notNull())
+    .addCheckConstraint("projects_visibility_check", sql`visibility in (${sql.join(projectVisibility.map((value) => sql.lit(value)))})`)
     .addUniqueConstraint("projects_account_id_name_unique", ["accountId", "name"])
     .execute();
 };
@@ -56,13 +60,15 @@ export const getProject = async (db: Database, handle: string, name: string): Pr
 
 export const createProject = async (db: Database, project: CreateProjectRow): Promise<Project | undefined> => {
   const id = randomBytes(16).toString("hex");
-  const payload: ProjectRow = { ...project, id, createdAt: nowIso(), updatedAt: nowIso() };
+  const payload: ProjectRow = { ...project, visibility: project.visibility ?? "private", id, createdAt: nowIso(), updatedAt: nowIso() };
   const result = await db.insertInto(table).values(payload).onConflict((oc) => oc.columns(["accountId", "name"]).doNothing()).executeTakeFirst();
   return result.numInsertedOrUpdatedRows ? await getProjectById(db, id) : undefined;
 };
 
 export const updateProject = async (db: Database, handle: string, name: string, updates: UpdateProjectRow): Promise<Project | undefined> => {
-  const payload = { description: updates.description, updatedAt: nowIso() };
+  const payload = updates.visibility === undefined
+    ? { description: updates.description, updatedAt: nowIso() }
+    : { description: updates.description, visibility: updates.visibility, updatedAt: nowIso() };
   const result = await db.updateTable(table)
     .set(payload)
     .where("id", "in", db.selectFrom(table)
@@ -86,6 +92,7 @@ export const listProjectsByUserActivity = async (db: Database, userId: ID): Prom
       `${accountsTable}.handle`,
       `${table}.name`,
       `${table}.description`,
+      `${table}.visibility`,
       `${table}.createdAt`,
       `${table}.updatedAt`
     ])

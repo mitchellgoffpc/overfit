@@ -9,6 +9,7 @@ const project: Project = {
   owner: "ada",
   name: "demo",
   description: "Demo project",
+  visibility: "private",
   createdAt: "2025-01-02T00:00:00.000Z",
   updatedAt: "2025-01-03T00:00:00.000Z"
 };

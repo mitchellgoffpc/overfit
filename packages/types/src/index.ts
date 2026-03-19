@@ -1,6 +1,7 @@
 export const organizationRoles = ["ADMIN", "MEMBER"] as const;
 export const accountTypes = ["USER", "ORGANIZATION"] as const;
 export const runStatus = ["queued", "running", "finished", "failed", "cancelled"] as const;
+export const projectVisibility = ["private", "public"] as const;
 
 export type ID = string;
 export type Handle = string;
@@ -8,6 +9,7 @@ export type Timestamp = string;
 export type RunStatus = (typeof runStatus)[number];
 export type OrganizationRole = (typeof organizationRoles)[number];
 export type AccountType = (typeof accountTypes)[number];
+export type ProjectVisibility = (typeof projectVisibility)[number];
 
 export interface Account {
   id: ID;
@@ -68,6 +70,7 @@ export interface Project {
   owner: Handle;
   name: string;
   description: string | null;
+  visibility: ProjectVisibility;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -1,4 +1,4 @@
-import { API_BASE, testSlug } from "@underfit/types";
+import { API_BASE, projectVisibility, testSlug } from "@underfit/types";
 import type { Project } from "@underfit/types";
 import { z } from "zod";
 
@@ -11,10 +11,12 @@ import { requireAuth } from "routes/auth";
 
 const CreateProjectPayloadSchema = z.strictObject({
   name: z.string().trim().toLowerCase(),
-  description: z.string().nullable().exactOptional()
+  description: z.string().nullable().exactOptional(),
+  visibility: z.enum(projectVisibility).exactOptional()
 });
 const UpdateProjectPayloadSchema = z.strictObject({
-  description: z.string().nullable()
+  description: z.string().nullable(),
+  visibility: z.enum(projectVisibility).exactOptional()
 });
 
 type CreateProjectPayload = z.infer<typeof CreateProjectPayloadSchema>;
@@ -52,7 +54,12 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
       if (!account) {
         res.status(404).json({ error: "Account not found" });
       } else {
-        const project = await createProject(db, { accountId: account.id, name: data.name, description: data.description ?? null });
+        const project = await createProject(db, {
+          accountId: account.id,
+          name: data.name,
+          description: data.description ?? null,
+          visibility: data.visibility ?? "private"
+        });
         if (!project) {
           res.status(409).json({ error: "Project already exists" });
         } else {
@@ -77,7 +84,8 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
         return;
       }
 
-      const project = await updateProject(db, handle, projectName, { description: data.description });
+      const updates = data.visibility === undefined ? { description: data.description } : { description: data.description, visibility: data.visibility };
+      const project = await updateProject(db, handle, projectName, updates);
       if (!project) {
         res.status(404).json({ error: "Project not found" });
       } else {

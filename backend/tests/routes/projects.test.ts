@@ -41,16 +41,22 @@ describe("projects routes", () => {
 
   it("creates and fetches a project by account handle and name", async () => {
     const createResponse = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "underfit", description: "Tracking runs" }).expect(200);
-    expect(createResponse.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
+    expect(createResponse.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs", visibility: "private" });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
-    expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs", visibility: "private" });
   });
 
   it("updates a project description", async () => {
     await createProject(db, { accountId: userId, name: "underfit", description: "Initial" });
     const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Tracking runs" }).expect(200);
-    expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs" });
+    expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs", visibility: "private" });
+  });
+
+  it("updates project visibility", async () => {
+    await createProject(db, { accountId: userId, name: "underfit", description: "Initial" });
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Initial", visibility: "public" }).expect(200);
+    expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Initial", visibility: "public" });
   });
 
   it("rejects invalid project names", async () => {
