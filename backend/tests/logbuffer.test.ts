@@ -45,10 +45,10 @@ describe("logbuffer", () => {
     await logbuffer.flush(runId, "worker-1");
     const segments = await listLogSegmentsForCursor(db, runId, "worker-1", 0);
     expect(segments).toHaveLength(1);
-    expect(segments[0]).toMatchObject({ startLine: 0, endLine: 2, byteCount: Buffer.byteLength("hello\nworld", "utf8") });
+    expect(segments[0]).toMatchObject({ startLine: 0, endLine: 2, byteOffset: 0, byteCount: Buffer.byteLength("hello\nworld\n", "utf8") });
 
-    const content = await fs.readFile(path.join(storageBaseDir, segments[0]!.storageKey), "utf8");
-    expect(content).toBe("hello\nworld");
+    const file = await fs.readFile(path.join(storageBaseDir, segments[0]!.storageKey), "utf8");
+    expect(file).toBe("hello\nworld\n");
 
     await logbuffer.stop();
   });
@@ -60,7 +60,7 @@ describe("logbuffer", () => {
     await logbuffer.appendLines(runId, "worker-1", 0, [{ timestamp: "2025-01-01T00:00:00.000Z", content: "abcd" }]);
     const segments = await listLogSegmentsForCursor(db, runId, "worker-1", 0);
     expect(segments).toHaveLength(1);
-    expect(segments[0]).toMatchObject({ startLine: 0, endLine: 1, byteCount: 4 });
+    expect(segments[0]).toMatchObject({ startLine: 0, endLine: 1, byteOffset: 0, byteCount: 5 });
 
     await logbuffer.stop();
   });

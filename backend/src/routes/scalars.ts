@@ -25,8 +25,8 @@ const FlushScalarBufferBodySchema = z.strictObject({});
 type CreateScalarsBody = z.infer<typeof CreateScalarsBodySchema>;
 type CreateScalarsResponse = { status: "buffered" } | { error: string; expectedStartLine: number };
 
-const readScalarSegment = async (storage: StorageBackend, storageKey: string): Promise<Scalar[]> => {
-  const content = (await storage.read(storageKey)).toString("utf8");
+const readScalarSegment = async (storage: StorageBackend, storageKey: string, byteOffset: number, byteCount: number): Promise<Scalar[]> => {
+  const content = (await storage.readRange(storageKey, byteOffset, byteCount)).toString("utf8");
   const lines = content.split("\n");
   if (lines[lines.length - 1] === "") {
     lines.pop();
@@ -73,7 +73,8 @@ export function registerScalarRoutes(app: RouteApp, db: Database, scalarBuffer: 
     }
 
     const persistedSegments = await listScalarSegmentsForCursor(db, run.id, 0);
-    const persistedScalars = (await Promise.all(persistedSegments.map(async ({ storageKey }) => await readScalarSegment(storage, storageKey)))).flat();
+    const readSegment = async (s: typeof persistedSegments[number]) => readScalarSegment(storage, s.storageKey, s.byteOffset, s.byteCount);
+    const persistedScalars = (await Promise.all(persistedSegments.map(readSegment))).flat();
     const nextCursor = persistedSegments.length === 0 ? 0 : persistedSegments[persistedSegments.length - 1]!.endLine;
     const bufferedScalars = scalarBuffer.getScalars(run.id, nextCursor, Number.MAX_SAFE_INTEGER);
     res.json([...persistedScalars, ...bufferedScalars]);

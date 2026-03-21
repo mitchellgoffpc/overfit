@@ -25,10 +25,9 @@ export interface LineBufferSegment<TScope> {
   scope: TScope;
   startLine: number;
   endLine: number;
-  byteCount: number;
   startAt: string;
   endAt: string;
-  content: string;
+  content: Buffer;
 }
 
 const getLineContent = (lines: LineItem[]): string => lines.map(({ content }) => content).join("\n");
@@ -157,12 +156,11 @@ export class LineBuffer<TScope, TItem extends LineItem> {
   private async writeSnapshot(snapshot: LineBufferState<TScope, TItem>): Promise<void> {
     const startAt = snapshot.lines[0]!.timestamp;
     const endAt = snapshot.lines[snapshot.lines.length - 1]!.timestamp;
-    const content = getLineContent(snapshot.lines);
+    const content = Buffer.from(getLineContent(snapshot.lines) + "\n", "utf8");
     await this.writeSegment({
       scope: snapshot.scope,
       startLine: snapshot.startLine,
       endLine: snapshot.endLine,
-      byteCount: snapshot.byteCount,
       startAt,
       endAt,
       content

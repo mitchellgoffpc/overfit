@@ -4,7 +4,7 @@ import type { LineBufferConfig } from "buffers/lines";
 import { LineBuffer } from "buffers/lines";
 import type { Database } from "db";
 import { createScalarSegment } from "repositories/scalars";
-import { getScalarSegmentStorageKey } from "storage";
+import { getScalarStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
 interface ScalarScope {
@@ -36,9 +36,9 @@ export class ScalarBuffer {
     this.lineBuffer = new LineBuffer(
       config,
       ({ runId }) => runId,
-      async ({ scope, startLine, endLine, byteCount, startAt, endAt, content }) => {
-        const storageKey = await this.storage.write(getScalarSegmentStorageKey(scope.runId, startLine), Buffer.from(content, "utf8"));
-        await createScalarSegment(this.db, { runId: scope.runId, startLine, endLine, byteCount, startAt, endAt, storageKey });
+      async ({ scope, startLine, endLine, startAt, endAt, content }) => {
+        const { storageKey, byteOffset, byteCount } = await this.storage.append(getScalarStorageKey(scope.runId), content);
+        await createScalarSegment(this.db, { runId: scope.runId, startLine, endLine, byteOffset, byteCount, startAt, endAt, storageKey });
       }
     );
   }

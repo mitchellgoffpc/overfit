@@ -40,13 +40,8 @@ type CreateLogLinesResponse = { status: "buffered" } | { error: string; expected
 const normalizeLogLines = (lines: LogLine[]): LogLine[] =>
   lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
 
-const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, startLine: number, endLine: number): Promise<string> => {
-  const content = (await storage.read(storageKey)).toString("utf8");
-  const lines = content.split("\n");
-  if (lines[lines.length - 1] === "") {
-    lines.pop();
-  }
-  return lines.slice(startLine, endLine).join("\n");
+const readLogSegment = async (storage: StorageBackend, storageKey: string, byteOffset: number, byteCount: number): Promise<string> => {
+  return (await storage.readRange(storageKey, byteOffset, byteCount)).toString("utf8");
 };
 
 export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuffer, storage: StorageBackend): void {
@@ -105,9 +100,11 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
     } else {
       const persistedSegments = await listLogSegmentsForCursor(db, run.id, workerId, cursor, lineCount);
       if (persistedSegments.length > 0) {
-        const entries = await Promise.all(persistedSegments.map(async ({ storageKey, startLine, endLine, startAt, endAt }) => {
+        const entries = await Promise.all(persistedSegments.map(async ({ storageKey, startLine, endLine, byteOffset, byteCount, startAt, endAt }) => {
+          const segmentContent = await readLogSegment(storage, storageKey, byteOffset, byteCount);
           const clippedStartLine = Math.max(startLine, cursor);
-          const content = await readLogSegmentLines(storage, storageKey, clippedStartLine - startLine, endLine - startLine);
+          const lines = segmentContent.split("\n");
+          const content = lines.slice(clippedStartLine - startLine, endLine - startLine).join("\n");
           return { startLine: clippedStartLine, endLine, content, startAt, endAt };
         }));
         const nextCursor = entries[entries.length - 1]!.endLine;

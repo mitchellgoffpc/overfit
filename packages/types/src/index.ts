@@ -121,6 +121,7 @@ export interface ScalarSegment {
   endLine: number;
   startAt: Timestamp;
   endAt: Timestamp;
+  byteOffset: number;
   byteCount: number;
   storageKey: string;
   createdAt: Timestamp;
@@ -134,6 +135,7 @@ export interface LogSegment {
   endLine: number;
   startAt: Timestamp;
   endAt: Timestamp;
+  byteOffset: number;
   byteCount: number;
   storageKey: string;
   createdAt: Timestamp;

@@ -18,6 +18,7 @@ export const createLogSegmentsTable = async (db: Database): Promise<void> => {
     .addColumn("endLine", "integer", (col) => col.notNull())
     .addColumn("startAt", "text", (col) => col.notNull())
     .addColumn("endAt", "text", (col) => col.notNull())
+    .addColumn("byteOffset", "integer", (col) => col.notNull())
     .addColumn("byteCount", "integer", (col) => col.notNull())
     .addColumn("storageKey", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())

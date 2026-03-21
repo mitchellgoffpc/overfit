@@ -4,7 +4,7 @@ import type { LineBufferConfig } from "buffers/lines";
 import { LineBuffer, LineBufferConfigSchema } from "buffers/lines";
 import type { Database } from "db";
 import { createLogSegment } from "repositories/logs";
-import { getLogSegmentStorageKey } from "storage";
+import { getLogStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
 export { LineBufferConfigSchema as LogBufferConfigSchema };
@@ -31,9 +31,10 @@ export class LogBuffer {
     this.lineBuffer = new LineBuffer(
       config,
       ({ runId, workerId }) => `${runId}:${workerId}`,
-      async ({ scope, startLine, endLine, byteCount, startAt, endAt, content }) => {
-        const storageKey = await this.storage.write(getLogSegmentStorageKey(scope.runId, scope.workerId, startLine), Buffer.from(content, "utf8"));
-        await createLogSegment(this.db, { runId: scope.runId, workerId: scope.workerId, startLine, endLine, byteCount, startAt, endAt, storageKey });
+      async ({ scope, startLine, endLine, startAt, endAt, content }) => {
+        const { storageKey, byteOffset, byteCount } = await this.storage.append(getLogStorageKey(scope.runId, scope.workerId), content);
+        const segment = { runId: scope.runId, workerId: scope.workerId, startLine, endLine, byteOffset, byteCount, startAt, endAt, storageKey };
+        await createLogSegment(this.db, segment);
       }
     );
   }
