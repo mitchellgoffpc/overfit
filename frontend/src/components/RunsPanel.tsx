@@ -6,7 +6,7 @@ import RunStatusBadge from "components/RunStatusBadge";
 import { buildProjectNameMap, formatRunTime } from "helpers";
 
 const runItemClass = "flex items-center justify-between gap-3 rounded-[14px] border border-transparent"
-  + " bg-brand-surfaceMuted px-4 py-3 hover:border-brand-border";
+  + " bg-white/80 px-4 py-3 hover:border-[#c7d8d7] hover:bg-white";
 
 interface RunsPanelProps {
   readonly runs: Run[];
@@ -20,15 +20,18 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
   const projectNames = buildProjectNameMap(projects);
 
   return (
-    <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+    <section className="rounded-[14px] border border-[#cfdddd] bg-[#f9fcfb]/70 p-4">
       {runs.length > 0 ? (
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="mb-4 flex flex-col gap-3 border-b border-[#d4dfdf] pb-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl">Recent runs</h2>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Section I</p>
+            <h2 className="mt-1 font-display text-[31px] leading-none">Recent Runs</h2>
             <p className="mt-1.5 text-[13px] text-brand-textMuted">Latest activity across your projects.</p>
           </div>
           <div className="flex items-center">
-            <div className="text-xs text-brand-textMuted">showing {runs.length}</div>
+            <div className="rounded-full border border-[#cfdddd] bg-white/90 px-3 py-1 text-[12px] text-brand-textMuted">
+              showing {runs.length}
+            </div>
           </div>
         </div>
       ) : null}
@@ -48,7 +51,7 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
                 href={`/${userHandle}/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
               >
                 <div className="grid gap-1.5">
-                  <div className="font-semibold">{run.name}</div>
+                  <div className="text-[14px] font-semibold">{run.name}</div>
                   <div className="flex items-center gap-2 text-xs text-brand-textMuted">
                     <span>{projectNames.get(run.projectId) ?? "Unknown project"}</span>
                     <span className="text-brand-border">•</span>

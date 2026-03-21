@@ -1,6 +1,6 @@
 import type { Organization, OrganizationRole } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Modal from "components/Modal";
 import { useAuthStore } from "stores/auth";
@@ -8,8 +8,12 @@ import { createOrganization, fetchMyMemberships, leaveOrganization } from "store
 
 type Membership = Organization & { role: OrganizationRole };
 
-const inputClass = "rounded-[10px] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
-  + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+const inkButtonClass = "rounded-[10px] border border-[#1f3637] bg-[#1f3637] px-4 py-2 text-sm font-semibold text-white"
+  + " transition hover:bg-[#152a2b] disabled:cursor-wait disabled:opacity-70";
+const paperButtonClass = "rounded-[10px] border border-[#cfd8d8] bg-white px-3 py-2 text-xs font-semibold"
+  + " text-brand-text transition hover:bg-[#f5f9f9] disabled:cursor-wait disabled:opacity-70";
+const lineInputClass = "w-full rounded-[10px] border border-[#d2dddd] bg-white/70 px-3 py-2.5 text-sm"
+  + " outline-none transition focus:border-brand-accent";
 const leaveButtonClass = "rounded-[10px] border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-xs font-semibold"
   + " text-[#b42318] hover:border-[#f87171] hover:bg-[#fee2e2] disabled:cursor-wait disabled:opacity-70";
 
@@ -26,6 +30,10 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const [isCreating, setIsCreating] = useState(false);
   const [isLeaving, setIsLeaving] = useState<string | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
+  const notebookDate = useMemo(
+    () => new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
+    []
+  );
 
   useEffect(() => {
     if (loaded || status !== "authenticated") { return; }
@@ -83,34 +91,44 @@ export default function SettingsOrganizationsContent(): ReactElement {
   };
 
   return (
-    <section className="grid gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Organizations</h1>
-        <button
-          className="rounded-[10px] bg-brand-accent px-3 py-2 text-sm font-semibold text-white shadow-soft"
-          type="button"
-          onClick={openCreateModal}
-        >
-          New organization
-        </button>
-      </div>
-
-      <div className="grid gap-4 rounded-[18px] border border-brand-border bg-brand-surface px-5 pb-3 pt-5 shadow-soft">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold">Your organizations</p>
-          <p className="text-xs text-brand-textMuted">{memberships.length} total</p>
+    <section className="grid lg:grid-cols-[300px_1fr]">
+      <aside className="border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:border-[#d2dfdf] lg:pl-14 lg:pr-5 lg:pt-8">
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
+        <h2 className="mt-1 font-display text-[34px] leading-none text-brand-text">Settings</h2>
+        <p className="mt-2 font-mono text-[11px] text-brand-textMuted" style={{ lineHeight: "30px" }}>{notebookDate}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.16em] mt-[28px] text-brand-textMuted" style={{ lineHeight: "30px" }}>Summary</p>
+        <div className="flex items-center justify-between text-[12px]" style={{ height: "30px" }}>
+          <span className="text-brand-textMuted">memberships</span>
+          <span className="font-semibold text-brand-text">{memberships.length}</span>
         </div>
-        {error ? <div className="text-xs text-[#b42318]">{error}</div> : null}
+      </aside>
+
+      <div className="relative p-6">
+        <header className="mb-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Section B</p>
+          <h2 className="mt-1 font-display text-[34px] leading-none text-brand-text">Organizations</h2>
+        </header>
+
+        <div className="flex flex-wrap gap-2 mb-[30px]">
+          {error ? <div className="rounded-[10px] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">{error}</div> : null}
+        </div>
+
+        <div className="mb-4 flex items-center justify-between">
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">Your organizations</p>
+          <button className={inkButtonClass} type="button" onClick={openCreateModal}>New organization</button>
+        </div>
+
         {isLoading ? <div className="text-xs text-brand-textMuted">Loading organizations...</div> : null}
         {!isLoading && memberships.length === 0 ? <div className="text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
-        <div className={memberships.length > 0 ? "border-t border-brand-border" : ""}>
+
+        <div className={memberships.length > 0 ? "border-t border-[#d2dfdf]" : ""}>
           {memberships.map((membership) => (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-border px-1 py-3 last:border-b-0" key={membership.id}>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d2dfdf] px-1 py-3 last:border-b-0" key={membership.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{membership.name}</p>
                 <p className="text-[11px] text-brand-textMuted">
                   @{membership.handle}
-                  <span className="ml-2 rounded-full border border-brand-border px-2 py-0.5 text-[10px] font-medium">{membership.role}</span>
+                  <span className="ml-2 rounded-full border border-[#d2dfdf] px-2 py-0.5 text-[10px] font-medium">{membership.role}</span>
                 </p>
               </div>
               <button
@@ -140,14 +158,14 @@ export default function SettingsOrganizationsContent(): ReactElement {
           {createError ? <div className="rounded-[10px] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{createError}</div> : null}
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Handle
-            <input className={inputClass} type="text" placeholder="acme" value={newHandle} onChange={(e) => { setNewHandle(e.target.value); }} />
+            <input className={lineInputClass} type="text" placeholder="acme" value={newHandle} onChange={(e) => { setNewHandle(e.target.value); }} />
           </label>
           <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
             Display name
-            <input className={inputClass} type="text" placeholder="Acme Corp" value={newName} onChange={(e) => { setNewName(e.target.value); }} />
+            <input className={lineInputClass} type="text" placeholder="Acme Corp" value={newName} onChange={(e) => { setNewName(e.target.value); }} />
           </label>
           <button
-            className="rounded-[10px] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
+            className={inkButtonClass}
             type="button"
             onClick={() => { void handleCreate(); }}
             disabled={isCreating}
@@ -165,7 +183,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
           </p>
           <div className="flex justify-end gap-2">
             <button
-              className="rounded-[10px] border border-brand-border bg-white px-3 py-2 text-xs font-semibold hover:bg-brand-hover"
+              className={paperButtonClass}
               type="button"
               onClick={() => { setLeaveTarget(null); }}
             >

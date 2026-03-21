@@ -1,3 +1,4 @@
+import { faCodeBranch, faGear, faList } from "@fortawesome/free-solid-svg-icons";
 import type { Run, Scalar } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,6 +16,7 @@ const tooltipClass = "pointer-events-none absolute z-10 max-w-[280px] rounded-[1
 const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
 const xFormatter = (value: number) => value.toFixed(0);
 const yFormatter = (value: number) => value.toFixed(2);
+const sectionLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 interface ChartSeries {
   readonly id: string;
@@ -43,6 +45,8 @@ const getSeriesPoints = (scalars: Scalar[], metric: string): { x: number; y: num
     if (typeof value !== "number") { return []; }
     return [{ x: scalar.step ?? scalarIndex, y: value }];
   });
+const formatCreatedAt = (value: string): string =>
+  new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default function ProjectCompareRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
@@ -129,6 +133,10 @@ export default function ProjectCompareRoute(): ReactElement {
     [projectRuns]
   );
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
+  const runningCount = useMemo(() => projectRuns.filter((run) => run.status === "running").length, [projectRuns]);
+  const failedCount = useMemo(() => projectRuns.filter((run) => run.status === "failed").length, [projectRuns]);
+  const notebookShellClass = "relative mx-auto w-full overflow-hidden border-x border-b border-[#c4d1d1]"
+    + " bg-[#f8fcfa] shadow-[0_14px_36px_rgba(30,52,52,0.18)] lg:grid lg:grid-cols-[300px_1fr]";
 
   const chartSeries = useMemo(() => {
     const metricKeys = new Set<string>();
@@ -191,8 +199,8 @@ export default function ProjectCompareRoute(): ReactElement {
       : { left: `${String(hovered.cursorX)}px`, top: "8px", transform: isLeft ? "translateX(12px)" : "translateX(calc(-100% - 12px))" };
 
     return (
-      <div className="relative rounded-[12px] border border-brand-border bg-brand-surface px-2 pb-[6px] pt-2 shadow-soft" key={metric}>
-        <div className="mb-1 flex flex-col items-center gap-0">
+      <div className="relative rounded-[14px] border border-[#cfdddd] bg-white/95 px-3 pb-[8px] pt-3 shadow-[0_8px_20px_rgba(23,43,43,0.06)]" key={metric}>
+        <div className="mb-1.5 flex flex-col items-center gap-0">
           <h2 className="text-[13px] font-semibold text-brand-text">{label}</h2>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-brand-textMuted">
             {series.map((line) => (
@@ -222,9 +230,9 @@ export default function ProjectCompareRoute(): ReactElement {
             </div>
           ) : null}
           <LineChart
-            className="h-[220px] w-full"
+            className="h-[230px] w-full"
             series={series.filter((line) => line.points.length > 0)}
-            height={220}
+            height={230}
             xLabelFormatter={xFormatter}
             yLabelFormatter={yFormatter}
             hoverStep={hovered?.step ?? null}
@@ -242,85 +250,121 @@ export default function ProjectCompareRoute(): ReactElement {
     return (
       <button
         className={[
-          "relative w-full px-4 py-2 text-left transition lg:px-5",
-          "after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-brand-border/70 after:content-['']",
-          "lg:after:left-5 lg:after:right-5 last:after:hidden",
-          isVisible ? "bg-transparent hover:bg-brand-surface/70" : "bg-transparent opacity-65"
+          "relative flex h-[30px] w-full items-center justify-between text-left transition",
+          isVisible ? "bg-transparent hover:bg-white/35" : "bg-transparent opacity-60"
         ].join(" ")}
         key={run.id}
         onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
         type="button"
       >
-        <div className="flex items-center justify-between gap-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-            <span className="truncate text-[13px] font-medium leading-5">{run.name}</span>
-          </div>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+          <span className="truncate text-[12px] font-semibold leading-5">{run.name}</span>
+        </div>
+        <div className="ml-2 flex items-center gap-2 text-[10px] text-brand-textMuted">
+          <span>{formatCreatedAt(run.createdAt)}</span>
           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-[#24b26b]" : "bg-brand-border"}`} />
         </div>
       </button>
     );
   };
   const tabs = [
-    { id: "runs", label: "Runs", href: `/${handle}/${projectName}` },
-    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare` },
-    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings` }
+    { id: "runs", label: "Runs", href: `/${handle}/${projectName}`, icon: faList },
+    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare`, icon: faCodeBranch },
+    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings`, icon: faGear }
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
+    <div className="min-h-screen bg-[#e9efed] text-brand-text">
       <Navbar
         breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: "compare" }]}
         tabs={tabs}
         activeTabId="compare"
+        tabsMaxWidth="100vw"
       />
-      <div className="flex-1 lg:grid lg:grid-cols-[280px_1fr]">
+
+      <div className={notebookShellClass} style={{ maxWidth: "calc(100% - 80px)" }}>
+        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[14px] bg-[#dce7e4]" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden
+          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 30px" }}
+        />
+        <div className="pointer-events-none absolute bottom-0 left-10 top-0 w-px bg-[#efb1b1]/70" aria-hidden />
+
         {!showProjectNotFound ? (
-          <aside className="flex h-full flex-col border-b border-brand-border bg-[#f0f6f7] px-4 py-4 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-brand-textMuted">Runs</h2>
-              <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] text-brand-textMuted">{projectRuns.length}</span>
+          <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
+            <div className="lg:h-[246px]">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
+              <h1 className="mt-1 font-display text-[33px] leading-none text-brand-text">{projectName}</h1>
+              <p className="mt-1 font-mono text-[11px] text-brand-textMuted">@{handle} / compare</p>
+
+              <div className="mt-3 rounded-[12px] border border-[#d2dede] bg-white/85 px-3 py-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
+                <div className="mt-2 flex items-center justify-between text-[12px]">
+                  <span className="text-brand-textMuted">total</span>
+                  <span className="font-semibold">{projectRuns.length}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[12px]">
+                  <span className="text-brand-textMuted">running</span>
+                  <span className="font-semibold text-[#2d7172]">{runningCount}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[12px]">
+                  <span className="text-brand-textMuted">failed</span>
+                  <span className="font-semibold text-[#bb5f5f]">{failedCount}</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <button
+                  className={"flex-1 rounded-[8px] border border-[#c2d7d6] bg-[#eff6f5] px-2 py-1.5"
+                    + " text-[11px] font-semibold text-brand-text transition hover:bg-white"}
+                  onClick={() => { setHiddenRunNames({}); }}
+                  type="button"
+                >
+                  Show all
+                </button>
+                <button
+                  className={"flex-1 rounded-[8px] border border-[#d4dfdf] bg-white/80 px-2 py-1.5"
+                    + " text-[11px] font-semibold text-brand-text transition hover:bg-white"}
+                  onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
+                  type="button"
+                >
+                  Hide all
+                </button>
+              </div>
             </div>
-            <div className="mb-3 flex gap-2">
-              <button
-                className="flex-1 rounded-md border border-brand-border bg-brand-surface px-2 py-1.5 text-[11px] font-semibold text-brand-text"
-                onClick={() => { setHiddenRunNames({}); }}
-                type="button"
-              >
-                Show all
-              </button>
-              <button
-                className="flex-1 rounded-md border border-brand-border bg-brand-surface px-2 py-1.5 text-[11px] font-semibold text-brand-text"
-                onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
-                type="button"
-              >
-                Hide all
-              </button>
-            </div>
-            <div className="-mx-4 border-y border-brand-border/70 lg:-mx-5">
-              {projectRuns.length === 0 && !isRunsLoading ? <div className="px-4 py-2 text-[13px] text-brand-textMuted lg:px-5">No runs yet.</div> : null}
+
+            <div className="grid">
+              {projectRuns.length === 0 && !isRunsLoading ? <div className="py-1 text-[13px] text-brand-textMuted">No runs yet.</div> : null}
               {projectRuns.map(renderRunItem)}
             </div>
           </aside>
         ) : null}
 
-        <main className="p-6 lg:p-8">
-          <div className="mb-6 rounded-xl border border-brand-border bg-brand-surface px-4 py-2 text-sm text-brand-textMuted">
-            plotting {visibleRuns.length} / {projectRuns.length} runs
-          </div>
+        <main className="relative p-6">
+          <header className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-[#d4dfdf] pb-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Section D</p>
+              <h2 className="mt-1 font-display text-[34px] leading-none text-brand-text">Comparison Plots</h2>
+            </div>
+            <div className="rounded-full border border-[#cfdddd] bg-white/90 px-3 py-1 text-[12px] text-brand-textMuted">
+              plotting {visibleRuns.length} / {projectRuns.length} runs
+            </div>
+          </header>
 
           {showProjectNotFound ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {runError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{runError}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{scalarError}</div> : null}
           {!showProjectNotFound ? (
-            <section className="lg:py-1">
+            <section>
               {isRunsLoading || isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">Loading charts...</div> : null}
               {visibleRuns.length === 0 ? <div className="mb-4 text-[13px] text-brand-textMuted">Select at least one run to view charts.</div> : null}
-              {sections.map(({ prefix, charts }) => (
-                <section className="mb-6 last:mb-0" key={prefix}>
+              {sections.map(({ prefix, charts }, sectionIndex) => (
+                <section className="mb-7 last:mb-0" key={prefix}>
                   <header className="mb-3 flex items-center justify-between gap-2">
                     <button
-                      className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
+                      className="flex items-center gap-2 text-left text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
                       type="button"
                       onClick={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
                     >
@@ -329,8 +373,8 @@ export default function ProjectCompareRoute(): ReactElement {
                           <path d="M4 6.25 8 10l4-3.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" />
                         </svg>
                       </span>
-                      <span>{prefix}</span>
-                      <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] font-semibold text-brand-textMuted">
+                      <span>Section {sectionLabels[sectionIndex] ?? "Z"} · {prefix}</span>
+                      <span className="rounded-full border border-[#d0dddd] bg-white px-2 py-0.5 text-[11px] font-semibold text-brand-textMuted">
                         {charts.length}
                       </span>
                     </button>

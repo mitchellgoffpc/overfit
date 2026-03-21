@@ -21,6 +21,7 @@ export default {
       fontFamily: {
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
         display: ["Fraunces", "serif"],
+        headline: ["Sora", "Space Grotesk", "system-ui", "sans-serif"],
         mono: ["SFMono-Regular", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
       },
     },

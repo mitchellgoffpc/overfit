@@ -1,3 +1,4 @@
+import { faCodeBranch, faGear, faList } from "@fortawesome/free-solid-svg-icons";
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { useParams } from "wouter";
@@ -25,9 +26,9 @@ export default function ProjectSettingsRoute(): ReactElement {
     if (!project) { void fetchProject(handle, projectName); }
   }, [fetchProject, handle, project, projectName]);
   const tabs = [
-    { id: "runs", label: "Runs", href: `/${handle}/${projectName}` },
-    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare` },
-    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings` }
+    { id: "runs", label: "Runs", href: `/${handle}/${projectName}`, icon: faList },
+    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare`, icon: faCodeBranch },
+    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings`, icon: faGear }
   ];
 
   return (
@@ -36,8 +37,9 @@ export default function ProjectSettingsRoute(): ReactElement {
         breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: "settings" }]}
         tabs={tabs}
         activeTabId="settings"
+        tabsMaxWidth="100vw"
       />
-      <main className="mx-auto w-full max-w-6xl px-6 py-6 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl px-6 py-6">
         {!project && !isProjectsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
         {project ? (
           <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 text-[14px] text-brand-textMuted shadow-soft">
