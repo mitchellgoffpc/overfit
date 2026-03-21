@@ -75,6 +75,14 @@ export interface Project {
   updatedAt: Timestamp;
 }
 
+export interface Collaborator {
+  id: ID;
+  projectId: ID;
+  userId: ID;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 export interface Run {
   id: ID;
   projectId: ID;

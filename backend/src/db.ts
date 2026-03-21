@@ -1,4 +1,4 @@
-import type { AccountAvatar, ApiKeyWithToken, LogSegment, OrganizationMember, ScalarSegment, Session, UserAuth } from "@underfit/types";
+import type { AccountAvatar, ApiKeyWithToken, Collaborator, LogSegment, OrganizationMember, ScalarSegment, Session, UserAuth } from "@underfit/types";
 import BetterSqlite3 from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { createAccountsTable } from "repositories/accounts";
 import { createApiKeysTable } from "repositories/api-keys";
 import type { ArtifactRow } from "repositories/artifacts";
 import { createArtifactsTable } from "repositories/artifacts";
+import { createCollaboratorsTable } from "repositories/collaborators";
 import { createLogSegmentsTable } from "repositories/logs";
 import { createOrganizationMembersTable } from "repositories/organization-members";
 import type { OrganizationRow } from "repositories/organizations";
@@ -46,6 +47,7 @@ interface DatabaseSchema {
   organizations: OrganizationRow;
   organization_members: OrganizationMember;
   projects: ProjectRow;
+  collaborators: Collaborator;
   runs: RunRow;
   log_segments: LogSegment;
   artifacts: ArtifactRow;
@@ -64,6 +66,7 @@ const initDatabase = async (db: Database): Promise<void> => {
   await createOrganizationsTable(db);
   await createOrganizationMembersTable(db);
   await createProjectsTable(db);
+  await createCollaboratorsTable(db);
   await createRunsTable(db);
   await createLogSegmentsTable(db);
   await createArtifactsTable(db);

@@ -12,6 +12,7 @@ import { registerAccountRoutes } from "routes/accounts";
 import { registerApiKeyRoutes } from "routes/api-keys";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
+import { registerCollaboratorRoutes } from "routes/collaborators";
 import { registerLogRoutes } from "routes/logs";
 import { registerOrganizationMembershipRoutes } from "routes/organization-members";
 import { registerOrganizationRoutes } from "routes/organizations";
@@ -47,6 +48,7 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerOrganizationMembershipRoutes(app, db);
   registerOrganizationRoutes(app, db);
   registerProjectRoutes(app, db);
+  registerCollaboratorRoutes(app, db);
   registerRunRoutes(app, db, config.server.metadataMaxBytes);
   registerLogRoutes(app, db, logBuffer, storage);
   registerArtifactRoutes(app, db, storage, config.server.metadataMaxBytes);
