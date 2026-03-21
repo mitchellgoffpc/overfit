@@ -6,20 +6,23 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { createApiKey } from "repositories/api-keys";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";
-import { createSession } from "repositories/sessions";
 import { createUser } from "repositories/users";
 
 describe("projects routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
   let userId: string;
+  let auth: [string, string];
 
   beforeEach(async () => {
     db = await createDatabase({ type: "sqlite", path: ":memory:" });
     app = createApp(AppConfigSchema.parse({}), db);
     userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
+    const { token } = await createApiKey(db, { userId, label: "test", token: "test-token" });
+    auth = ["Authorization", `Bearer ${token}`];
   });
 
   it("fetches projects by account handle and project name", async () => {
@@ -40,7 +43,8 @@ describe("projects routes", () => {
   });
 
   it("creates and fetches a project by account handle and name", async () => {
-    const createResponse = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "underfit", description: "Tracking runs" }).expect(200);
+    const createResponse = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects`).set(...auth).send({ name: "underfit", description: "Tracking runs" }).expect(200);
     expect(createResponse.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs", visibility: "private" });
 
     const response = await request(app).get(`${API_BASE}/accounts/ada/projects/underfit`).expect(200);
@@ -49,40 +53,42 @@ describe("projects routes", () => {
 
   it("updates a project description", async () => {
     await createProject(db, { accountId: userId, name: "underfit", description: "Initial" });
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Tracking runs" }).expect(200);
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).set(...auth).send({ description: "Tracking runs" }).expect(200);
     expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Tracking runs", visibility: "private" });
   });
 
   it("updates project visibility", async () => {
     await createProject(db, { accountId: userId, name: "underfit", description: "Initial" });
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ description: "Initial", visibility: "public" }).expect(200);
+    const response = await request(app)
+      .put(`${API_BASE}/accounts/ada/projects/underfit`).set(...auth).send({ description: "Initial", visibility: "public" }).expect(200);
     expect(response.body).toMatchObject({ owner: "ada", name: "underfit", description: "Initial", visibility: "public" });
   });
 
   it("rejects invalid project names", async () => {
-    const response = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "Underfit Labs", description: null }).expect(400);
+    const response = await request(app).post(`${API_BASE}/accounts/ada/projects`).set(...auth).send({ name: "Underfit Labs", description: null }).expect(400);
     expect(response.body).toMatchObject({ error: "Invalid project name" });
   });
 
   it("rejects creating projects for unknown accounts", async () => {
-    const response = await request(app).post(`${API_BASE}/accounts/missing/projects`).send({ name: "underfit", description: null }).expect(404);
+    const response = await request(app).post(`${API_BASE}/accounts/missing/projects`).set(...auth).send({ name: "underfit", description: null }).expect(404);
     expect(response.body).toMatchObject({ error: "Account not found" });
   });
 
   it("rejects updating unknown projects", async () => {
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/missing`).send({ description: "Tracking runs" }).expect(404);
+    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/missing`).set(...auth).send({ description: "Tracking runs" }).expect(404);
     expect(response.body).toMatchObject({ error: "Project not found" });
   });
 
   it("rejects creating duplicate projects", async () => {
     await createProject(db, { accountId: userId, name: "underfit", description: null });
-    const response = await request(app).post(`${API_BASE}/accounts/ada/projects`).send({ name: "underfit", description: null }).expect(409);
+    const response = await request(app).post(`${API_BASE}/accounts/ada/projects`).set(...auth).send({ name: "underfit", description: null }).expect(409);
     expect(response.body).toMatchObject({ error: "Project already exists" });
   });
 
   it("rejects updating non-updatable fields", async () => {
     await createProject(db, { accountId: userId, name: "underfit", description: null });
-    const response = await request(app).put(`${API_BASE}/accounts/ada/projects/underfit`).send({ name: "new-name", description: "Tracking runs" }).expect(400);
+    const response = await request(app)
+      .put(`${API_BASE}/accounts/ada/projects/underfit`).set(...auth).send({ name: "new-name", description: "Tracking runs" }).expect(400);
     expect(response.body).toMatchObject({ error: "Unrecognized key: \"name\"" });
   });
 
@@ -94,9 +100,8 @@ describe("projects routes", () => {
     await createRun(db, { projectId: project2.id, userId, name: "Run 2", status: "finished", config: null });
     await createRun(db, { projectId: project2.id, userId, name: "Run 3", status: "running", config: null });
     await createRun(db, { projectId: project1.id, userId: user2Id, name: "Run 4", status: "running", config: null });
-    const session = await createSession(db, { userId, expiresAt: "2099-01-01T00:00:00.000Z" });
 
-    const response = await request(app).get(`${API_BASE}/me/projects`).set("Cookie", `underfit_session=${session.id}`).expect(200);
+    const response = await request(app).get(`${API_BASE}/me/projects`).set(...auth).expect(200);
     expect(response.body).toMatchObject([{ id: project2.id }, { id: project1.id }]);
   });
 

@@ -1,12 +1,13 @@
 import { API_BASE } from "@underfit/types";
-import type { Artifact } from "@underfit/types";
+import type { Artifact, ID } from "@underfit/types";
 import express from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError, getJsonSizeError } from "helpers";
-import type { RouteApp, RouteHandler, RouteParams } from "helpers";
+import type { RouteApp, RouteHandler } from "helpers";
 import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
+import { requireAuth } from "routes/auth";
 import { getArtifactStorageKey } from "storage";
 import type { StorageBackend } from "storage";
 
@@ -45,7 +46,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     }
   };
 
-  const getArtifactHandler: RouteHandler<RouteParams, Artifact> = async (req, res) => {
+  const getArtifactHandler: RouteHandler<{ id: ID }, Artifact> = async (req, res) => {
     const artifact = await getArtifact(db, req.params.id);
 
     if (!artifact) {
@@ -55,7 +56,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     }
   };
 
-  const uploadArtifactHandler: RouteHandler<RouteParams, Artifact, Buffer> = async (req, res) => {
+  const uploadArtifactHandler: RouteHandler<{ id: ID }, Artifact, Buffer> = async (req, res) => {
     const artifact = await getArtifact(db, req.params.id);
     if (!artifact) {
       res.status(404).json({ error: "Artifact not found" });
@@ -72,7 +73,7 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     }
   };
 
-  const downloadArtifactHandler: RouteHandler<RouteParams, Buffer> = async (req, res) => {
+  const downloadArtifactHandler: RouteHandler<{ id: ID }, Buffer> = async (req, res) => {
     const artifact = await getArtifact(db, req.params.id);
 
     if (!artifact) {
@@ -93,8 +94,8 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
   };
 
   app.get(`${API_BASE}/artifacts`, listArtifactsHandler);
-  app.put(`${API_BASE}/artifacts`, createArtifactHandler);
+  app.put(`${API_BASE}/artifacts`, requireAuth(db), createArtifactHandler);
   app.get(`${API_BASE}/artifacts/:id`, getArtifactHandler);
-  app.put(`${API_BASE}/artifacts/:id/file`, express.raw({ type: "*/*", limit: "250mb" }), uploadArtifactHandler);
+  app.put(`${API_BASE}/artifacts/:id/file`, requireAuth(db), express.raw({ type: "*/*", limit: "250mb" }), uploadArtifactHandler);
   app.get(`${API_BASE}/artifacts/:id/file`, downloadArtifactHandler);
 }

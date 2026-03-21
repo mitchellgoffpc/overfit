@@ -8,6 +8,7 @@ import type { RouteApp, RouteHandler } from "helpers";
 import type { LogBuffer, LogLine } from "logbuffer";
 import { getLatestLogSegment, listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
+import { requireAuth } from "routes/auth";
 import type { StorageBackend } from "storage";
 
 const CreateLogLineSchema = z.strictObject({
@@ -31,9 +32,10 @@ const ListLogEntriesQuerySchema = z.strictObject({
 type CreateLogLinesPayload = z.infer<typeof CreateLogLinesBodySchema>;
 type FlushLogBufferPayload = z.infer<typeof FlushLogBufferBodySchema>;
 type ListLogEntriesQuery = z.infer<typeof ListLogEntriesQuerySchema>;
-type CreateLogLinesResponse = { status: "buffered" } | { error: string; expectedStartLine: number };
 
-interface RunPathParams { handle: string; projectName: string; runName: string; }
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type RunPathParams = { handle: string; projectName: string; runName: string };
+type CreateLogLinesResponse = { status: "buffered" } | { error: string; expectedStartLine: number };
 
 const normalizeLogLines = (lines: LogLine[]): LogLine[] =>
   lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
@@ -48,7 +50,7 @@ const readLogSegmentLines = async (storage: StorageBackend, storageKey: string, 
 };
 
 export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuffer, storage: StorageBackend): void {
-  const getPathRun = async (params: RunPathParams) => {
+  const getPathRun = async (params: { handle: string; projectName: string; runName: string }) => {
     return await getRun(db, params.handle.trim().toLowerCase(), params.projectName.trim().toLowerCase(), params.runName.trim().toLowerCase());
   };
 
@@ -133,6 +135,6 @@ export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuf
   };
 
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, listLogEntriesHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, createLogLinesHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs/flush`, flushLogBufferHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs`, requireAuth(db), createLogLinesHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/logs/flush`, requireAuth(db), flushLogBufferHandler);
 }

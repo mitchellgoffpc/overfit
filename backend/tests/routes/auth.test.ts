@@ -12,31 +12,19 @@ import { createDatabase } from "db";
 import type { Database } from "db";
 
 async function getWithToken(app: ReturnType<typeof createApp>, path: string, token: string, status = 200) {
-  return request(app)
-    .get(path)
-    .set("Authorization", `Bearer ${token}`)
-    .expect(status);
+  return request(app).get(path).set("Authorization", `Bearer ${token}`).expect(status);
 }
 
 async function getWithCookie(app: ReturnType<typeof createApp>, path: string, cookie: string, status = 200) {
-  return request(app)
-    .get(path)
-    .set("Cookie", cookie)
-    .expect(status);
+  return request(app).get(path).set("Cookie", cookie).expect(status);
 }
 
 async function postWithCookie(app: ReturnType<typeof createApp>, path: string, cookie: string, status = 200) {
-  return request(app)
-    .post(path)
-    .set("Cookie", cookie)
-    .expect(status);
+  return request(app).post(path).set("Cookie", cookie).expect(status);
 }
 
 async function post(app: ReturnType<typeof createApp>, path: string, payload: Record<string, unknown>, status = 200) {
-  return request(app)
-    .post(`${API_BASE}/${path}`)
-    .send(payload)
-    .expect(status);
+  return request(app).post(`${API_BASE}/${path}`).send(payload).expect(status);
 }
 
 const getSetCookie = (response: { headers: Record<string, string | string[] | undefined> }): string | undefined => {

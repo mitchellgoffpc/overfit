@@ -7,6 +7,7 @@ import { formatZodError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import { getRun } from "repositories/runs";
 import { getLatestScalarSegment, listScalarSegmentsForCursor } from "repositories/scalars";
+import { requireAuth } from "routes/auth";
 import type { ScalarBuffer } from "scalarbuffer";
 import type { StorageBackend } from "storage";
 
@@ -92,6 +93,6 @@ export function registerScalarRoutes(app: RouteApp, db: Database, scalarBuffer: 
   };
 
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars`, getScalarsHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars`, createScalarHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars/flush`, flushScalarBufferHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars`, requireAuth(db), createScalarHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName/scalars/flush`, requireAuth(db), flushScalarBufferHandler);
 }

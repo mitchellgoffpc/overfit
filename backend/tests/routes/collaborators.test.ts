@@ -12,6 +12,8 @@ import { createOrganization } from "repositories/organizations";
 import { createProject } from "repositories/projects";
 import { createUser } from "repositories/users";
 
+const PROJECT_COLLABORATORS = `${API_BASE}/accounts/owner/projects/my-project/collaborators`;
+
 describe("collaborators routes", () => {
   let db: Database;
   let app: ReturnType<typeof createApp>;
@@ -32,7 +34,7 @@ describe("collaborators routes", () => {
   });
 
   it("lists collaborators for a project", async () => {
-    const response = await request(app).get(`${API_BASE}/accounts/owner/projects/my-project/collaborators`).expect(200);
+    const response = await request(app).get(PROJECT_COLLABORATORS).expect(200);
     expect(response.body).toEqual([]);
   });
 
@@ -42,51 +44,44 @@ describe("collaborators routes", () => {
   });
 
   it("adds a collaborator as the project owner", async () => {
-    const response = await request(app)
-      .put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
+    const response = await request(app).put(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
     expect(response.body).toMatchObject({ userId: outsiderId });
 
-    const list = await request(app).get(`${API_BASE}/accounts/owner/projects/my-project/collaborators`).expect(200);
+    const list = await request(app).get(PROJECT_COLLABORATORS).expect(200);
     expect(list.body).toMatchObject([{ handle: "outsider" }]);
   });
 
   it("returns 409 when adding a duplicate collaborator", async () => {
-    await request(app).put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
-    const response = await request(app)
-      .put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(409);
+    await request(app).put(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
+    const response = await request(app).put(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(409);
     expect(response.body).toMatchObject({ error: "User is already a collaborator" });
   });
 
   it("rejects adding a collaborator by a non-owner", async () => {
-    const response = await request(app)
-      .put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${outsiderToken}`).expect(403);
+    const response = await request(app).put(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${outsiderToken}`).expect(403);
     expect(response.body).toMatchObject({ error: "Forbidden" });
   });
 
   it("removes a collaborator as the project owner", async () => {
-    await request(app).put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
-    await request(app)
-      .delete(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
-    const list = await request(app).get(`${API_BASE}/accounts/owner/projects/my-project/collaborators`).expect(200);
+    await request(app).put(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
+    await request(app).delete(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
+    const list = await request(app).get(PROJECT_COLLABORATORS).expect(200);
     expect(list.body).toEqual([]);
   });
 
   it("returns 404 when removing a non-existent collaborator", async () => {
-    const response = await request(app)
-      .delete(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(404);
+    const response = await request(app).delete(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(404);
     expect(response.body).toMatchObject({ error: "Collaborator not found" });
   });
 
   it("rejects removing a collaborator by a non-owner", async () => {
-    await request(app).put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
-    const response = await request(app)
-      .delete(`${API_BASE}/accounts/owner/projects/my-project/collaborators/outsider`).set("Authorization", `Bearer ${outsiderToken}`).expect(403);
+    await request(app).put(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${ownerToken}`).expect(200);
+    const response = await request(app).delete(`${PROJECT_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${outsiderToken}`).expect(403);
     expect(response.body).toMatchObject({ error: "Forbidden" });
   });
 
   it("returns 404 for unknown user when adding collaborator", async () => {
-    const response = await request(app)
-      .put(`${API_BASE}/accounts/owner/projects/my-project/collaborators/ghost`).set("Authorization", `Bearer ${ownerToken}`).expect(404);
+    const response = await request(app).put(`${PROJECT_COLLABORATORS}/ghost`).set("Authorization", `Bearer ${ownerToken}`).expect(404);
     expect(response.body).toMatchObject({ error: "User not found" });
   });
 
@@ -102,38 +97,33 @@ describe("collaborators routes", () => {
       await createProject(db, { accountId: org.id, name: "org-project", description: null });
     });
 
+    const ORG_COLLABORATORS = `${API_BASE}/accounts/org/projects/org-project/collaborators`;
+
     it("allows org admins to add collaborators", async () => {
-      const response = await request(app)
-        .put(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
+      const response = await request(app).put(`${ORG_COLLABORATORS}/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
       expect(response.body).toMatchObject({ userId: outsiderId });
     });
 
     it("rejects org members from adding collaborators", async () => {
-      const response = await request(app)
-        .put(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", "Bearer orgmember-token").expect(403);
+      const response = await request(app).put(`${ORG_COLLABORATORS}/outsider`).set("Authorization", "Bearer orgmember-token").expect(403);
       expect(response.body).toMatchObject({ error: "Forbidden" });
     });
 
     it("allows org admins to remove collaborators", async () => {
-      await request(app)
-        .put(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
-      await request(app)
-        .delete(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
-      const list = await request(app).get(`${API_BASE}/accounts/org/projects/org-project/collaborators`).expect(200);
+      await request(app).put(`${ORG_COLLABORATORS}/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
+      await request(app).delete(`${ORG_COLLABORATORS}/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
+      const list = await request(app).get(ORG_COLLABORATORS).expect(200);
       expect(list.body).toEqual([]);
     });
 
     it("rejects org members from removing collaborators", async () => {
-      await request(app)
-        .put(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
-      const response = await request(app)
-        .delete(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", "Bearer orgmember-token").expect(403);
+      await request(app).put(`${ORG_COLLABORATORS}/outsider`).set("Authorization", "Bearer orgadmin-token").expect(200);
+      const response = await request(app).delete(`${ORG_COLLABORATORS}/outsider`).set("Authorization", "Bearer orgmember-token").expect(403);
       expect(response.body).toMatchObject({ error: "Forbidden" });
     });
 
     it("rejects non-org-members from adding collaborators", async () => {
-      const response = await request(app)
-        .put(`${API_BASE}/accounts/org/projects/org-project/collaborators/outsider`).set("Authorization", `Bearer ${outsiderToken}`).expect(403);
+      const response = await request(app).put(`${ORG_COLLABORATORS}/outsider`).set("Authorization", `Bearer ${outsiderToken}`).expect(403);
       expect(response.body).toMatchObject({ error: "Forbidden" });
     });
   });

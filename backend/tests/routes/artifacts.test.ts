@@ -10,6 +10,7 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { createApiKey } from "repositories/api-keys";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";
 import { createUser } from "repositories/users";
@@ -21,6 +22,7 @@ describe("artifacts routes", () => {
   let userId: string;
   let runId: string;
   let projectId: string;
+  let auth: [string, string];
 
   beforeAll(async () => {
     storageBaseDir = await fs.mkdtemp(path.join(os.tmpdir(), "underfit-artifacts-"));
@@ -36,11 +38,13 @@ describe("artifacts routes", () => {
     userId = (await createUser(db, { email: "ada@example.com", handle: "ada", name: "Ada Lovelace", bio: null }))!.id;
     projectId = (await createProject(db, { accountId: userId, name: "underfit", description: null }))!.id;
     runId = (await createRun(db, { projectId, userId, name: "Run 1", status: "running", config: null }))!.id;
+    const { token } = await createApiKey(db, { userId, label: "test", token: "test-token" });
+    auth = ["Authorization", `Bearer ${token}`];
   });
 
   it("inserts and fetches an artifact", async () => {
     const artifactPayload = { runId, name: "model", type: "model", version: "v1", uri: "s3://bucket/model" };
-    const insertResponse = await request(app).put(`${API_BASE}/artifacts`).send(artifactPayload).expect(200);
+    const insertResponse = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(artifactPayload).expect(200);
     const artifactId = (insertResponse.body as { id: string }).id;
     expect(artifactId).toEqual(expect.any(String));
     const response = await request(app).get(`${API_BASE}/artifacts/${artifactId}`).expect(200);
@@ -60,28 +64,25 @@ describe("artifacts routes", () => {
       { payload: { runId, name: "model", type: "model" }, error: "version: Invalid input: expected string, received undefined" }
     ];
     for (const { payload, error } of cases) {
-      const response = await request(app).put(`${API_BASE}/artifacts`).send(payload).expect(400);
+      const response = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
       expect(response.body).toMatchObject({ error });
     }
   });
 
   it("rejects invalid run references", async () => {
     const payload = { runId: "missing-run", name: "model", type: "model", version: "v1" };
-    const response = await request(app).put(`${API_BASE}/artifacts`).send(payload).expect(400);
+    const response = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
     expect(response.body).toMatchObject({ error: "Artifact runId does not reference an existing run" });
   });
 
   it("uploads and downloads an artifact file", async () => {
     const artifactPayload = { runId, name: "checkpoint", type: "model", version: "v1" };
-    const insertResponse = await request(app).put(`${API_BASE}/artifacts`).send(artifactPayload).expect(200);
+    const insertResponse = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(artifactPayload).expect(200);
     const artifactId = (insertResponse.body as { id: string }).id;
 
     const content = Buffer.from("dummy file");
-    const uploadResponse = await request(app)
-      .put(`${API_BASE}/artifacts/${artifactId}/file`)
-      .set("Content-Type", "application/octet-stream")
-      .send(content)
-      .expect(200);
+    const fileUrl = `${API_BASE}/artifacts/${artifactId}/file`;
+    const uploadResponse = await request(app).put(fileUrl).set(...auth).set("Content-Type", "application/octet-stream").send(content).expect(200);
     expect(uploadResponse.text).toContain(`"id":"${artifactId}"`);
     expect(uploadResponse.text).toContain('"uri":"file://');
 
@@ -92,20 +93,15 @@ describe("artifacts routes", () => {
 
   it("rejects artifact creation when metadata exceeds configured size", async () => {
     const limitedApp = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: 16 } }), db);
-    const response = await request(limitedApp)
-      .put(`${API_BASE}/artifacts`)
-      .send({ runId, name: "model", type: "model", version: "v1", metadata: { key: "this is too large" } })
-      .expect(400);
+    const payload = { runId, name: "model", type: "model", version: "v1", metadata: { key: "this is too large" } };
+    const response = await request(limitedApp).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
     expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
   });
 
   it("allows unbounded artifact metadata when metadataMaxBytes is null", async () => {
     const unboundedApp = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: null } }), db);
-    const largeMetadata = { payload: "x".repeat(10_000) };
-    const response = await request(unboundedApp)
-      .put(`${API_BASE}/artifacts`)
-      .send({ runId, name: "model", type: "model", version: "v1", metadata: largeMetadata })
-      .expect(200);
-    expect(response.body).toMatchObject({ runId, metadata: largeMetadata });
+    const payload = { runId, name: "model", type: "model", version: "v1", metadata: { payload: "x".repeat(10_000) } };
+    const response = await request(unboundedApp).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(200);
+    expect(response.body).toMatchObject({ runId, metadata: payload.metadata });
   });
 });

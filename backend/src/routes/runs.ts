@@ -127,5 +127,5 @@ export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes:
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, listProjectRunsHandler);
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, getRunHandler);
   app.post(`${API_BASE}/accounts/:handle/projects/:projectName/runs`, requireAuth(db), createRunHandler);
-  app.put(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, updateRunHandler);
+  app.put(`${API_BASE}/accounts/:handle/projects/:projectName/runs/:runName`, requireAuth(db), updateRunHandler);
 }

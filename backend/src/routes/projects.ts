@@ -96,7 +96,7 @@ export function registerProjectRoutes(app: RouteApp, db: Database): void {
 
   app.get(`${API_BASE}/me/projects`, requireAuth(db), listMyProjectsHandler);
   app.get(`${API_BASE}/accounts/:handle/projects`, listProjectsHandler);
-  app.post(`${API_BASE}/accounts/:handle/projects`, createProjectHandler);
+  app.post(`${API_BASE}/accounts/:handle/projects`, requireAuth(db), createProjectHandler);
   app.get(`${API_BASE}/accounts/:handle/projects/:projectName`, getProjectHandler);
-  app.put(`${API_BASE}/accounts/:handle/projects/:projectName`, updateProjectHandler);
+  app.put(`${API_BASE}/accounts/:handle/projects/:projectName`, requireAuth(db), updateProjectHandler);
 }
