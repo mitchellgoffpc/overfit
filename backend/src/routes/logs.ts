@@ -2,10 +2,10 @@ import { API_BASE } from "@underfit/types";
 import type { LogPage } from "@underfit/types";
 import { z } from "zod";
 
+import type { LogBuffer, LogLine } from "buffers/logs";
 import type { Database } from "db";
 import { formatZodError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
-import type { LogBuffer, LogLine } from "logbuffer";
 import { getLatestLogSegment, listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
 import { requireAuth } from "routes/auth";

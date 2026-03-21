@@ -1,8 +1,8 @@
 import type { ID, Scalar } from "@underfit/types";
 
+import type { LineBufferConfig } from "buffers/lines";
+import { LineBuffer } from "buffers/lines";
 import type { Database } from "db";
-import type { LineBufferConfig } from "linebuffer";
-import { LineBuffer } from "linebuffer";
 import { createScalarSegment } from "repositories/scalars";
 import { getScalarSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";

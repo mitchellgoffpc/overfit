@@ -5,9 +5,9 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { LogBuffer } from "buffers/logs";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import { LogBuffer } from "logbuffer";
 import { listLogSegmentsForCursor } from "repositories/logs";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";

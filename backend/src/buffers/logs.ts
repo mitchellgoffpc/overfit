@@ -1,8 +1,8 @@
 import type { ID } from "@underfit/types";
 
+import type { LineBufferConfig } from "buffers/lines";
+import { LineBuffer, LineBufferConfigSchema } from "buffers/lines";
 import type { Database } from "db";
-import type { LineBufferConfig } from "linebuffer";
-import { LineBuffer, LineBufferConfigSchema } from "linebuffer";
 import { createLogSegment } from "repositories/logs";
 import { getLogSegmentStorageKey } from "storage";
 import type { StorageBackend } from "storage";

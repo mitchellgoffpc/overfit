@@ -4,9 +4,10 @@ import cors from "cors";
 import express from "express";
 import type { Express, Request, Response } from "express";
 
+import { LogBuffer } from "buffers/logs";
+import { ScalarBuffer } from "buffers/scalars";
 import type { AppConfig } from "config";
 import type { Database } from "db";
-import { LogBuffer } from "logbuffer";
 import { registerAccountAvatarRoutes } from "routes/account-avatars";
 import { registerAccountRoutes } from "routes/accounts";
 import { registerApiKeyRoutes } from "routes/api-keys";
@@ -20,7 +21,6 @@ import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
 import { registerScalarRoutes } from "routes/scalars";
 import { registerUserRoutes } from "routes/users";
-import { ScalarBuffer } from "scalarbuffer";
 import { createStorage } from "storage";
 
 export function createApp(config: AppConfig, db: Database): Express {

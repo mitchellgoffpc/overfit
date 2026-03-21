@@ -4,8 +4,8 @@ import path from "node:path";
 import * as toml from "@iarna/toml";
 import { z } from "zod";
 
+import { LogBufferConfigSchema } from "buffers/logs";
 import { DatabaseConfigSchema } from "db";
-import { LogBufferConfigSchema } from "logbuffer";
 import { StorageConfigSchema } from "storage";
 
 const ServerConfigSchema = z.strictObject({

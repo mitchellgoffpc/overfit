@@ -2,13 +2,13 @@ import { API_BASE } from "@underfit/types";
 import type { Scalar } from "@underfit/types";
 import { z } from "zod";
 
+import type { ScalarBuffer } from "buffers/scalars";
 import type { Database } from "db";
 import { formatZodError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import { getRun } from "repositories/runs";
 import { getLatestScalarSegment, listScalarSegmentsForCursor } from "repositories/scalars";
 import { requireAuth } from "routes/auth";
-import type { ScalarBuffer } from "scalarbuffer";
 import type { StorageBackend } from "storage";
 
 const ScalarSchema = z.strictObject({
