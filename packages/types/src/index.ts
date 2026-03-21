@@ -117,6 +117,7 @@ export interface Scalar {
 export interface ScalarSegment {
   id: ID;
   runId: ID;
+  resolution: number;
   startLine: number;
   endLine: number;
   startAt: Timestamp;

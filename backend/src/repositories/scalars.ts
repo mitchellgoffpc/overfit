@@ -13,6 +13,7 @@ export const createScalarSegmentsTable = async (db: Database): Promise<void> => 
     .ifNotExists()
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("runId", "text", (col) => col.references("runs.id").onDelete("cascade").onUpdate("cascade").notNull())
+    .addColumn("resolution", "integer", (col) => col.notNull())
     .addColumn("startLine", "integer", (col) => col.notNull())
     .addColumn("endLine", "integer", (col) => col.notNull())
     .addColumn("startAt", "text", (col) => col.notNull())
@@ -21,7 +22,7 @@ export const createScalarSegmentsTable = async (db: Database): Promise<void> => 
     .addColumn("byteCount", "integer", (col) => col.notNull())
     .addColumn("storageKey", "text", (col) => col.notNull())
     .addColumn("createdAt", "text", (col) => col.notNull())
-    .addUniqueConstraint("scalar_segments_run_start_line_unique", ["runId", "startLine"])
+    .addUniqueConstraint("scalar_segments_run_resolution_start_line_unique", ["runId", "resolution", "startLine"])
     .execute();
 };
 
@@ -31,20 +32,24 @@ export const createScalarSegment = async (db: Database, segment: Omit<ScalarSegm
   return payload;
 };
 
-export const getLatestScalarSegment = async (db: Database, runId: ID): Promise<ScalarSegment | undefined> => {
+export const getLatestScalarSegment = async (db: Database, runId: ID, resolution = 0): Promise<ScalarSegment | undefined> => {
   return await db
     .selectFrom(table)
     .selectAll()
     .where("runId", "=", runId)
+    .where("resolution", "=", resolution)
     .orderBy("endLine", "desc")
     .executeTakeFirst();
 };
 
-export const listScalarSegmentsForCursor = async (db: Database, runId: ID, cursor: number, count = Number.MAX_SAFE_INTEGER): Promise<ScalarSegment[]> => {
+export const listScalarSegmentsForCursor = async (
+  db: Database, runId: ID, resolution: number, cursor: number, count = Number.MAX_SAFE_INTEGER
+): Promise<ScalarSegment[]> => {
   return await db
     .selectFrom(table)
     .selectAll()
     .where("runId", "=", runId)
+    .where("resolution", "=", resolution)
     .where("endLine", ">", cursor)
     .where("startLine", "<", cursor + count)
     .orderBy("startLine", "asc")

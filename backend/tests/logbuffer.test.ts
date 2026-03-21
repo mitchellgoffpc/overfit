@@ -65,6 +65,32 @@ describe("logbuffer", () => {
     await logbuffer.stop();
   });
 
+  it("appends multiple flushes to the same file with correct byte offsets", async () => {
+    const storage = createStorage({ type: "file", baseDir: storageBaseDir });
+    const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 1024 * 1024, maxSegmentAgeMs: 60_000, flushIntervalMs: 10_000 });
+
+    await logbuffer.appendLines(runId, "worker-1", 0, [{ timestamp: "2025-01-01T00:00:00.000Z", content: "first" }]);
+    await logbuffer.flush(runId, "worker-1");
+    await logbuffer.appendLines(runId, "worker-1", 1, [{ timestamp: "2025-01-01T00:00:01.000Z", content: "second" }]);
+    await logbuffer.flush(runId, "worker-1");
+
+    const segments = await listLogSegmentsForCursor(db, runId, "worker-1", 0);
+    expect(segments).toHaveLength(2);
+    expect(segments[0]).toMatchObject({ startLine: 0, endLine: 1, byteOffset: 0 });
+    expect(segments[1]).toMatchObject({ startLine: 1, endLine: 2, byteOffset: segments[0]!.byteCount });
+    expect(segments[0]!.storageKey).toBe(segments[1]!.storageKey);
+
+    const file = await fs.readFile(path.join(storageBaseDir, segments[0]!.storageKey), "utf8");
+    expect(file).toBe("first\nsecond\n");
+
+    const chunk0 = file.slice(segments[0]!.byteOffset, segments[0]!.byteOffset + segments[0]!.byteCount);
+    const chunk1 = file.slice(segments[1]!.byteOffset, segments[1]!.byteOffset + segments[1]!.byteCount);
+    expect(chunk0).toBe("first\n");
+    expect(chunk1).toBe("second\n");
+
+    await logbuffer.stop();
+  });
+
   it("flushes old buffers on interval", async () => {
     const storage = createStorage({ type: "file", baseDir: storageBaseDir });
     const logbuffer = new LogBuffer(db, storage, { maxSegmentBytes: 1024 * 1024, maxSegmentAgeMs: 25, flushIntervalMs: 10 });

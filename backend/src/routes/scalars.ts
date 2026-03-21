@@ -2,6 +2,7 @@ import { API_BASE } from "@underfit/types";
 import type { Scalar } from "@underfit/types";
 import { z } from "zod";
 
+import { SCALAR_RESOLUTIONS } from "buffers/scalars";
 import type { ScalarBuffer } from "buffers/scalars";
 import type { Database } from "db";
 import { formatZodError } from "helpers";
@@ -21,6 +22,10 @@ const CreateScalarsBodySchema = z.strictObject({
   scalars: z.array(ScalarSchema).min(1)
 });
 const FlushScalarBufferBodySchema = z.strictObject({});
+const GetScalarsQuerySchema = z.object({
+  resolution: z.coerce.number().int().min(0).max(4).optional(),
+  maxPoints: z.coerce.number().int().positive().optional()
+});
 
 type CreateScalarsBody = z.infer<typeof CreateScalarsBodySchema>;
 type CreateScalarsResponse = { status: "buffered" } | { error: string; expectedStartLine: number };
@@ -66,17 +71,37 @@ export function registerScalarRoutes(app: RouteApp, db: Database, scalarBuffer: 
   };
 
   const getScalarsHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Scalar[]> = async (req, res) => {
+    const query = GetScalarsQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      res.status(400).json({ error: formatZodError(query.error) });
+      return;
+    }
+    if (query.data.resolution !== undefined && query.data.maxPoints !== undefined) {
+      res.status(400).json({ error: "resolution and maxPoints are mutually exclusive" });
+      return;
+    }
     const run = await getPathRun(req.params);
     if (!run) {
       res.status(404).json({ error: "Run not found" });
       return;
     }
 
-    const persistedSegments = await listScalarSegmentsForCursor(db, run.id, 0);
+    let resolution = query.data.resolution ?? 0;
+    if (query.data.maxPoints !== undefined) {
+      for (let i = SCALAR_RESOLUTIONS.length - 1; i > 0; i--) {
+        const count = await scalarBuffer.getLineCount(run.id, i);
+        if (count >= query.data.maxPoints) {
+          resolution = i;
+          break;
+        }
+      }
+    }
+
+    const persistedSegments = await listScalarSegmentsForCursor(db, run.id, resolution, 0);
     const readSegment = async (s: typeof persistedSegments[number]) => readScalarSegment(storage, s.storageKey, s.byteOffset, s.byteCount);
     const persistedScalars = (await Promise.all(persistedSegments.map(readSegment))).flat();
     const nextCursor = persistedSegments.length === 0 ? 0 : persistedSegments[persistedSegments.length - 1]!.endLine;
-    const bufferedScalars = scalarBuffer.getScalars(run.id, nextCursor, Number.MAX_SAFE_INTEGER);
+    const bufferedScalars = scalarBuffer.getScalars(run.id, resolution, nextCursor, Number.MAX_SAFE_INTEGER);
     res.json([...persistedScalars, ...bufferedScalars]);
   };
 
