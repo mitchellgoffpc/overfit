@@ -64,13 +64,14 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
   }, [runs]);
 
   return (
-    <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 shadow-soft">
+    <section className="rounded-[18px] border border-[#d4dede] bg-[#f9fcfb]/90 p-5 shadow-soft">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl">Activity</h2>
-          <p className="mt-1.5 text-[13px] text-brand-textMuted">Runs created in the last {WEEK_COUNT} weeks.</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-textMuted">Section C</p>
+          <h2 className="mt-1 text-xl">Activity</h2>
+          <p className="mt-1 text-[13px] text-brand-textMuted">Runs created in the last {WEEK_COUNT} weeks.</p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-brand-textMuted">
+        <div className="flex items-center gap-2 font-mono text-[11px] text-brand-textMuted">
           <span>Less</span>
           <div className="flex items-center gap-1">
             {levelClasses.map((classes) => (

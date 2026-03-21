@@ -82,7 +82,7 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#e4f1f2_0%,_#f2f6f6_35%,_#f6f7fb_100%)] text-brand-text">
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Organization" }]} />
 
-      <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl px-6 py-8">
         <header className="mb-8 flex items-start gap-6">
           <div className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-[#d9ecec] text-2xl font-bold text-brand-accentStrong">
             {organization.name.charAt(0).toUpperCase()}

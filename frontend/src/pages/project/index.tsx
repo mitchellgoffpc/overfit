@@ -11,7 +11,9 @@ export default function ProjectPage(): ReactElement {
 
   return (
     <Switch>
-      <Route path="/:handle/:projectName/runs/:runName" component={RunDetailPage} />
+      <Route path="/:handle/:projectName/runs/:runName/logs">{() => <RunDetailPage section="logs" />}</Route>
+      <Route path="/:handle/:projectName/runs/:runName/artifacts">{() => <RunDetailPage section="artifacts" />}</Route>
+      <Route path="/:handle/:projectName/runs/:runName">{() => <RunDetailPage section="charts" />}</Route>
       <Route path="/:handle/:projectName/compare" component={ProjectComparePage} />
       <Route path="/:handle/:projectName/settings" component={ProjectSettingsPage} />
       <Route path="/:handle/:projectName" component={ProjectRunsPage} />

@@ -1,4 +1,4 @@
-import type { Project, Run, User } from "@underfit/types";
+import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { Link } from "wouter";
@@ -7,11 +7,10 @@ import RunStatusBadge from "components/RunStatusBadge";
 import { formatDuration, formatRunTime } from "helpers";
 
 const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
-const headerCellClass = "whitespace-nowrap px-3 py-2 text-[11px] uppercase tracking-[0.08em] text-brand-textMuted";
-const bodyCellClass = "whitespace-nowrap px-3 py-2 text-[13px]";
-const rowCellClass = `${bodyCellClass} transition-colors group-hover:bg-[#f5f9f9]`;
-const stickyBaseClass = `${bodyCellClass} sticky left-0 z-10 flex min-w-0 items-center gap-2.5 border-r border-brand-border bg-brand-surface`;
-const stickyNameCellClass = `${stickyBaseClass} no-underline transition-colors group-hover:bg-[#f5f9f9]`;
+const headerCellClass = "flex h-[30px] items-center whitespace-nowrap px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-brand-textMuted";
+const bodyCellClass = "flex h-[30px] items-center whitespace-nowrap px-2.5 text-[12px] text-brand-text";
+const leftGridTemplateColumns = "8px 56px 180px";
+const leftPaneWidth = 244;
 
 const formatRunConfigValue = (config: Run["config"], key: string): string => {
   if (!config || typeof config !== "object") { return "—"; }
@@ -48,13 +47,12 @@ const getRunConfigKeys = (config: Run["config"]): string[] => {
 interface ProjectRunsTableProps {
   readonly runs: Run[];
   readonly project: Project;
-  readonly user: User | null;
   readonly ownerHandle: string;
   readonly isLoading: boolean;
   readonly error: string | null;
 }
 
-export default function ProjectRunsTable({ runs, project, user, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
+export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
   const colorByRunName = useMemo(() => new Map(runs.map((run, index) => [run.name, runColors[index % runColors.length] ?? "#1a7b7d"])), [runs]);
   const configColumns = useMemo(() => {
     const keys = new Set<string>();
@@ -63,54 +61,96 @@ export default function ProjectRunsTable({ runs, project, user, ownerHandle, isL
     }
     return [...keys].sort((a, b) => a.localeCompare(b));
   }, [runs]);
-  const tableGridTemplateColumns = useMemo(() => (
-    ["260px", "132px", "120px", "120px", "140px", "110px", ...configColumns.map(() => "120px")].join(" ")
-  ), [configColumns]);
+  const statusCounts = useMemo(() => {
+    const counts: Record<Run["status"], number> = { queued: 0, running: 0, finished: 0, failed: 0, cancelled: 0 };
+    for (const run of runs) { counts[run.status] += 1; }
+    return counts;
+  }, [runs]);
+  const rightGridTemplateColumns = useMemo(
+    () => ["120px", "100px", "150px", "90px", ...configColumns.map(() => "120px")].join(" "),
+    [configColumns]
+  );
+  const tableHeight = (runs.length + 1) * 30;
+  const sectionHeight = Math.max(240, 150 + tableHeight + 12);
 
   return (
-    <section className="w-full">
-      {error ? <div className="py-3 text-[13px] text-brand-textMuted">{error}</div> : null}
-      {!error && isLoading ? <div className="py-3 text-[13px] text-brand-textMuted">Loading runs...</div> : null}
+    <section style={{ minHeight: `${sectionHeight.toString()}px` }}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand-textMuted">Section A</p>
+          <h2 className="text-[15px] font-semibold text-brand-text">Run Ledger</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-brand-textMuted">
+          <span>{runs.length} entries</span>
+          <span>{statusCounts.running} running</span>
+          <span>{statusCounts.failed} failed</span>
+          <span>{project.visibility}</span>
+        </div>
+      </div>
+
+      {error ? <div className="absolute inset-x-0 top-[180px] py-2 text-[13px] text-brand-textMuted">{error}</div> : null}
+      {!error && isLoading ? <div className="absolute inset-x-0 top-[180px] py-2 text-[13px] text-brand-textMuted">Loading runs...</div> : null}
 
       {!error && !isLoading ? (
         runs.length === 0 ? (
-          <div className="py-3 text-[13px] text-brand-textMuted">No runs yet for {project.name}.</div>
+          <div className="absolute inset-x-0 top-[180px] bg-white/20 px-4 py-8 text-[13px] text-brand-textMuted">
+            No runs yet for {project.name}.
+          </div>
         ) : (
-          <div className="overflow-x-auto rounded-[12px] border border-brand-border bg-brand-surface shadow-soft">
-            <div className="min-w-full w-max">
-              <div className="grid items-center border-b border-brand-border" style={{ gridTemplateColumns: tableGridTemplateColumns }}>
-                <span className={`${headerCellClass} sticky left-0 z-20 border-r bg-brand-surface`}>Name</span>
-                <span className={headerCellClass}>State</span>
-                <span className={headerCellClass}>Notes</span>
-                <span className={headerCellClass}>User</span>
-                <span className={headerCellClass}>Created</span>
-                <span className={headerCellClass}>Runtime</span>
-                {configColumns.map((column) => <span className={headerCellClass} key={column}>{column}</span>)}
+          <div
+            className="absolute right-0 bottom-0 left-12 top-[180px] grid min-w-0"
+            style={{ gridTemplateColumns: `${leftPaneWidth.toString()}px minmax(0, 1fr)` }}
+          >
+            <div>
+              <div className="grid" style={{ gridTemplateColumns: leftGridTemplateColumns }}>
+                <span />
+                <span className={headerCellClass}>Ln</span>
+                <span className={headerCellClass}>Name</span>
               </div>
+
               {runs.map((run, index) => {
                 const runColor = colorByRunName.get(run.name) ?? runColors[index % runColors.length] ?? "#1a7b7d";
                 return (
-                  <div
-                    className="group grid items-center border-b border-brand-border/70 last:border-b-0"
-                    key={run.id}
-                    style={{ gridTemplateColumns: tableGridTemplateColumns }}
-                  >
-                    <Link
-                      className={stickyNameCellClass}
-                      href={`/${ownerHandle}/${project.name}/runs/${run.name}`}
-                    >
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: runColor }} />
-                      <p className="truncate font-semibold text-brand-text">{run.name}</p>
+                  <div className="grid h-[30px] items-center" key={run.id} style={{ gridTemplateColumns: leftGridTemplateColumns }}>
+                    <span />
+                    <span className={`${bodyCellClass} font-mono text-[10px] text-brand-textMuted`}>{String(index + 1).padStart(3, "0")}</span>
+                    <Link className={`${bodyCellClass} min-w-0 gap-2 no-underline`} href={`/${ownerHandle}/${project.name}/runs/${run.name}`}>
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: runColor }} />
+                      <span className="truncate font-semibold text-brand-text">{run.name}</span>
                     </Link>
-                    <div className={rowCellClass}><RunStatusBadge status={run.status} /></div>
-                    <span className={`${rowCellClass} text-brand-textMuted`}>—</span>
-                    <span className={rowCellClass}>{user?.handle ?? run.user}</span>
-                    <span className={rowCellClass}>{formatRunTime(run.createdAt)}</span>
-                    <span className={rowCellClass}>{formatDuration(run.createdAt, run.updatedAt)}</span>
-                    {configColumns.map((column) => <span className={rowCellClass} key={column}>{formatRunConfigValue(run.config, column)}</span>)}
                   </div>
                 );
               })}
+            </div>
+
+            <div className="min-w-0 self-stretch overflow-x-auto overflow-y-hidden">
+              <div
+                className="w-max min-h-full pl-[8px]"
+              >
+                <div className="grid" style={{ gridTemplateColumns: rightGridTemplateColumns }}>
+                  <span className={headerCellClass}>State</span>
+                  <span className={headerCellClass}>User</span>
+                  <span className={headerCellClass}>Created</span>
+                  <span className={headerCellClass}>Runtime</span>
+                  {configColumns.map((column) => (
+                    <span className={headerCellClass} key={column}>{column}</span>
+                  ))}
+                </div>
+
+                {runs.map((run) => (
+                  <div className="grid h-[30px] items-center" key={run.id} style={{ gridTemplateColumns: rightGridTemplateColumns }}>
+                    <div className={bodyCellClass}><RunStatusBadge status={run.status} /></div>
+                    <span className={bodyCellClass}>@{run.user}</span>
+                    <span className={bodyCellClass}>{formatRunTime(run.createdAt)}</span>
+                    <span className={bodyCellClass}>{formatDuration(run.createdAt, run.updatedAt)}</span>
+                    {configColumns.map((column) => (
+                      <span className={`${bodyCellClass} max-w-[180px] truncate`} key={column} title={formatRunConfigValue(run.config, column)}>
+                        {formatRunConfigValue(run.config, column)}
+                      </span>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )

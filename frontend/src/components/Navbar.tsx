@@ -1,3 +1,5 @@
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -19,15 +21,24 @@ export interface NavbarTab {
   readonly id: string;
   readonly label: string;
   readonly href: string;
+  readonly icon?: IconDefinition;
+  readonly tint?: string;
+  readonly tintActive?: string;
 }
 
 interface NavbarProps {
   readonly breadcrumbs: Breadcrumb[];
   readonly tabs?: NavbarTab[];
   readonly activeTabId?: string;
+  readonly tabsMaxWidth?: string;
 }
 
-export default function Navbar({ breadcrumbs, tabs = [], activeTabId }: NavbarProps): ReactElement {
+export default function Navbar({
+  breadcrumbs,
+  tabs = [],
+  activeTabId,
+  tabsMaxWidth
+}: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
   const user = useAccountsStore((state) => state.me());
   const logout = useAuthStore((state) => state.logout);
@@ -68,10 +79,43 @@ export default function Navbar({ breadcrumbs, tabs = [], activeTabId }: NavbarPr
     navigate("/login");
   };
 
+  const tabsClass = "flex -mb-px items-end justify-end gap-2";
+  const accountMinWidth = tabsMaxWidth ? { minWidth: `calc((100vw - ${tabsMaxWidth}) / 2)` } : undefined;
+
+  const renderTabs = () => (
+    <>
+      {tabs.map((tab) => {
+        const isActive = tab.id === activeTabId;
+        const baseClass = "relative inline-flex items-start gap-1.5 rounded-t-[10px] border border-b-0 px-3 py-2.5 text-[11px]"
+          + " font-mono uppercase tracking-[0.08em] no-underline transition-all";
+        const sizeClass = isActive ? "h-9" : "h-8 hover:h-9";
+        const stateClass = isActive
+          ? "z-20 border-[#b9cbcb] text-brand-text shadow-[0_-4px_10px_rgba(20,45,45,0.08)]"
+          : "z-10 border-[#cfdada] text-brand-textMuted opacity-95 shadow-[0_-4px_10px_rgba(20,45,45,0.08)]"
+            + " hover:text-brand-text";
+        return (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            className={`${sizeClass} ${baseClass} ${stateClass}`}
+            aria-current={isActive ? "page" : undefined}
+            style={{ backgroundColor: isActive ? tab.tintActive ?? "#fcfffd" : tab.tint ?? "#f6fbf8" }}
+          >
+            {isActive ? (
+              <span className="absolute -bottom-1 left-1 right-1 h-1.5 rounded-sm" style={{ background: "rgba(26,123,125,0.24)" }} />
+            ) : null}
+            {tab.icon ? <FontAwesomeIcon icon={tab.icon} className="h-3 w-3 translate-y-[2px]" /> : null}
+            <span>{tab.label}</span>
+          </Link>
+        );
+      })}
+    </>
+  );
+
   return (
-    <nav className="border-b border-brand-border bg-[#f0f6f7]">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-2.5">
-        <div className="flex flex-wrap items-center gap-4">
+    <nav className="relative z-30 border-b border-brand-border bg-[#f0f6f7]">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6">
+        <div className="flex flex-wrap items-center gap-4 py-2.5">
           <Link className="flex items-center gap-3 text-inherit no-underline" href="/">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-accent text-[18px] font-semibold text-white">
               <span className="font-display">U</span>
@@ -108,82 +152,80 @@ export default function Navbar({ breadcrumbs, tabs = [], activeTabId }: NavbarPr
           ) : null}
         </div>
 
-        {user ? (
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              className={navButtonClass}
-              aria-haspopup="menu"
-              aria-expanded={isMenuOpen}
-              onClick={() => { setIsMenuOpen((prev) => !prev); }}
-            >
-              <div className="hidden text-right sm:block">
-                <p className="text-[13px] font-semibold leading-tight">{name}</p>
-                <p className="mt-1 text-[11px] leading-tight text-brand-textMuted">{user.email}</p>
+        <div className="ml-auto flex self-stretch items-end gap-3">
+          {tabs.length > 0 ? (
+            <div className="hidden md:block">
+              <div className="mx-auto w-full">
+                <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
               </div>
-              <div className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[#d9ecec] text-sm font-semibold text-brand-accentStrong">
-                {initials}
-                <img
-                  key={user.handle}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  src={avatarSrc}
-                  alt={`${name} avatar`}
-                  onError={(event) => { event.currentTarget.style.display = "none"; }}
-                />
-              </div>
-            </button>
-            {isMenuOpen ? (
-              <div
-                className={"absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2"
-                  + " shadow-[0_16px_32px_rgba(15,23,42,0.14)]"}
-                role="menu"
+            </div>
+          ) : null}
+
+          {user ? (
+            <div className="relative flex justify-end py-2.5" ref={menuRef} style={accountMinWidth}>
+              <button
+                type="button"
+                className={navButtonClass}
+                aria-haspopup="menu"
+                aria-expanded={isMenuOpen}
+                onClick={() => { setIsMenuOpen((prev) => !prev); }}
               >
-                <Link className={menuItemClass} role="menuitem" href={profileHref}>
-                  Profile
-                </Link>
-                <Link className={menuItemClass} role="menuitem" href="/">
-                  Projects
-                </Link>
-                <Link className={menuItemClass} role="menuitem" href={profileHref}>
-                  Runs
-                </Link>
-                <Link className={menuItemClass} role="menuitem" href="/settings/profile">
-                  Settings
-                </Link>
-                <div className="my-2 border-t border-brand-border" />
-                <button
-                  type="button"
-                  className={`w-full text-left ${menuItemClass}`}
-                  role="menuitem"
-                  onClick={() => { void handleLogout(); }}
+                <div className="hidden text-right sm:block">
+                  <p className="text-[13px] font-semibold leading-tight">{name}</p>
+                  <p className="mt-1 text-[11px] leading-tight text-brand-textMuted">{user.email}</p>
+                </div>
+                <div
+                  className={"relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[#d9ecec]"
+                    + " text-sm font-semibold text-brand-accentStrong"}
                 >
-                  Sign Out
-                </button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+                  {initials}
+                  <img
+                    key={user.handle}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    src={avatarSrc}
+                    alt={`${name} avatar`}
+                    onError={(event) => { event.currentTarget.style.display = "none"; }}
+                  />
+                </div>
+              </button>
+              {isMenuOpen ? (
+                <div
+                  className={"absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2"
+                    + " shadow-[0_16px_32px_rgba(15,23,42,0.14)]"}
+                  role="menu"
+                >
+                  <Link className={menuItemClass} role="menuitem" href={profileHref}>
+                    Profile
+                  </Link>
+                  <Link className={menuItemClass} role="menuitem" href="/">
+                    Projects
+                  </Link>
+                  <Link className={menuItemClass} role="menuitem" href={profileHref}>
+                    Runs
+                  </Link>
+                  <Link className={menuItemClass} role="menuitem" href="/settings/profile">
+                    Settings
+                  </Link>
+                  <div className="my-2 border-t border-brand-border" />
+                  <button
+                    type="button"
+                    className={`w-full text-left ${menuItemClass}`}
+                    role="menuitem"
+                    onClick={() => { void handleLogout(); }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {tabs.length > 0 ? (
-        <div className="px-6">
-          <div className="flex items-center gap-7 overflow-x-auto" aria-label="Project tabs">
-            {tabs.map((tab) => {
-              const isActive = tab.id === activeTabId;
-              return (
-                <Link
-                  key={tab.id}
-                  href={tab.href}
-                  className={[
-                    "relative -mb-px inline-flex h-9 items-center border-b-2 px-0 text-[15px] font-medium no-underline transition-colors",
-                    isActive ? "border-[#1a7b7d] text-brand-text" : "border-transparent text-brand-textMuted hover:text-brand-text"
-                  ].join(" ")}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {tab.label}
-                </Link>
-              );
-            })}
+        <div className="px-6 md:hidden">
+          <div className="mx-auto w-full">
+            <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
           </div>
         </div>
       ) : null}
