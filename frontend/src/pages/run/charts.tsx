@@ -136,9 +136,46 @@ export default function RunChartsPage(): ReactElement {
     });
   }, [media]);
 
+  const renderMediaFile = (item: Media, index: number) => {
+    const url = getMediaFileUrl(handle, projectName, runName, item.id, index);
+    return (
+      <div key={`${item.id}-${String(index)}`}>
+        {item.type === "image" ? (
+          <img src={url} alt={item.key} className="w-full rounded-lg" />
+        ) : item.type === "video" ? (
+          <video src={url} controls className="w-full rounded-lg" />
+        ) : (
+          <audio src={url} controls className="w-full" />
+        )}
+        {item.metadata && "caption" in item.metadata ? (
+          <p className="mt-1.5 text-center text-[0.75rem] text-brand-textMuted">{String(item.metadata["caption"])}</p>
+        ) : null}
+      </div>
+    );
+  };
+
   const renderMediaGroup = (key: string, items: Media[], steps: number[]) => {
     const selectedStep = mediaSteps[key] ?? steps[steps.length - 1] ?? 0;
     const visible = items.filter((m) => m.step === selectedStep);
+    const isMultiFile = items.some((m) => m.count > 1);
+
+    if (isMultiFile) {
+      return (
+        <div className="flex h-[18.5rem] flex-col rounded-xl border border-brand-border bg-brand-surface px-4 pb-3 pt-3 shadow-soft" key={key}>
+          <h3 className="mb-2 text-center text-[0.8125rem] font-semibold text-brand-text">{key}</h3>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-2">
+              {visible.flatMap((item) => Array.from({ length: item.count }, (_, i) => renderMediaFile(item, i)))}
+            </div>
+          </div>
+          {steps.length > 1 ? (
+            <div className="mt-3 flex shrink-0 justify-center border-t border-brand-border pt-3">
+              <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
+            </div>
+          ) : null}
+        </div>
+      );
+    }
 
     return (
       <section className="mb-6 last:mb-0" key={key}>
@@ -165,19 +202,9 @@ export default function RunChartsPage(): ReactElement {
         {collapsedSections[`media:${key}`] ? null : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {visible.flatMap((item) => Array.from({ length: item.count }, (_, i) => {
-              const url = getMediaFileUrl(handle, projectName, runName, item.id, i);
               return (
                 <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={`${item.id}-${String(i)}`}>
-                  {item.type === "image" ? (
-                    <img src={url} alt={item.key} className="w-full rounded-lg" />
-                  ) : item.type === "video" ? (
-                    <video src={url} controls className="w-full rounded-lg" />
-                  ) : (
-                    <audio src={url} controls className="w-full" />
-                  )}
-                  {item.metadata && "caption" in item.metadata ? (
-                    <p className="mt-1.5 text-center text-[0.75rem] text-brand-textMuted">{String(item.metadata["caption"])}</p>
-                  ) : null}
+                  {renderMediaFile(item, i)}
                 </div>
               );
             }))}
@@ -223,7 +250,12 @@ export default function RunChartsPage(): ReactElement {
         <>
           <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" />
           {mediaError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{mediaError}</div> : null}
-          {mediaByKey.map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
+          {mediaByKey.some(({ items }) => items.some((m) => m.count > 1)) ? (
+            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {mediaByKey.filter(({ items }) => items.some((m) => m.count > 1)).map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
+            </div>
+          ) : null}
+          {mediaByKey.filter(({ items }) => !items.some((m) => m.count > 1)).map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
         </>
       ) : null}
     </main>
