@@ -15,6 +15,7 @@ import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
 import { registerCollaboratorRoutes } from "routes/collaborators";
 import { registerLogRoutes } from "routes/logs";
+import { registerMediaRoutes } from "routes/media";
 import { registerOrganizationMembershipRoutes } from "routes/organization-members";
 import { registerOrganizationRoutes } from "routes/organizations";
 import { registerProjectRoutes } from "routes/projects";
@@ -52,6 +53,7 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerRunRoutes(app, db, config.server.metadataMaxBytes);
   registerLogRoutes(app, db, logBuffer, storage);
   registerArtifactRoutes(app, db, storage, config.server.metadataMaxBytes);
+  registerMediaRoutes(app, db, storage, config.server.metadataMaxBytes);
   registerScalarRoutes(app, db, scalarBuffer, storage);
 
   app.get(`${API_BASE}/health`, (_req: Request, res: Response) => {

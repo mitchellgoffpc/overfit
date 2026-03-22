@@ -11,6 +11,8 @@ import type { ArtifactRow } from "repositories/artifacts";
 import { createArtifactsTable } from "repositories/artifacts";
 import { createCollaboratorsTable } from "repositories/collaborators";
 import { createLogSegmentsTable } from "repositories/logs";
+import type { MediaRow } from "repositories/media";
+import { createMediaTable } from "repositories/media";
 import { createOrganizationMembersTable } from "repositories/organization-members";
 import type { OrganizationRow } from "repositories/organizations";
 import { createOrganizationsTable } from "repositories/organizations";
@@ -51,6 +53,7 @@ interface DatabaseSchema {
   runs: RunRow;
   log_segments: LogSegment;
   artifacts: ArtifactRow;
+  media: MediaRow;
   scalar_segments: ScalarSegment;
 }
 
@@ -70,6 +73,7 @@ const initDatabase = async (db: Database): Promise<void> => {
   await createRunsTable(db);
   await createLogSegmentsTable(db);
   await createArtifactsTable(db);
+  await createMediaTable(db);
   await createScalarSegmentsTable(db);
 };
 

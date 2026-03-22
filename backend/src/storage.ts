@@ -79,6 +79,7 @@ class FileStorageBackend implements StorageBackend {
 }
 
 export const getArtifactStorageKey = (runId: ID, artifactId: ID): string => path.join(runId, artifactId);
+export const getMediaStorageKey = (runId: ID, mediaId: ID): string => path.join(runId, "media", mediaId);
 export const getLogStorageKey = (runId: ID, workerId: string): string => path.join(runId, "logs", `${workerId}.log`);
 export const getScalarStorageKey = (runId: ID, resolution: number): string => path.join(runId, "scalars", `r${String(resolution)}.jsonl`);
 

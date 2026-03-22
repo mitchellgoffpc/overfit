@@ -1,11 +1,13 @@
 export const organizationRoles = ["ADMIN", "MEMBER"] as const;
 export const accountTypes = ["USER", "ORGANIZATION"] as const;
+export const mediaTypes = ["image", "video", "audio"] as const;
 export const runStatus = ["queued", "running", "finished", "failed", "cancelled"] as const;
 export const projectVisibility = ["private", "public"] as const;
 
 export type ID = string;
 export type Handle = string;
 export type Timestamp = string;
+export type MediaType = (typeof mediaTypes)[number];
 export type RunStatus = (typeof runStatus)[number];
 export type OrganizationRole = (typeof organizationRoles)[number];
 export type AccountType = (typeof accountTypes)[number];
@@ -106,6 +108,17 @@ export interface Artifact {
   updatedAt: Timestamp;
   uri: string | null;
   metadata: Record<string, unknown> | null;
+}
+
+export interface Media {
+  id: ID;
+  runId: ID;
+  key: string;
+  step: number | null;
+  type: MediaType;
+  storageKey: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: Timestamp;
 }
 
 export interface Scalar {
