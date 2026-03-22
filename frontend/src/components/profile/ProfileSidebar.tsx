@@ -23,7 +23,6 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.16) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
         />
         <div className="relative px-1 py-1.5 text-xs text-brand-textMuted">Log in to view profile.</div>
       </aside>
@@ -40,7 +39,6 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.16) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
       />
 
       <div className="relative grid gap-4">
