@@ -1,3 +1,4 @@
+import type { Media } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
@@ -7,6 +8,8 @@ import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import SectionHeader from "components/SectionHeader";
+import StepSlider from "components/StepSlider";
+import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
 
@@ -22,12 +25,17 @@ export default function RunChartsPage(): ReactElement {
   const scalarError = useScalarStore((state) => state.error);
   const isScalarsLoading = useScalarStore((state) => state.isLoading);
   const fetchScalars = useScalarStore((state) => state.fetchScalars);
+  const media = useMediaStore((state) => state.media);
+  const mediaError = useMediaStore((state) => state.error);
+  const fetchMedia = useMediaStore((state) => state.fetchMedia);
 
   useEffect(() => {
     void fetchScalars(handle, projectName, runName);
-  }, [fetchScalars, handle, projectName, runName]);
+    void fetchMedia(handle, projectName, runName);
+  }, [fetchScalars, fetchMedia, handle, projectName, runName]);
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
 
   const chartSeries = useMemo(() => {
@@ -115,6 +123,67 @@ export default function RunChartsPage(): ReactElement {
     );
   };
 
+  const mediaByKey = useMemo(() => {
+    const buckets = new Map<string, Media[]>();
+    media.forEach((item) => {
+      const list = buckets.get(item.key) ?? [];
+      list.push(item);
+      buckets.set(item.key, list);
+    });
+    return Array.from(buckets.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([key, items]) => {
+      const steps = [...new Set(items.filter((m) => m.step !== null).map((m) => m.step!))].sort((a, b) => a - b);
+      return { key, items, steps };
+    });
+  }, [media]);
+
+  const renderMediaGroup = (key: string, items: Media[], steps: number[]) => {
+    const selectedStep = mediaSteps[key] ?? steps[steps.length - 1] ?? 0;
+    const visible = items.filter((m) => m.step === selectedStep);
+
+    return (
+      <section className="mb-6 last:mb-0" key={key}>
+        <header className="mb-3 flex items-center justify-between gap-2">
+          <button
+            className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
+            type="button"
+            onClick={() => { setCollapsedSections((prev) => ({ ...prev, [`media:${key}`]: !(prev[`media:${key}`] ?? false) })); }}
+          >
+            <span className={`transition-transform ${collapsedSections[`media:${key}`] ? "-rotate-90" : "rotate-0"}`}>
+              <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
+                <path d="M4 6.25 8 10l4-3.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" />
+              </svg>
+            </span>
+            <span>{key}</span>
+            <span className="rounded-full border border-brand-border px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
+              {items.length}
+            </span>
+          </button>
+          {steps.length > 1 && !collapsedSections[`media:${key}`] ? (
+            <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
+          ) : null}
+        </header>
+        {collapsedSections[`media:${key}`] ? null : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {visible.map((item) => (
+              <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={item.id}>
+                {item.type === "image" ? (
+                  <img src={getMediaFileUrl(handle, projectName, runName, item.id)} alt={item.key} className="w-full rounded-lg" />
+                ) : item.type === "video" ? (
+                  <video src={getMediaFileUrl(handle, projectName, runName, item.id)} controls className="w-full rounded-lg" />
+                ) : (
+                  <audio src={getMediaFileUrl(handle, projectName, runName, item.id)} controls className="w-full" />
+                )}
+                {item.metadata && "caption" in item.metadata ? (
+                  <p className="mt-1.5 text-center text-[0.75rem] text-brand-textMuted">{String(item.metadata["caption"])}</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  };
+
   return (
     <main className="relative p-[1.5rem]">
       <SectionHeader title="Scalar Plots" subtitle="training + validation metrics" />
@@ -147,6 +216,13 @@ export default function RunChartsPage(): ReactElement {
           )}
         </section>
       ))}
+      {mediaByKey.length > 0 ? (
+        <>
+          <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" />
+          {mediaError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{mediaError}</div> : null}
+          {mediaByKey.map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
+        </>
+      ) : null}
     </main>
   );
 }

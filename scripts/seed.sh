@@ -154,6 +154,44 @@ for run_target in "$project_one_name:$baseline_run_name" "$project_two_name:$dis
   run_variant=$((run_variant + 1))
 done
 
+seed_media() {
+  local project_name="$1" run_name="$2" key="$3" step="$4" r="$5" g="$6" b="$7"
+  local png
+  png="$(node -e "
+const zlib = require('zlib');
+const W = 64, H = 64, r = ${r}, g = ${g}, b = ${b};
+const rows = [];
+for (let y = 0; y < H; y++) { const row = Buffer.alloc(1 + W * 4); row[0] = 0; for (let x = 0; x < W; x++) { const o = 1 + x * 4; row[o] = r; row[o+1] = g; row[o+2] = b; row[o+3] = 255; } rows.push(row); }
+const deflated = zlib.deflateSync(Buffer.concat(rows));
+const crc32 = (buf) => { let c = 0xFFFFFFFF; for (const byte of buf) { c ^= byte; for (let j = 0; j < 8; j++) c = (c >>> 1) ^ (c & 1 ? 0xEDB88320 : 0); } return (c ^ 0xFFFFFFFF) >>> 0; };
+const chunk = (type, data) => { const t = Buffer.from(type); const buf = Buffer.concat([t, data]); const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(buf)); return Buffer.concat([len, buf, crc]); };
+const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(W, 0); ihdr.writeUInt32BE(H, 4); ihdr[8] = 8; ihdr[9] = 6;
+const sig = Buffer.from([137,80,78,71,13,10,26,10]);
+const png = Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', deflated), chunk('IEND', Buffer.alloc(0))]);
+process.stdout.write(png.toString('base64'));
+")"
+  local tmpfile encoded_meta
+  tmpfile="$(mktemp)"
+  echo "$png" | base64 -d > "$tmpfile"
+  encoded_meta="$(jq -Rrn --arg c "${r},${g},${b}" '{caption: ("sample at step " + "'"$step"'"), color: $c} | @uri')"
+  curl -sS -o /dev/null -f -X POST \
+    -H "content-type: application/octet-stream" \
+    -b "$cookie_jar" -c "$cookie_jar" \
+    --data-binary "@$tmpfile" \
+    "$base_url/accounts/$user_handle/projects/$project_name/runs/$run_name/media?key=$key&step=$step&type=image&metadata=$encoded_meta"
+  rm -f "$tmpfile"
+}
+
+run_variant=0
+for run_target in "$project_one_name:$baseline_run_name" "$project_two_name:$distilbert_run_name" "$project_two_name:$llama_eval_run_name"; do
+  project_name="${run_target%%:*}"
+  run_name="${run_target#*:}"
+  seed_media "$project_name" "$run_name" "samples" 0 26 123 125
+  seed_media "$project_name" "$run_name" "samples" 50 60 180 90
+  seed_media "$project_name" "$run_name" "samples" 100 200 80 80
+  run_variant=$((run_variant + 1))
+done
+
 seed_logs_for_worker "$project_one_name" "$baseline_run_name" worker-0
 seed_logs_for_worker "$project_one_name" "$baseline_run_name" worker-1
 seed_logs_for_worker "$project_two_name" "$distilbert_run_name" worker-0
