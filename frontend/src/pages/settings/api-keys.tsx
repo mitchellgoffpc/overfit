@@ -1,7 +1,8 @@
 import type { ApiKey } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
+import SettingsSidebar from "components/settings/SettingsSidebar";
 import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
 
 const inkButtonClass = "rounded-[0.625rem] border border-[#1f3637] bg-[#1f3637] px-4 py-2 text-sm font-semibold text-white"
@@ -21,10 +22,6 @@ export default function SettingsKeysContent(): ReactElement {
   const [createdKeyToken, setCreatedKeyToken] = useState<string | null>(null);
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [isDeletingKey, setIsDeletingKey] = useState<string | null>(null);
-  const notebookDate = useMemo(
-    () => new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
-    []
-  );
 
   useEffect(() => {
     if (apiKeysLoaded || status !== "authenticated") { return; }
@@ -82,16 +79,7 @@ export default function SettingsKeysContent(): ReactElement {
 
   return (
     <section className="grid lg:grid-cols-[18.75rem_1fr]">
-      <aside className="border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:border-[#d2dfdf] lg:pl-14 lg:pr-5 lg:pt-8">
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-        <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Settings</h2>
-        <p className="mt-2 font-mono text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>{notebookDate}</p>
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] mt-7 text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>Summary</p>
-        <div className="flex items-center justify-between text-[0.75rem]" style={{ height: "1.875rem" }}>
-          <span className="text-brand-textMuted">active keys</span>
-          <span className="font-semibold text-brand-text">{apiKeys.length}</span>
-        </div>
-      </aside>
+      <SettingsSidebar sectionLabel="Summary" stats={[{ label: "active keys", value: apiKeys.length }]} />
 
       <div className="relative p-6">
         <header className="mb-3">

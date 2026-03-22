@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import { Link } from "wouter";
 
 import Navbar from "components/Navbar";
+import NotebookShell from "components/NotebookShell";
 import RunsPanel from "components/RunsPanel";
 import { useAccountsStore } from "stores/accounts";
 import { useProjectStore } from "stores/projects";
@@ -31,21 +32,11 @@ export default function IndexRoute(): ReactElement {
   const runningCount = useMemo(() => runs.filter((run) => run.status === "running").length, [runs]);
   const failedCount = useMemo(() => runs.filter((run) => run.status === "failed").length, [runs]);
   const userHandle = user?.handle ?? "workspace";
-  const notebookShellClass = "relative mx-auto w-full overflow-hidden border-x border-b border-[#c4d1d1]"
-    + " bg-[#f8fcfa] shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)] lg:grid lg:grid-cols-[18.75rem_1fr]";
-
   return (
     <div className="min-h-screen bg-[#e9efed] text-brand-text">
       <Navbar breadcrumbs={[{ label: "Home" }]} />
 
-      <div className={notebookShellClass} style={{ maxWidth: "calc(100% - 5rem)" }}>
-        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[0.875rem] bg-[#dce7e4]" aria-hidden />
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
-        />
-        <div className="pointer-events-none absolute bottom-0 left-10 top-0 w-px bg-[#efb1b1]/70" aria-hidden />
+      <NotebookShell columns="18.75rem 1fr" maxWidth="calc(100% - 5rem)">
 
         <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
@@ -120,7 +111,7 @@ export default function IndexRoute(): ReactElement {
 
           <RunsPanel runs={runs} projects={projects} userHandle={userHandle} isLoading={isRunsLoading} error={runError} />
         </main>
-      </div>
+      </NotebookShell>
     </div>
   );
 }

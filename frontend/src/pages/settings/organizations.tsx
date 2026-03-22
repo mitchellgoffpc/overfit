@@ -1,8 +1,9 @@
 import type { Organization, OrganizationRole } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Modal from "components/Modal";
+import SettingsSidebar from "components/settings/SettingsSidebar";
 import { useAuthStore } from "stores/auth";
 import { createOrganization, fetchMyMemberships, leaveOrganization } from "stores/organizations";
 
@@ -30,10 +31,6 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const [isCreating, setIsCreating] = useState(false);
   const [isLeaving, setIsLeaving] = useState<string | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
-  const notebookDate = useMemo(
-    () => new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
-    []
-  );
 
   useEffect(() => {
     if (loaded || status !== "authenticated") { return; }
@@ -92,16 +89,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
 
   return (
     <section className="grid lg:grid-cols-[18.75rem_1fr]">
-      <aside className="border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:border-[#d2dfdf] lg:pl-14 lg:pr-5 lg:pt-8">
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-        <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Settings</h2>
-        <p className="mt-2 font-mono text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>{notebookDate}</p>
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] mt-7 text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>Summary</p>
-        <div className="flex items-center justify-between text-[0.75rem]" style={{ height: "1.875rem" }}>
-          <span className="text-brand-textMuted">memberships</span>
-          <span className="font-semibold text-brand-text">{memberships.length}</span>
-        </div>
-      </aside>
+      <SettingsSidebar sectionLabel="Summary" stats={[{ label: "memberships", value: memberships.length }]} />
 
       <div className="relative p-6">
         <header className="mb-3">

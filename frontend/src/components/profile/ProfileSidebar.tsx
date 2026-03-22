@@ -19,7 +19,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
 
   if (!user) {
     return (
-      <aside className="relative flex h-full flex-col gap-5 border-b border-[#d4dddd] px-5 py-6 lg:border-b-0 lg:border-r">
+      <aside className="relative flex h-full flex-col gap-5 border-b border-[#d4dddd] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
@@ -36,7 +36,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar`;
 
   return (
-    <aside className="relative flex h-full flex-col gap-5 border-b border-[#d4dddd] px-5 py-6 lg:border-b-0 lg:border-r">
+    <aside className="relative flex h-full flex-col gap-5 border-b border-[#d4dddd] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden

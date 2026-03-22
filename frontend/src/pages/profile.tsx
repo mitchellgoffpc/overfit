@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useParams } from "wouter";
 
 import Navbar from "components/Navbar";
+import NotebookShell from "components/NotebookShell";
 import ProfileActivityHeatmap from "components/profile/ProfileActivityHeatmap";
 import ProfileProjectsPanel from "components/profile/ProfileProjectsPanel";
 import ProfileRunsPanel from "components/profile/ProfileRunsPanel";
@@ -32,8 +33,6 @@ export default function ProfileRoute(): ReactElement {
   const organization = account?.type === "ORGANIZATION" ? account : null;
   const projects = Object.values(projectsByKey).filter((project) => project.owner === handle);
   const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle);
-  const notebookShellClass = "relative mx-auto w-full max-w-7xl overflow-hidden border-x border-b border-[#c4d1d1]"
-    + " bg-[#f8fcfa] shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)] lg:grid lg:grid-cols-[18.75rem_1fr]";
 
   useEffect(() => {
     if (!account && !notFound) { void fetchAccount(handle); }
@@ -55,14 +54,7 @@ export default function ProfileRoute(): ReactElement {
     <div className="min-h-screen bg-[#e9efed] text-brand-text">
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Profile" }]} />
 
-      <div className={notebookShellClass}>
-        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[0.875rem] bg-[#dce7e4]" aria-hidden />
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
-        />
-        <div className="pointer-events-none absolute bottom-0 left-10 top-0 w-px bg-[#efb1b1]/70" aria-hidden />
+      <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
 
         <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
 
@@ -93,7 +85,7 @@ export default function ProfileRoute(): ReactElement {
             <ProfileActivityHeatmap runs={runs} />
           </div>
         </main>
-      </div>
+      </NotebookShell>
     </div>
   );
 }

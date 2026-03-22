@@ -2,6 +2,7 @@ import type { User } from "@underfit/types";
 import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useState } from "react";
 
+import SettingsSidebar from "components/settings/SettingsSidebar";
 import { apiBase } from "helpers";
 import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 
@@ -34,10 +35,6 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
   const [isAvatarMissing, setIsAvatarMissing] = useState(false);
   const initials = useMemo(() => user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(), [user.name]);
   const avatarSrc = useMemo(() => `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`, [avatarVersion, user.handle]);
-  const notebookDate = useMemo(
-    () => new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
-    []
-  );
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -91,20 +88,10 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
 
   return (
     <section className="grid lg:grid-cols-[18.75rem_1fr]">
-      <aside className="border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:border-[#d2dfdf] lg:pl-14 lg:pr-5 lg:pt-8">
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-        <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Settings</h2>
-        <p className="mt-2 font-mono text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>{notebookDate}</p>
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] mt-7 text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>Subject</p>
-        <div className="flex items-center justify-between text-[0.75rem]" style={{ height: "1.875rem" }}>
-          <span className="text-brand-textMuted">handle</span>
-          <span className="font-semibold text-brand-text">@{user.handle}</span>
-        </div>
-        <div className="flex items-center justify-between text-[0.75rem]" style={{ height: "1.875rem" }}>
-          <span className="text-brand-textMuted">role</span>
-          <span className="font-semibold text-brand-text">Researcher</span>
-        </div>
-      </aside>
+      <SettingsSidebar
+        sectionLabel="Subject"
+        stats={[{ label: "handle", value: `@${user.handle}` }, { label: "role", value: "Researcher" }]}
+      />
 
       <div className="relative p-6">
         <header className="mb-3">

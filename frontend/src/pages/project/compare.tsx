@@ -5,6 +5,8 @@ import { useParams } from "wouter";
 
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
+import NotebookShell from "components/NotebookShell";
+import ProjectHeader from "components/project/ProjectHeader";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { fetchRunScalars } from "stores/scalars";
@@ -123,8 +125,6 @@ export default function ProjectCompareRoute(): ReactElement {
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
   const runningCount = useMemo(() => projectRuns.filter((run) => run.status === "running").length, [projectRuns]);
   const failedCount = useMemo(() => projectRuns.filter((run) => run.status === "failed").length, [projectRuns]);
-  const notebookShellClass = "relative mx-auto w-full overflow-hidden border-x border-b border-[#c4d1d1]"
-    + " bg-[#f8fcfa] shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)] lg:grid lg:grid-cols-[18.75rem_1fr]";
 
   const chartSeries = useMemo(() => {
     const metricKeys = new Set<string>();
@@ -262,21 +262,12 @@ export default function ProjectCompareRoute(): ReactElement {
   };
 
   return (
-    <div className={notebookShellClass} style={{ maxWidth: "calc(100% - 5rem)" }}>
-        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[0.875rem] bg-[#dce7e4]" aria-hidden />
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
-        />
-        <div className="pointer-events-none absolute bottom-0 left-10 top-0 w-px bg-[#efb1b1]/70" aria-hidden />
+    <NotebookShell columns="18.25rem 1fr" maxWidth="calc(100% - 5rem)">
 
         {!showProjectNotFound ? (
-          <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
+          <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-[4.125rem] lg:pr-5">
             <div className="lg:h-[15.375rem]">
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-              <h1 className="mt-1 font-display text-[2.0625rem] leading-none text-brand-text">{projectName}</h1>
-              <p className="mt-1 font-mono text-[0.6875rem] text-brand-textMuted">@{handle} / compare</p>
+              <ProjectHeader handle={handle} projectName={projectName} />
 
               <div className="mt-3 rounded-xl border border-[#d2dede] bg-white/85 px-3 py-3">
                 <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
@@ -369,6 +360,6 @@ export default function ProjectCompareRoute(): ReactElement {
             </section>
           ) : null}
         </main>
-      </div>
+      </NotebookShell>
   );
 }

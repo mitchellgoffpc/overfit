@@ -2,8 +2,9 @@ import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { useParams } from "wouter";
 
+import NotebookShell from "components/NotebookShell";
+import ProjectHeader from "components/project/ProjectHeader";
 import ProjectRunsTable from "components/project/RunsTable";
-import { apiBase } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 
@@ -27,48 +28,14 @@ export default function ProjectRunsPage(): ReactElement {
   const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
   const projectRuns = project ? runList.filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [];
   const showProjectNotFound = !project && !isProjectsLoading;
-  const ownerInitial = handle[0]?.toUpperCase() ?? "?";
-  const ownerAvatarSrc = `${apiBase}/accounts/${encodeURIComponent(handle)}/avatar`;
 
   return (
-    <main
-        className={[
-          "relative mx-auto w-full overflow-hidden border-x border-b border-[#c4d1d1]",
-          "bg-[#f8fcfa] shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)]"
-        ].join(" ")}
-        style={{ maxWidth: "calc(100% - 5rem)" }}
-      >
-        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[0.875rem] bg-[#dce7e4]" aria-hidden />
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
-        />
-        <div className="pointer-events-none absolute bottom-0 left-10 top-0 z-[100] w-px bg-[#efb1b1]/70" aria-hidden />
+      <NotebookShell maxWidth="calc(100% - 5rem)">
         <div className="pointer-events-none absolute bottom-0 left-[18.25rem] top-0 w-px bg-[#d4dfdf]" aria-hidden />
 
         <div className="relative py-5 pl-[4.125rem] pr-5">
           <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-              <h1 className="mt-1 flex flex-wrap items-center gap-2.5 font-display text-[2.125rem] leading-none text-brand-text">
-                <div
-                  className={[
-                    "relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-[#c3d7d7]",
-                    "bg-[#d9ecec] text-xs font-semibold text-brand-accentStrong"
-                  ].join(" ")}
-                >
-                  {ownerInitial}
-                  <img
-                    className="absolute inset-0 h-full w-full object-cover"
-                    src={ownerAvatarSrc}
-                    alt={`${handle} avatar`}
-                    onError={(event) => { event.currentTarget.style.display = "none"; }}
-                  />
-                </div>
-                <span>{projectName}</span>
-              </h1>
-            </div>
+            <ProjectHeader handle={handle} projectName={projectName} />
             {project ? (
               <span
                 className={"inline-flex items-center rounded-full border border-[#d4dfdf] bg-white/90 px-2 py-px"
@@ -90,6 +57,6 @@ export default function ProjectRunsPage(): ReactElement {
             />
           ) : null}
         </div>
-      </main>
+      </NotebookShell>
   );
 }
