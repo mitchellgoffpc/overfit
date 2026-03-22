@@ -79,16 +79,12 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
     if (!artifact) {
       res.status(404).json({ error: "Artifact not found" });
     } else {
-      try {
-        const content = await storage.read(getArtifactStorageKey(artifact.runId, artifact.id));
+      const result = await storage.safeRead(getArtifactStorageKey(artifact.runId, artifact.id));
+      if (!result.ok) {
+        res.status(404).json({ error: "Artifact file not found" });
+      } else {
         res.setHeader("Content-Type", "application/octet-stream");
-        res.send(content);
-      } catch (error) {
-        if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-          res.status(404).json({ error: "Artifact file not found" });
-        } else {
-          throw error;
-        }
+        res.send(result.data);
       }
     }
   };

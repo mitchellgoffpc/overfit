@@ -18,11 +18,15 @@ export interface AppendResult {
   byteCount: number;
 }
 
+export type ReadResult = { ok: true; data: Buffer } | { ok: false; error: string };
+
 export interface StorageBackend {
   write: (storageKey: string, content: Buffer) => Promise<string>;
   read: (storageKey: string) => Promise<Buffer>;
+  safeRead: (storageKey: string) => Promise<ReadResult>;
   append: (storageKey: string, content: Buffer) => Promise<AppendResult>;
   readRange: (storageKey: string, byteOffset: number, byteCount: number) => Promise<Buffer>;
+  safeReadRange: (storageKey: string, byteOffset: number, byteCount: number) => Promise<ReadResult>;
 }
 
 class FileStorageBackend implements StorageBackend {
@@ -54,6 +58,17 @@ class FileStorageBackend implements StorageBackend {
     return await fs.readFile(this.resolveStoragePath(storageKey));
   }
 
+  async safeRead(storageKey: string): Promise<ReadResult> {
+    try {
+      return { ok: true, data: await fs.readFile(this.resolveStoragePath(storageKey)) };
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+        return { ok: false, error: "File not found" };
+      }
+      throw error;
+    }
+  }
+
   async append(storageKey: string, content: Buffer): Promise<AppendResult> {
     const storagePath = this.resolveStoragePath(storageKey);
     await fs.mkdir(path.dirname(storagePath), { recursive: true });
@@ -72,6 +87,26 @@ class FileStorageBackend implements StorageBackend {
       const buffer = Buffer.alloc(byteCount);
       await fileHandle.read(buffer, 0, byteCount, byteOffset);
       return buffer;
+    } finally {
+      await fileHandle.close();
+    }
+  }
+
+  async safeReadRange(storageKey: string, byteOffset: number, byteCount: number): Promise<ReadResult> {
+    const storagePath = this.resolveStoragePath(storageKey);
+    let fileHandle;
+    try {
+      fileHandle = await fs.open(storagePath, "r");
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+        return { ok: false, error: "File not found" };
+      }
+      throw error;
+    }
+    try {
+      const buffer = Buffer.alloc(byteCount);
+      await fileHandle.read(buffer, 0, byteCount, byteOffset);
+      return { ok: true, data: buffer };
     } finally {
       await fileHandle.close();
     }

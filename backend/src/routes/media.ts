@@ -77,16 +77,14 @@ export function registerMediaRoutes(app: RouteApp, db: Database, storage: Storag
 
   const listMediaHandler: RouteHandler<{ handle: string; projectName: string; runName: string }, Media[]> = async (req, res) => {
     const query = ListMediaQuerySchema.safeParse(req.query);
+    const run = await getPathRun(req.params);
     if (!query.success) {
       res.status(400).json({ error: formatZodError(query.error) });
-      return;
-    }
-    const run = await getPathRun(req.params);
-    if (!run) {
+    } else if (!run) {
       res.status(404).json({ error: "Run not found" });
-      return;
+    } else {
+      res.json(await listMedia(db, run.id, query.data.key, query.data.step));
     }
-    res.json(await listMedia(db, run.id, query.data.key, query.data.step));
   };
 
   const downloadMediaHandler: RouteHandler<{ id: ID }, Buffer> = async (req, res) => {
@@ -94,16 +92,12 @@ export function registerMediaRoutes(app: RouteApp, db: Database, storage: Storag
     if (!media) {
       res.status(404).json({ error: "Media not found" });
     } else {
-      try {
-        const content = await storage.read(media.storageKey);
+      const result = await storage.safeRead(media.storageKey);
+      if (!result.ok) {
+        res.status(404).json({ error: "Media file not found" });
+      } else {
         res.setHeader("Content-Type", "application/octet-stream");
-        res.send(content);
-      } catch (error) {
-        if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-          res.status(404).json({ error: "Media file not found" });
-        } else {
-          throw error;
-        }
+        res.send(result.data);
       }
     }
   };
