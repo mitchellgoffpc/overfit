@@ -6,7 +6,7 @@ import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
 import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
-import SectionHeader from "components/run/SectionHeader";
+import SectionHeader from "components/SectionHeader";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
 

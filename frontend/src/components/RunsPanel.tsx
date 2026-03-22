@@ -22,7 +22,7 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
   return (
     <section className="rounded-[0.875rem] border border-[#cfdddd] bg-[#f9fcfb]/70 p-4">
       {runs.length > 0 ? (
-        <div className="mb-4 flex flex-col gap-3 border-b border-[#d4dfdf] pb-3 md:flex-row md:items-center md:justify-between">
+        <div className="mb-4 flex flex-col gap-3 pb-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section I</p>
             <h2 className="mt-1 font-display text-[2rem] leading-none">Recent Runs</h2>

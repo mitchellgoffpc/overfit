@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
-import SectionHeader from "components/run/SectionHeader";
+import SectionHeader from "components/SectionHeader";
 import type { ParsedLogLine } from "stores/logs";
 import { useLogStore } from "stores/logs";
 import { useRunStore } from "stores/runs";

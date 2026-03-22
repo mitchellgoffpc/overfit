@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { useParams } from "wouter";
 
-import SectionHeader from "components/run/SectionHeader";
+import SectionHeader from "components/SectionHeader";
 import { useRunStore } from "stores/runs";
 
 export default function RunArtifactsPage(): ReactElement {

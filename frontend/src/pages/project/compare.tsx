@@ -9,6 +9,7 @@ import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
+import SectionHeader from "components/SectionHeader";
 import { formatRunTime } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
@@ -296,15 +297,11 @@ export default function ProjectCompareRoute(): ReactElement {
         ) : null}
 
         <main className="relative p-6">
-          <header className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-[#d4dfdf] pb-3">
-            <div>
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section D</p>
-              <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Comparison Plots</h2>
-            </div>
-            <div className="rounded-full border border-[#cfdddd] bg-white/90 px-3 py-1 text-[0.75rem] text-brand-textMuted">
-              plotting {visibleRuns.length} / {projectRuns.length} runs
-            </div>
-          </header>
+          <SectionHeader
+            title="Comparison Plots"
+            subtitle={`plotting ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`}
+            sectionLabel="Section D"
+          />
 
           {showProjectNotFound ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}

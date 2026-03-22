@@ -87,7 +87,7 @@ export default function IndexRoute(): ReactElement {
         </aside>
 
         <main className="relative p-6">
-          <header className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-[#d4dfdf] pb-3">
+          <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section H</p>
               <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Workspace Activity</h2>
