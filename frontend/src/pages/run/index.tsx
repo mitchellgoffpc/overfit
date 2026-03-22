@@ -1,4 +1,4 @@
-import { faBoxArchive, faChartLine, faFileLines } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faFileLines, faFolderOpen } from "@fortawesome/free-solid-svg-icons";
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { Link, Route, Switch, useLocation, useParams } from "wouter";
@@ -6,8 +6,8 @@ import { Link, Route, Switch, useLocation, useParams } from "wouter";
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
 import { formatRunTime } from "helpers";
-import RunArtifactsPage from "pages/run/artifacts";
 import RunChartsPage from "pages/run/charts";
+import RunFilesPage from "pages/run/files";
 import RunLogsPage from "pages/run/logs";
 import { buildRunKey, useRunStore } from "stores/runs";
 
@@ -23,12 +23,13 @@ export default function RunDetailRoute(): ReactElement {
   }, [fetchRun, handle, projectName, run, runName]);
 
   const [location] = useLocation();
-  const activeTab = location.endsWith("/logs") ? "logs" : location.endsWith("/artifacts") ? "artifacts" : "charts";
   const basePath = `/${handle}/${projectName}/runs/${runName}`;
+  const afterBase = location.slice(basePath.length);
+  const activeTab = afterBase.startsWith("/logs") ? "logs" : afterBase.startsWith("/files") ? "files" : "charts";
   const tabs = [
     { id: "charts", label: "Charts", href: basePath, icon: faChartLine },
     { id: "logs", label: "Logs", href: `${basePath}/logs`, icon: faFileLines },
-    { id: "artifacts", label: "Artifacts", href: `${basePath}/artifacts`, icon: faBoxArchive }
+    { id: "files", label: "Files", href: `${basePath}/files`, icon: faFolderOpen }
   ];
   const statusColorClass = run?.status === "running" ? "bg-[#24b26b]" : run?.status === "failed" ? "bg-[#bb5f5f]" : "bg-brand-border";
 
@@ -81,7 +82,7 @@ export default function RunDetailRoute(): ReactElement {
 
         <Switch>
           <Route path="/:handle/:projectName/runs/:runName/logs" component={RunLogsPage} />
-          <Route path="/:handle/:projectName/runs/:runName/artifacts" component={RunArtifactsPage} />
+          <Route path="/:handle/:projectName/runs/:runName/files/*?" component={RunFilesPage} />
           <Route path="/:handle/:projectName/runs/:runName" component={RunChartsPage} />
         </Switch>
       </NotebookShell>

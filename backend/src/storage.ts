@@ -20,6 +20,12 @@ export interface AppendResult {
 
 export type ReadResult = { ok: true; data: Buffer } | { ok: false; error: string };
 
+export interface FileEntry {
+  name: string;
+  isDirectory: boolean;
+  size: number;
+}
+
 export interface StorageBackend {
   write: (storageKey: string, content: Buffer) => Promise<string>;
   read: (storageKey: string) => Promise<Buffer>;
@@ -27,6 +33,7 @@ export interface StorageBackend {
   append: (storageKey: string, content: Buffer) => Promise<AppendResult>;
   readRange: (storageKey: string, byteOffset: number, byteCount: number) => Promise<Buffer>;
   safeReadRange: (storageKey: string, byteOffset: number, byteCount: number) => Promise<ReadResult>;
+  list: (prefix: string) => Promise<FileEntry[]>;
 }
 
 class FileStorageBackend implements StorageBackend {
@@ -90,6 +97,25 @@ class FileStorageBackend implements StorageBackend {
     } finally {
       await fileHandle.close();
     }
+  }
+
+  async list(prefix: string): Promise<FileEntry[]> {
+    const dir = this.resolveStoragePath(prefix);
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") { return []; }
+      throw error;
+    }
+    const results: FileEntry[] = [];
+    for (const entry of entries) {
+      const isDirectory = entry.isDirectory();
+      const size = isDirectory ? 0 : (await fs.stat(path.join(dir, entry.name))).size;
+      results.push({ name: entry.name, isDirectory, size });
+    }
+    results.sort((a, b) => a.isDirectory === b.isDirectory ? a.name.localeCompare(b.name) : a.isDirectory ? -1 : 1);
+    return results;
   }
 
   async safeReadRange(storageKey: string, byteOffset: number, byteCount: number): Promise<ReadResult> {

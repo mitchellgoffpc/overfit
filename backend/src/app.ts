@@ -14,6 +14,7 @@ import { registerApiKeyRoutes } from "routes/api-keys";
 import { registerArtifactRoutes } from "routes/artifacts";
 import { registerAuthRoutes } from "routes/auth";
 import { registerCollaboratorRoutes } from "routes/collaborators";
+import { registerFileRoutes } from "routes/files";
 import { registerLogRoutes } from "routes/logs";
 import { registerMediaRoutes } from "routes/media";
 import { registerOrganizationMembershipRoutes } from "routes/organization-members";
@@ -53,6 +54,7 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerRunRoutes(app, db);
   registerLogRoutes(app, db, logBuffer, storage);
   registerArtifactRoutes(app, db, storage);
+  registerFileRoutes(app, db, storage);
   registerMediaRoutes(app, db, storage);
   registerScalarRoutes(app, db, scalarBuffer, storage);
 
