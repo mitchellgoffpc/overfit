@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError } from "helpers";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { getAccount } from "repositories/accounts";
 import { createProject, getProject, listProjects, listProjectsByUserActivity, updateProject } from "repositories/projects";
 import { requireAuth } from "routes/auth";
@@ -23,7 +23,7 @@ type CreateProjectPayload = z.infer<typeof CreateProjectPayloadSchema>;
 type UpdateProjectPayload = z.infer<typeof UpdateProjectPayloadSchema>;
 
 export function registerProjectRoutes(app: RouteApp, db: Database): void {
-  const listMyProjectsHandler: RouteHandler<Record<string, string>, Project[]> = async (req, res) => {
+  const listMyProjectsHandler: RouteHandler<Empty, Project[]> = async (req, res) => {
     res.json(await listProjectsByUserActivity(db, req.user.id));
   };
 

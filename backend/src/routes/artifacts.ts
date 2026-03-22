@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError, getJsonSizeError } from "helpers";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { requireAuth } from "routes/auth";
 import { getArtifactStorageKey } from "storage";
@@ -22,11 +22,11 @@ const CreateArtifactPayloadSchema = z.strictObject({
 type CreateArtifactPayload = z.infer<typeof CreateArtifactPayloadSchema>;
 
 export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend, metadataMaxBytes: number | null): void {
-  const listArtifactsHandler: RouteHandler<Record<string, string>, Artifact[]> = async (_req, res) => {
+  const listArtifactsHandler: RouteHandler<Empty, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
 
-  const createArtifactHandler: RouteHandler<Record<string, string>, Artifact, CreateArtifactPayload> = async (req, res) => {
+  const createArtifactHandler: RouteHandler<Empty, Artifact, CreateArtifactPayload> = async (req, res) => {
     const { success, error, data } = CreateArtifactPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });

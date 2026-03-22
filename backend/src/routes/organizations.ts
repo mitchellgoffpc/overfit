@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError } from "helpers";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { createOrganizationMember, getOrganizationMember } from "repositories/organization-members";
 import { createOrganization, getOrganization, updateOrganization } from "repositories/organizations";
 import { requireAuth } from "routes/auth";
@@ -21,7 +21,7 @@ type CreateOrganizationPayload = z.infer<typeof CreateOrganizationPayloadSchema>
 type UpdateOrganizationPayload = z.infer<typeof UpdateOrganizationPayloadSchema>;
 
 export function registerOrganizationRoutes(app: RouteApp, db: Database): void {
-  const createOrganizationHandler: RouteHandler<Record<string, never>, Organization, CreateOrganizationPayload> = async (req, res) => {
+  const createOrganizationHandler: RouteHandler<Empty, Organization, CreateOrganizationPayload> = async (req, res) => {
     const { success, error, data } = CreateOrganizationPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });

@@ -3,7 +3,7 @@ import express from "express";
 import sharp from "sharp";
 
 import type { Database } from "db";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { deleteAccountAvatar, getAccountAvatar, upsertAccountAvatar } from "repositories/account-avatars";
 import { getAccount } from "repositories/accounts";
 import { requireAuth } from "routes/auth";
@@ -49,7 +49,7 @@ export function registerAccountAvatarRoutes(app: RouteApp, db: Database): void {
     sendAvatar(Buffer.from(avatar.image), res);
   };
 
-  const putCurrentUserAvatarHandler: RouteHandler<Record<string, string>, { status: "ok" }, Buffer> = async (req, res) => {
+  const putCurrentUserAvatarHandler: RouteHandler<Empty, { status: "ok" }, Buffer> = async (req, res) => {
     if (!Buffer.isBuffer(req.body) || !req.body.length) {
       res.status(400).json({ error: "Avatar upload must include raw bytes" });
       return;
@@ -65,7 +65,7 @@ export function registerAccountAvatarRoutes(app: RouteApp, db: Database): void {
     res.json({ status: "ok" });
   };
 
-  const deleteCurrentUserAvatarHandler: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
+  const deleteCurrentUserAvatarHandler: RouteHandler<Empty, { status: "ok" }> = async (req, res) => {
     await deleteAccountAvatar(db, req.user.id);
     res.json({ status: "ok" });
   };

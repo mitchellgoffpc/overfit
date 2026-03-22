@@ -15,7 +15,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError } from "helpers";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { getUserByApiKey } from "repositories/api-keys";
 import { getSession, createSession, deleteSession } from "repositories/sessions";
 import { createUserAuth, getUserAuth } from "repositories/user-auth";
@@ -128,7 +128,7 @@ export const requireAuth = (db: Database): RequestHandler => async (req, res, ne
 };
 
 export function registerAuthRoutes(app: RouteApp, db: Database): void {
-  const register: RouteHandler<Record<string, string>, AuthResponse, RegisterPayload> = async (req, res) => {
+  const register: RouteHandler<Empty, AuthResponse, RegisterPayload> = async (req, res) => {
     const { success, error, data } = RegisterPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
@@ -157,7 +157,7 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     res.json({ user, session: { token: session.id, createdAt: session.createdAt, expiresAt } });
   };
 
-  const login: RouteHandler<Record<string, string>, AuthResponse, LoginPayload> = async (req, res) => {
+  const login: RouteHandler<Empty, AuthResponse, LoginPayload> = async (req, res) => {
     const { success, error, data } = LoginPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
@@ -177,7 +177,7 @@ export function registerAuthRoutes(app: RouteApp, db: Database): void {
     res.json({ user, session: { token: session.id, createdAt: session.createdAt, expiresAt } });
   };
 
-  const logout: RouteHandler<Record<string, string>, { status: "ok" }> = async (req, res) => {
+  const logout: RouteHandler<Empty, { status: "ok" }> = async (req, res) => {
     const token = getSessionToken(req.cookies as Record<string, string>);
     const session = token ? await getSession(db, token) : undefined;
     if (!token || !session) {

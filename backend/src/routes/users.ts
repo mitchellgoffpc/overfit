@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError } from "helpers";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { getUserByEmail, updateUser } from "repositories/users";
 import { requireAuth } from "routes/auth";
 
@@ -20,7 +20,7 @@ type EmailExistsQuery = z.infer<typeof EmailExistsQuerySchema>;
 type UpdateUserPayload = z.infer<typeof UpdateUserPayloadSchema>;
 
 export function registerUserRoutes(app: RouteApp, db: Database): void {
-  const emailExistsHandler: RouteHandler<Record<string, string>, { exists: boolean }, undefined, EmailExistsQuery> = async (req, res) => {
+  const emailExistsHandler: RouteHandler<Empty, { exists: boolean }, undefined, EmailExistsQuery> = async (req, res) => {
     const { success, error, data } = EmailExistsQuerySchema.safeParse(req.query);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
@@ -29,7 +29,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const updateUserHandler: RouteHandler<Record<string, string>, User, UpdateUserPayload> = async (req, res) => {
+  const updateUserHandler: RouteHandler<Empty, User, UpdateUserPayload> = async (req, res) => {
     const { success, error, data } = UpdateUserPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
@@ -44,7 +44,7 @@ export function registerUserRoutes(app: RouteApp, db: Database): void {
     }
   };
 
-  const getCurrentUserHandler: RouteHandler<Record<string, string>, User> = (req, res) => {
+  const getCurrentUserHandler: RouteHandler<Empty, User> = (req, res) => {
     res.json(req.user);
   };
 

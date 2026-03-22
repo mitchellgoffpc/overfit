@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import type { Database } from "db";
 import { formatZodError } from "helpers";
-import type { RouteApp, RouteHandler } from "helpers";
+import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { createApiKey, deleteApiKey, listApiKeys } from "repositories/api-keys";
 import { requireAuth } from "routes/auth";
 
@@ -17,11 +17,11 @@ const ApiKeyPayloadSchema = z.strictObject({
 type ApiKeyPayload = z.infer<typeof ApiKeyPayloadSchema>;
 
 export function registerApiKeyRoutes(app: RouteApp, db: Database): void {
-  const listApiKeysHandler: RouteHandler<Record<string, string>, ApiKey[]> = async (req, res) => {
+  const listApiKeysHandler: RouteHandler<Empty, ApiKey[]> = async (req, res) => {
     res.json(await listApiKeys(db, req.user.id));
   };
 
-  const createApiKeyHandler: RouteHandler<Record<string, string>, ApiKeyWithToken, ApiKeyPayload> = async (req, res) => {
+  const createApiKeyHandler: RouteHandler<Empty, ApiKeyWithToken, ApiKeyPayload> = async (req, res) => {
     const { success, error, data } = ApiKeyPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
