@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import { Link } from "wouter";
 
 import RunStatusBadge from "components/RunStatusBadge";
-import { formatDuration, formatRunTime } from "helpers";
+import { formatDuration, formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 
 const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
-const headerCellClass = "flex h-[1.875rem] items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
-const bodyCellClass = "flex h-[1.875rem] items-center whitespace-nowrap px-2.5 text-[0.75rem] text-brand-text";
+const headerCellClass = "flex items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
+const bodyCellClass = "flex items-center whitespace-nowrap px-2.5 text-[0.75rem] text-brand-text";
 const leftGridTemplateColumns = "0.5rem 3.5rem 11.25rem";
 const leftPaneWidth = "15.25rem";
 
@@ -71,7 +71,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
     () => ["7.5rem", "6.25rem", "9.375rem", "5.625rem", ...configColumns.map(() => "7.5rem")].join(" "),
     [configColumns]
   );
-  const tableHeight = (runs.length + 1) * 1.875;
+  const tableHeight = (runs.length + 1) * RULED_LINE_HEIGHT;
   const sectionHeight = Math.max(15, 9.375 + tableHeight + 0.75);
 
   return (
@@ -103,7 +103,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
             style={{ gridTemplateColumns: `${leftPaneWidth} minmax(0, 1fr)` }}
           >
             <div>
-              <div className="grid" style={{ gridTemplateColumns: leftGridTemplateColumns }}>
+              <div className="grid" style={{ gridTemplateColumns: leftGridTemplateColumns, height: RULED_LINE }}>
                 <span />
                 <span className={headerCellClass}>Ln</span>
                 <span className={headerCellClass}>Name</span>
@@ -114,9 +114,9 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
                 const hovered = hoveredRunId === run.id;
                 return (
                   <div
-                    className={`grid h-[1.875rem] items-center -ml-12 pl-12 ${hovered ? "bg-brand-accent/5" : ""}`}
+                    className={`grid items-center -ml-12 pl-12 ${hovered ? "bg-brand-accent/5" : ""}`}
                     key={run.id}
-                    style={{ gridTemplateColumns: leftGridTemplateColumns }}
+                    style={{ gridTemplateColumns: leftGridTemplateColumns, height: RULED_LINE }}
                     onMouseEnter={() => { setHoveredRunId(run.id); }}
                     onMouseLeave={() => { setHoveredRunId(null); }}
                   >
@@ -135,7 +135,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
               <div
                 className="min-w-full w-max min-h-full pl-2"
               >
-                <div className="grid" style={{ gridTemplateColumns: rightGridTemplateColumns }}>
+                <div className="grid" style={{ gridTemplateColumns: rightGridTemplateColumns, height: RULED_LINE }}>
                   <span className={headerCellClass}>State</span>
                   <span className={headerCellClass}>User</span>
                   <span className={headerCellClass}>Created</span>
@@ -147,9 +147,9 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
 
                 {runs.map((run) => (
                   <div
-                    className={`grid h-[1.875rem] items-center -ml-2 pl-2 ${hoveredRunId === run.id ? "bg-brand-accent/5" : ""}`}
+                    className={`grid items-center -ml-2 pl-2 ${hoveredRunId === run.id ? "bg-brand-accent/5" : ""}`}
                     key={run.id}
-                    style={{ gridTemplateColumns: rightGridTemplateColumns }}
+                    style={{ gridTemplateColumns: rightGridTemplateColumns, height: RULED_LINE }}
                     onMouseEnter={() => { setHoveredRunId(run.id); }}
                     onMouseLeave={() => { setHoveredRunId(null); }}
                   >

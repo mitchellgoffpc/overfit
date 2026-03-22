@@ -1,6 +1,9 @@
 import { API_VERSION } from "@underfit/types";
 import type { Project } from "@underfit/types";
 
+export const RULED_LINE_HEIGHT = 1.875;
+export const RULED_LINE = `${String(RULED_LINE_HEIGHT)}rem`;
+
 interface APISuccessResponse<T> { ok: true; body: T; error?: never; status: number };
 interface APIFailureResponse { ok: false; body?: never; error: string; status: number };
 type APIResponse<T> = APISuccessResponse<T> | APIFailureResponse;

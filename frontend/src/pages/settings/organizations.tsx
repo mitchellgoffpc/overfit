@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import Modal from "components/Modal";
 import SettingsSidebar from "components/settings/SettingsSidebar";
+import { RULED_LINE } from "helpers";
 import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import { useAuthStore } from "stores/auth";
 import { createOrganization, fetchMyMemberships, leaveOrganization } from "stores/organizations";
@@ -89,7 +90,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
           <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Organizations</h2>
         </header>
 
-        <div className="flex flex-wrap gap-2 mb-[1.875rem]">
+        <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
           {error ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">{error}</div> : null}
         </div>
 

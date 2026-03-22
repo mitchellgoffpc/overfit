@@ -10,7 +10,7 @@ import LineChart from "components/charts/LineChart";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
-import { formatRunTime } from "helpers";
+import { formatRunTime, RULED_LINE } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { fetchRunScalars } from "stores/scalars";
@@ -226,11 +226,12 @@ export default function ProjectCompareRoute(): ReactElement {
     return (
       <button
         className={[
-          "relative flex h-[1.875rem] w-full items-center justify-between text-left transition",
+          "relative flex w-full items-center justify-between text-left transition",
           isVisible ? "bg-transparent hover:bg-white/35" : "bg-transparent opacity-60"
         ].join(" ")}
         key={run.id}
         onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
+        style={{ height: RULED_LINE }}
         type="button"
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -296,7 +297,7 @@ export default function ProjectCompareRoute(): ReactElement {
           </aside>
         ) : null}
 
-        <main className="relative p-6">
+        <main className="relative px-6 pb-6">
           <SectionHeader
             title="Comparison Plots"
             subtitle={`plotting ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`}

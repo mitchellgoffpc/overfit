@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
+import { RULED_LINE } from "helpers";
+
 interface NotebookShellProps {
   readonly columns?: string;
   readonly maxWidth?: string;
@@ -21,7 +23,7 @@ export default function NotebookShell({ columns, maxWidth, className, children }
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
+        style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: `100% ${RULED_LINE}` }}
       />
       <div className="pointer-events-none absolute bottom-0 left-10 top-0 w-px bg-[#efb1b1]/70" aria-hidden />
       {children}

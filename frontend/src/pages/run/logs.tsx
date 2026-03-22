@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import SectionHeader from "components/SectionHeader";
+import { RULED_LINE } from "helpers";
 import type { ParsedLogLine } from "stores/logs";
 import { useLogStore } from "stores/logs";
 import { useRunStore } from "stores/runs";
@@ -45,12 +46,12 @@ export default function RunLogsPage(): ReactElement {
   const renderLine = (line: LogLine) => {
     const { timestamp, message, content } = line;
     return (
-      <div className="grid h-[1.875rem] grid-cols-[4.5rem_1fr] items-center gap-3 px-3" key={line.lineNumber}>
+      <div className="grid grid-cols-[4.5rem_1fr] items-center gap-3 px-3" style={{ height: RULED_LINE }} key={line.lineNumber}>
         <span className="flex justify-end px-1 text-right text-brand-textMuted/70">{line.lineNumber}</span>
         <span className="text-[#2f3e41]">
           {!timestamp ? content : (
             <>
-              <span className="mr-2 inline-flex items-center whitespace-nowrap rounded bg-[#d6e3e5] px-1.5 text-[#243336]">{timestamp}</span>
+              <span className="leading-5 mr-2 inline-flex items-center whitespace-nowrap rounded bg-[#d6e3e5] px-1.5 text-[#243336]">{timestamp}</span>
               <span className="break-words">{message}</span>
             </>
           )}
@@ -60,12 +61,9 @@ export default function RunLogsPage(): ReactElement {
   };
 
   return (
-    <main className="relative flex min-h-[32.5rem] flex-col p-[1.5rem]">
-      <SectionHeader title="Runtime Logs" subtitle="live stream + search" />
-      {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
-      {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
-      <section className="flex min-h-0 flex-1 flex-col">
-        <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+    <main className="relative flex min-h-[32.5rem] flex-col px-[1.5rem] pb-[1.5rem]">
+      <SectionHeader title="Runtime Logs" subtitle="live stream + search" numLines={6}>
+        <div className="flex gap-2 flex-row items-center justify-between flex-grow">
           <div className="flex flex-1 items-center gap-2 rounded-xl border border-brand-border bg-white px-3 py-2">
             <span className="text-[0.6875rem] uppercase tracking-[0.08em] text-brand-textMuted">Search</span>
             <input
@@ -92,14 +90,19 @@ export default function RunLogsPage(): ReactElement {
             </label>
           ) : null}
         </div>
+      </SectionHeader>
 
+      {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
+      {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
+
+      <section className="flex min-h-0 flex-1 flex-col">
         {logError ? <div className="mb-2 text-[0.8125rem] text-brand-textMuted">{logError}</div> : null}
 
-        <div className="min-h-0 flex-1 overflow-auto border-y border-brand-border">
+        <div className="min-h-0 flex-1 overflow-auto border-b border-brand-border">
           {!logError && !scope && visibleLines.length === 0 ? <div className="px-3 py-2 text-[0.8125rem] text-brand-textMuted">Loading logs...</div> : null}
           {!logError && scope && visibleLines.length === 0 ? <div className="px-3 py-2 text-[0.8125rem] text-brand-textMuted">No logs yet.</div> : null}
           {visibleLines.length > 0 ? (
-            <div className="font-mono text-[0.75rem] leading-[1.875rem] text-[#2f3e41]">
+            <div className="font-mono text-[0.75rem] text-[#2f3e41]" style={{ lineHeight: RULED_LINE }}>
               {visibleLines.map(renderLine)}
             </div>
           ) : null}

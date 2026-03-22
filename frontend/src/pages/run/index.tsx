@@ -1,11 +1,11 @@
 import { faChartLine, faFileLines, faFolderOpen } from "@fortawesome/free-solid-svg-icons";
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { Link, Route, Switch, useLocation, useParams } from "wouter";
+import { Route, Switch, useLocation, useParams } from "wouter";
 
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
-import { formatRunTime } from "helpers";
+import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import RunChartsPage from "pages/run/charts";
 import RunFilesPage from "pages/run/files";
 import RunLogsPage from "pages/run/logs";
@@ -43,18 +43,14 @@ export default function RunDetailRoute(): ReactElement {
       />
 
       <NotebookShell columns="18.75rem 1fr" maxWidth="calc(100% - 5rem)">
+        <aside
+          className="relative border-b border-[#d2dfdf] px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
+          style={{ paddingTop: `calc(${String(RULED_LINE_HEIGHT)}rem + 1px)` }}
+        >
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Lab Notebook</p>
+          <h1 className="font-display text-[2.0625rem] leading-none text-brand-text" style={{ height: RULED_LINE }}>{runName}</h1>
 
-        <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-          <h1 className="mt-1 font-display text-[2.0625rem] leading-none text-brand-text">{runName}</h1>
-          <p className="mt-1 font-mono text-[0.6875rem] text-brand-textMuted">
-            @{handle} /{" "}
-            <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={`/${handle}/${projectName}`}>
-              {projectName}
-            </Link>
-          </p>
-
-          <div className="mt-3 rounded-[0.75rem] border border-[#d2dede] bg-white/85 px-3 py-3">
+          <div className="mt-5 rounded-[0.75rem] border border-[#d2dede] bg-white/85 px-3 py-3">
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
             {run ? (
               <>

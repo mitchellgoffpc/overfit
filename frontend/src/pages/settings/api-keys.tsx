@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
 import SettingsSidebar from "components/settings/SettingsSidebar";
+import { RULED_LINE } from "helpers";
 import { dangerButtonClass, inkButtonClass, lineInputClass } from "pages/settings/styles";
 import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
 
@@ -81,7 +82,7 @@ export default function SettingsKeysContent(): ReactElement {
           <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">API Keys</h2>
         </header>
 
-        <div className="flex flex-wrap gap-2 mb-[1.875rem]">
+        <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
           {apiKeysError ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">
             {apiKeysError}
           </div> : null}

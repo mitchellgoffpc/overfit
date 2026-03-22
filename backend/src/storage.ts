@@ -24,6 +24,7 @@ export interface FileEntry {
   name: string;
   isDirectory: boolean;
   size: number;
+  lastModified: string;
 }
 
 export interface StorageBackend {
@@ -111,8 +112,9 @@ class FileStorageBackend implements StorageBackend {
     const results: FileEntry[] = [];
     for (const entry of entries) {
       const isDirectory = entry.isDirectory();
-      const size = isDirectory ? 0 : (await fs.stat(path.join(dir, entry.name))).size;
-      results.push({ name: entry.name, isDirectory, size });
+      const stat = await fs.stat(path.join(dir, entry.name));
+      const size = isDirectory ? 0 : stat.size;
+      results.push({ name: entry.name, isDirectory, size, lastModified: stat.mtime.toISOString() });
     }
     results.sort((a, b) => a.isDirectory === b.isDirectory ? a.name.localeCompare(b.name) : a.isDirectory ? -1 : 1);
     return results;

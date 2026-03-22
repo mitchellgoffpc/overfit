@@ -9,6 +9,7 @@ import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
@@ -79,7 +80,7 @@ export default function RunChartsPage(): ReactElement {
   };
 
   const renderSeries = (prefix: string, series: LineSeries) => {
-    const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
+    const label = series.id;
     const hovered = hoveredSections[prefix] ?? null;
     const closest = hovered ? getClosestPoint(series, hovered.step) : null;
     const isLeft = (hovered?.xRatio ?? 0) < 0.5;
@@ -87,7 +88,11 @@ export default function RunChartsPage(): ReactElement {
       : { left: `${String(hovered.cursorX)}px`, top: "0.5rem", transform: isLeft ? "translateX(0.75rem)" : "translateX(calc(-100% - 0.75rem))" };
 
     return (
-      <div className="relative rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft" key={series.id}>
+      <div
+        className="relative flex flex-col rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft"
+        style={{ height: `${String(9 * RULED_LINE_HEIGHT)}rem` }}
+        key={series.id}
+      >
         <div className="mb-1 flex flex-col items-center gap-0">
           <h2 className="text-[0.8125rem] font-semibold text-brand-text">{label}</h2>
           <div className="flex items-center gap-2 text-[0.6875rem] text-brand-textMuted">
@@ -96,7 +101,7 @@ export default function RunChartsPage(): ReactElement {
           </div>
         </div>
         {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
-        <div className="relative">
+        <div className="relative min-h-0 flex-1">
           {hovered && closest ? (
             <div className={tooltipClass} style={tooltipStyle}>
               <div className="flex items-center justify-between gap-3 text-[0.75rem] text-brand-text">
@@ -110,7 +115,7 @@ export default function RunChartsPage(): ReactElement {
             </div>
           ) : null}
           <LineChart
-            className="h-[13.75rem] w-full"
+            className="h-full w-full"
             series={series.points.length > 0 ? [series] : []}
             height={220}
             xLabelFormatter={xFormatter}
@@ -179,7 +184,7 @@ export default function RunChartsPage(): ReactElement {
 
     return (
       <section className="mb-6 last:mb-0" key={key}>
-        <header className="mb-3 flex items-center justify-between gap-2">
+        <header className="flex items-center justify-between gap-2" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
           <button
             className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
             type="button"
@@ -191,7 +196,7 @@ export default function RunChartsPage(): ReactElement {
               </svg>
             </span>
             <span>{key}</span>
-            <span className="rounded-full border border-brand-border px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
+            <span className="inline-flex h-6 items-center rounded-md bg-brand-border/60 px-1.5 text-[0.6875rem] font-semibold text-brand-textMuted">
               {items.length}
             </span>
           </button>
@@ -215,17 +220,21 @@ export default function RunChartsPage(): ReactElement {
   };
 
   return (
-    <main className="relative p-[1.5rem]">
+    <main className="relative px-[1.5rem] pb-[1.5rem]">
       <SectionHeader title="Scalar Plots" subtitle="training + validation metrics" />
       {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
       {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
       {sections.map(({ prefix, series }) => (
-        <section className="mb-6 last:mb-0" key={prefix}>
-          <header className="mb-3 flex items-center justify-between gap-2">
+        <section className="last:mb-0" key={prefix}>
+          <header
+            className="flex items-center justify-between gap-2"
+            style={collapsedSections[prefix] ? undefined : { marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}
+          >
             <button
               className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
               type="button"
+              style={{ lineHeight: RULED_LINE }}
               onClick={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
             >
               <span className={`transition-transform ${collapsedSections[prefix] ? "-rotate-90" : "rotate-0"}`}>
@@ -234,13 +243,13 @@ export default function RunChartsPage(): ReactElement {
                 </svg>
               </span>
               <span>{prefix}</span>
-              <span className="rounded-full border border-brand-border px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
+              <span className="h-5 w-5 leading-5 text-center rounded bg-[#d6e3e5] text-[0.6875rem] font-semibold text-brand-textMuted">
                 {series.length}
               </span>
             </button>
           </header>
           {collapsedSections[prefix] ? null : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
               {series.map((item) => renderSeries(prefix, item))}
             </div>
           )}
@@ -248,7 +257,7 @@ export default function RunChartsPage(): ReactElement {
       ))}
       {mediaByKey.length > 0 ? (
         <>
-          <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" />
+          <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" numLines={0} />
           {mediaError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{mediaError}</div> : null}
           {mediaByKey.some(({ items }) => items.some((m) => m.count > 1)) ? (
             <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -6,6 +6,7 @@ export interface FileEntry {
   name: string;
   isDirectory: boolean;
   size: number;
+  lastModified: string;
 }
 
 type FilesFetchResponse = { ok: true; body: FileEntry[]; status: number } | { ok: false; error: string; status: number };

@@ -3,7 +3,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useState } from "react";
 
 import SettingsSidebar from "components/settings/SettingsSidebar";
-import { apiBase, getInitials } from "helpers";
+import { apiBase, getInitials, RULED_LINE } from "helpers";
 import { inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 
@@ -94,7 +94,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
           <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Profile</h2>
         </header>
 
-        <div className="flex flex-wrap gap-2 mb-[1.875rem]">
+        <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
           {saveError ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">
             {saveError}
           </div> : null}
