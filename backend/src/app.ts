@@ -50,10 +50,10 @@ export function createApp(config: AppConfig, db: Database): Express {
   registerOrganizationRoutes(app, db);
   registerProjectRoutes(app, db);
   registerCollaboratorRoutes(app, db);
-  registerRunRoutes(app, db, config.server.metadataMaxBytes);
+  registerRunRoutes(app, db);
   registerLogRoutes(app, db, logBuffer, storage);
-  registerArtifactRoutes(app, db, storage, config.server.metadataMaxBytes);
-  registerMediaRoutes(app, db, storage, config.server.metadataMaxBytes);
+  registerArtifactRoutes(app, db, storage);
+  registerMediaRoutes(app, db, storage);
   registerScalarRoutes(app, db, scalarBuffer, storage);
 
   app.get(`${API_BASE}/health`, (_req: Request, res: Response) => {

@@ -9,8 +9,7 @@ import { DatabaseConfigSchema } from "db";
 import { StorageConfigSchema } from "storage";
 
 const ServerConfigSchema = z.strictObject({
-  port: z.coerce.number().int().min(1).default(4000),
-  metadataMaxBytes: z.coerce.number().int().min(1).nullable().default(null)
+  port: z.coerce.number().int().min(1).default(4000)
 }).prefault({});
 
 export const AppConfigSchema = z.strictObject({

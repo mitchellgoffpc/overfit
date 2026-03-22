@@ -10,6 +10,7 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { MAX_JSON_BYTES } from "helpers";
 import { createApiKey } from "repositories/api-keys";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";
@@ -91,17 +92,9 @@ describe("artifacts routes", () => {
     expect(downloadResponse.body).toEqual(content);
   });
 
-  it("rejects artifact creation when metadata exceeds configured size", async () => {
-    const limitedApp = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: 16 } }), db);
-    const payload = { runId, name: "model", type: "model", version: "v1", metadata: { key: "this is too large" } };
-    const response = await request(limitedApp).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
-    expect(response.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
-  });
-
-  it("allows unbounded artifact metadata when metadataMaxBytes is null", async () => {
-    const unboundedApp = createApp(AppConfigSchema.parse({ storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: null } }), db);
-    const payload = { runId, name: "model", type: "model", version: "v1", metadata: { payload: "x".repeat(10_000) } };
-    const response = await request(unboundedApp).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(200);
-    expect(response.body).toMatchObject({ runId, metadata: payload.metadata });
+  it("rejects artifact creation when metadata exceeds max size", async () => {
+    const payload = { runId, name: "model", type: "model", version: "v1", metadata: { key: "x".repeat(MAX_JSON_BYTES) } };
+    const response = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
+    expect(response.body).toMatchObject({ error: `metadata: Serialized JSON exceeds ${String(MAX_JSON_BYTES)} bytes` });
   });
 });

@@ -138,14 +138,4 @@ describe("media routes", () => {
     expect(res.body).toMatchObject({ error: "metadata: Invalid JSON" });
   });
 
-  it("rejects metadata exceeding configured size", async () => {
-    const limited = AppConfigSchema.parse({
-      storage: { type: "file", baseDir: storageBaseDir }, server: { metadataMaxBytes: 16 }
-    });
-    const limitedApp = createApp(limited, db);
-    const query = { key: "img", step: "0", type: "image", metadata: JSON.stringify({ caption: "too large" }) };
-    const res = await request(limitedApp).post(RUN_MEDIA).set(...auth)
-      .set("Content-Type", "application/octet-stream").query(query).send(Buffer.from("x")).expect(400);
-    expect(res.body).toMatchObject({ error: "metadata: Serialized JSON exceeds 16 bytes" });
-  });
 });

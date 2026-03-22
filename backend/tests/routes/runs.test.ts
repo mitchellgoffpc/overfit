@@ -8,6 +8,7 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
+import { MAX_JSON_BYTES } from "helpers";
 import { createApiKey } from "repositories/api-keys";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";
@@ -118,16 +119,14 @@ describe("runs routes", () => {
     expect(response.body).toMatchObject({ error: "User not found" });
   });
 
-  it("rejects run creation when config exceeds configured size", async () => {
-    const limitedApp = createApp(AppConfigSchema.parse({ server: { metadataMaxBytes: 16 } }), db);
-    const response = await request(limitedApp).post(PROJECT_RUNS).set(...auth).send({ status: "running", config: { key: "this is too large" } }).expect(400);
-    expect(response.body).toMatchObject({ error: "config: Serialized JSON exceeds 16 bytes" });
+  it("rejects run creation when config exceeds max size", async () => {
+    const response = await request(app).post(PROJECT_RUNS).set(...auth).send({ status: "running", config: { key: "x".repeat(MAX_JSON_BYTES) } }).expect(400);
+    expect(response.body).toMatchObject({ error: `config: Serialized JSON exceeds ${String(MAX_JSON_BYTES)} bytes` });
   });
 
-  it("rejects run update when config exceeds configured size", async () => {
+  it("rejects run update when config exceeds max size", async () => {
     await createRun(db, { projectId, userId, name: "baseline", status: "running", config: null });
-    const limitedApp = createApp(AppConfigSchema.parse({ server: { metadataMaxBytes: 16 } }), db);
-    const response = await request(limitedApp).put(`${PROJECT_RUNS}/baseline`).set(...auth).send({ config: { key: "this is too large" } }).expect(400);
-    expect(response.body).toMatchObject({ error: "config: Serialized JSON exceeds 16 bytes" });
+    const response = await request(app).put(`${PROJECT_RUNS}/baseline`).set(...auth).send({ config: { key: "x".repeat(MAX_JSON_BYTES) } }).expect(400);
+    expect(response.body).toMatchObject({ error: `config: Serialized JSON exceeds ${String(MAX_JSON_BYTES)} bytes` });
   });
 });

@@ -4,7 +4,7 @@ import express from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { formatZodError, getJsonSizeError } from "helpers";
+import { checkJsonSize, formatZodError } from "helpers";
 import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { requireAuth } from "routes/auth";
@@ -17,11 +17,11 @@ const CreateArtifactPayloadSchema = z.strictObject({
   type: z.string(),
   version: z.string(),
   uri: z.string().nullable().exactOptional().prefault(null),
-  metadata: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
+  metadata: z.record(z.string(), z.unknown()).superRefine(checkJsonSize).nullable().exactOptional().prefault(null)
 });
 type CreateArtifactPayload = z.infer<typeof CreateArtifactPayloadSchema>;
 
-export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend, metadataMaxBytes: number | null): void {
+export function registerArtifactRoutes(app: RouteApp, db: Database, storage: StorageBackend): void {
   const listArtifactsHandler: RouteHandler<Empty, Artifact[]> = async (_req, res) => {
     res.json(await listArtifacts(db));
   };
@@ -32,12 +32,6 @@ export function registerArtifactRoutes(app: RouteApp, db: Database, storage: Sto
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
-    const metadataSizeError = getJsonSizeError("metadata", data.metadata, metadataMaxBytes);
-    if (metadataSizeError) {
-      res.status(400).json({ error: metadataSizeError });
-      return;
-    }
-
     const artifact = await createArtifact(db, data);
     if (!artifact) {
       res.status(400).json({ error: "Artifact runId does not reference an existing run" });

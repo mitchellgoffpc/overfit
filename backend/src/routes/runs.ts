@@ -7,7 +7,7 @@ import type { Run } from "@underfit/types";
 import { z } from "zod";
 
 import type { Database } from "db";
-import { formatZodError, getJsonSizeError } from "helpers";
+import { checkJsonSize, formatZodError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import { getProject } from "repositories/projects";
 import { createRun, getRun, listProjectRuns, listUserRuns, updateRun } from "repositories/runs";
@@ -16,11 +16,11 @@ import { requireAuth } from "routes/auth";
 
 const CreateRunPayloadSchema = z.strictObject({
   status: z.enum(runStatus).exactOptional().prefault("queued"),
-  config: z.record(z.string(), z.unknown()).nullable().exactOptional().prefault(null)
+  config: z.record(z.string(), z.unknown()).superRefine(checkJsonSize).nullable().exactOptional().prefault(null)
 });
 const UpdateRunPayloadSchema = z.strictObject({
   status: z.enum(runStatus).exactOptional(),
-  config: z.record(z.string(), z.unknown()).nullable().exactOptional()
+  config: z.record(z.string(), z.unknown()).superRefine(checkJsonSize).nullable().exactOptional()
 });
 
 type CreateRunPayload = z.infer<typeof CreateRunPayloadSchema>;
@@ -36,7 +36,7 @@ const randomWord = (words: string[]): string => {
 };
 const randomRunName = (): string => `${randomWord(adjectives)}-${randomWord(nouns)}`;
 
-export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes: number | null): void {
+export function registerRunRoutes(app: RouteApp, db: Database): void {
   const listUserRunsHandler: RouteHandler<{ handle: string }, Run[]> = async (req, res) => {
     const user = await getUserByHandle(db, req.params.handle.trim().toLowerCase());
     if (!user) {
@@ -75,11 +75,6 @@ export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes:
       res.status(400).json({ error: formatZodError(error) });
       return;
     }
-    const configSizeError = getJsonSizeError("config", data.config, metadataMaxBytes);
-    if (configSizeError) {
-      res.status(400).json({ error: configSizeError });
-      return;
-    }
 
     const handle = req.params.handle.trim().toLowerCase();
     const projectName = req.params.projectName.trim().toLowerCase();
@@ -104,11 +99,6 @@ export function registerRunRoutes(app: RouteApp, db: Database, metadataMaxBytes:
     const { success, error, data } = UpdateRunPayloadSchema.safeParse(req.body);
     if (!success) {
       res.status(400).json({ error: formatZodError(error) });
-      return;
-    }
-    const configSizeError = getJsonSizeError("config", data.config, metadataMaxBytes);
-    if (configSizeError) {
-      res.status(400).json({ error: configSizeError });
       return;
     }
 
