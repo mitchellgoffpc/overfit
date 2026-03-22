@@ -1,6 +1,6 @@
 import type { Project, Run } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 
 import RunStatusBadge from "components/RunStatusBadge";
@@ -53,6 +53,7 @@ interface ProjectRunsTableProps {
 }
 
 export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
+  const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
   const colorByRunName = useMemo(() => new Map(runs.map((run, index) => [run.name, runColors[index % runColors.length] ?? "#1a7b7d"])), [runs]);
   const configColumns = useMemo(() => {
     const keys = new Set<string>();
@@ -98,7 +99,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
           </div>
         ) : (
           <div
-            className="absolute right-0 bottom-0 left-12 top-[180px] grid min-w-0"
+            className="absolute -right-5 bottom-0 left-12 top-[180px] grid min-w-0"
             style={{ gridTemplateColumns: `${leftPaneWidth.toString()}px minmax(0, 1fr)` }}
           >
             <div>
@@ -110,8 +111,15 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
 
               {runs.map((run, index) => {
                 const runColor = colorByRunName.get(run.name) ?? runColors[index % runColors.length] ?? "#1a7b7d";
+                const hovered = hoveredRunId === run.id;
                 return (
-                  <div className="grid h-[30px] items-center" key={run.id} style={{ gridTemplateColumns: leftGridTemplateColumns }}>
+                  <div
+                    className={`grid h-[30px] items-center -ml-12 pl-12 ${hovered ? "bg-brand-accent/5" : ""}`}
+                    key={run.id}
+                    style={{ gridTemplateColumns: leftGridTemplateColumns }}
+                    onMouseEnter={() => { setHoveredRunId(run.id); }}
+                    onMouseLeave={() => { setHoveredRunId(null); }}
+                  >
                     <span />
                     <span className={`${bodyCellClass} font-mono text-[10px] text-brand-textMuted`}>{String(index + 1).padStart(3, "0")}</span>
                     <Link className={`${bodyCellClass} min-w-0 gap-2 no-underline`} href={`/${ownerHandle}/${project.name}/runs/${run.name}`}>
@@ -125,7 +133,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
 
             <div className="min-w-0 self-stretch overflow-x-auto overflow-y-hidden">
               <div
-                className="w-max min-h-full pl-[8px]"
+                className="min-w-full w-max min-h-full pl-[8px]"
               >
                 <div className="grid" style={{ gridTemplateColumns: rightGridTemplateColumns }}>
                   <span className={headerCellClass}>State</span>
@@ -138,7 +146,13 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
                 </div>
 
                 {runs.map((run) => (
-                  <div className="grid h-[30px] items-center" key={run.id} style={{ gridTemplateColumns: rightGridTemplateColumns }}>
+                  <div
+                    className={`grid h-[30px] items-center -ml-2 pl-2 ${hoveredRunId === run.id ? "bg-brand-accent/5" : ""}`}
+                    key={run.id}
+                    style={{ gridTemplateColumns: rightGridTemplateColumns }}
+                    onMouseEnter={() => { setHoveredRunId(run.id); }}
+                    onMouseLeave={() => { setHoveredRunId(null); }}
+                  >
                     <div className={bodyCellClass}><RunStatusBadge status={run.status} /></div>
                     <span className={bodyCellClass}>@{run.user}</span>
                     <span className={bodyCellClass}>{formatRunTime(run.createdAt)}</span>
