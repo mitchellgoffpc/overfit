@@ -51,7 +51,7 @@ export default function ProfileRoute(): ReactElement {
   if (organization) { return <OrganizationPage organization={organization} />; }
 
   return (
-    <div className="min-h-screen bg-[#e9efed] text-brand-text">
+    <div className="min-h-screen bg-brand-bgStrong text-brand-text">
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Profile" }]} />
 
       <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">

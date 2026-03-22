@@ -11,13 +11,13 @@ import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import { formatRunTime, RULED_LINE } from "helpers";
+import { colors, runPalette } from "lib/colors";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { fetchRunScalars } from "stores/scalars";
 
 const tooltipClass = "pointer-events-none absolute z-10 max-w-[17.5rem] rounded-[0.625rem] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
-const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
 const sectionLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 interface CompareChartSeries extends LineSeries {
@@ -103,7 +103,7 @@ export default function ProjectCompareRoute(): ReactElement {
   }, [handle, projectName, projectRuns]);
 
   const colorByRunName = useMemo(
-    () => new Map(projectRuns.map((run, index) => [run.name, runColors[index % runColors.length] ?? "#1a7b7d"])),
+    () => new Map(projectRuns.map((run, index) => [run.name, runPalette[index % runPalette.length] ?? colors.brand.accent])),
     [projectRuns]
   );
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
@@ -125,7 +125,7 @@ export default function ProjectCompareRoute(): ReactElement {
         id: `${metric}:${run.name}`,
         runName: run.name,
         points: getSeriesPoints(scalarsByRun[run.name] ?? [], metric),
-        color: colorByRunName.get(run.name) ?? runColors[index % runColors.length] ?? "#1a7b7d",
+        color: colorByRunName.get(run.name) ?? runPalette[index % runPalette.length] ?? colors.brand.accent,
         lineWidth: 2
       }))
     }));
@@ -172,7 +172,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
     return (
       <div
-        className={"relative rounded-[0.875rem] border border-[#cfdddd] bg-white/95 px-3 pb-2 pt-3"
+        className={"relative rounded-[0.875rem] border border-brand-borderMuted bg-white/95 px-3 pb-2 pt-3"
           + " shadow-[0_0.5rem_1.25rem_rgba(23,43,43,0.06)]"}
         key={metric}
       >
@@ -221,7 +221,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
   const renderRunItem = (run: Run, index: number) => {
     const isVisible = hiddenRunNames[run.name] !== true;
-    const color = runColors[index % runColors.length] ?? "#1a7b7d";
+    const color = runPalette[index % runPalette.length] ?? colors.brand.accent;
     const isActive = run.status === "running";
     return (
       <button
@@ -240,7 +240,7 @@ export default function ProjectCompareRoute(): ReactElement {
         </div>
         <div className="ml-2 flex items-center gap-2 text-[0.625rem] text-brand-textMuted">
           <span>{formatRunTime(run.createdAt)}</span>
-          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-[#24b26b]" : "bg-brand-border"}`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-signal-running" : "bg-brand-border"}`} />
         </div>
       </button>
     );
@@ -250,11 +250,11 @@ export default function ProjectCompareRoute(): ReactElement {
     <NotebookShell columns="18.25rem 1fr" maxWidth="calc(100% - 5rem)">
 
         {!showProjectNotFound ? (
-          <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-[4.125rem] lg:pr-5">
+          <aside className="relative border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-[4.125rem] lg:pr-5">
             <div className="lg:h-[15.375rem]">
               <ProjectHeader handle={handle} projectName={projectName} />
 
-              <div className="mt-3 rounded-xl border border-[#d2dede] bg-white/85 px-3 py-3">
+              <div className="mt-3 rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
                 <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
                 <div className="mt-2 flex items-center justify-between text-[0.75rem]">
                   <span className="text-brand-textMuted">total</span>
@@ -262,17 +262,17 @@ export default function ProjectCompareRoute(): ReactElement {
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[0.75rem]">
                   <span className="text-brand-textMuted">running</span>
-                  <span className="font-semibold text-[#2d7172]">{runningCount}</span>
+                  <span className="font-semibold text-signal-accent">{runningCount}</span>
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[0.75rem]">
                   <span className="text-brand-textMuted">failed</span>
-                  <span className="font-semibold text-[#bb5f5f]">{failedCount}</span>
+                  <span className="font-semibold text-signal-failed">{failedCount}</span>
                 </div>
               </div>
 
               <div className="mt-3 flex gap-2">
                 <button
-                  className={"flex-1 rounded-lg border border-[#c2d7d6] bg-[#eff6f5] px-2 py-1.5"
+                  className={"flex-1 rounded-lg border border-brand-borderStrong bg-hover px-2 py-1.5"
                     + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
                   onClick={() => { setHiddenRunNames({}); }}
                   type="button"
@@ -280,7 +280,7 @@ export default function ProjectCompareRoute(): ReactElement {
                   Show all
                 </button>
                 <button
-                  className={"flex-1 rounded-lg border border-[#d4dfdf] bg-white/80 px-2 py-1.5"
+                  className={"flex-1 rounded-lg border border-brand-borderMuted bg-white/80 px-2 py-1.5"
                     + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
                   onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
                   type="button"
@@ -325,7 +325,7 @@ export default function ProjectCompareRoute(): ReactElement {
                         </svg>
                       </span>
                       <span>Section {sectionLabels[sectionIndex] ?? "Z"} · {prefix}</span>
-                      <span className="rounded-full border border-[#d0dddd] bg-white px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
+                      <span className="rounded-full border border-brand-borderMuted bg-white px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
                         {charts.length}
                       </span>
                     </button>

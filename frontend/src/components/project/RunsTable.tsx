@@ -5,8 +5,8 @@ import { Link } from "wouter";
 
 import RunStatusBadge from "components/RunStatusBadge";
 import { formatDuration, formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { colors, runPalette } from "lib/colors";
 
-const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
 const headerCellClass = "flex items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
 const bodyCellClass = "flex items-center whitespace-nowrap px-2.5 text-[0.75rem] text-brand-text";
 const leftGridTemplateColumns = "0.5rem 3.5rem 11.25rem";
@@ -54,7 +54,7 @@ interface ProjectRunsTableProps {
 
 export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
   const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
-  const colorByRunName = useMemo(() => new Map(runs.map((run, index) => [run.name, runColors[index % runColors.length] ?? "#1a7b7d"])), [runs]);
+  const colorByRunName = useMemo(() => new Map(runs.map((run, index) => [run.name, runPalette[index % runPalette.length] ?? colors.brand.accent])), [runs]);
   const configColumns = useMemo(() => {
     const keys = new Set<string>();
     for (const run of runs) {
@@ -110,7 +110,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
               </div>
 
               {runs.map((run, index) => {
-                const runColor = colorByRunName.get(run.name) ?? runColors[index % runColors.length] ?? "#1a7b7d";
+                const runColor = colorByRunName.get(run.name) ?? runPalette[index % runPalette.length] ?? colors.brand.accent;
                 const hovered = hoveredRunId === run.id;
                 return (
                   <div

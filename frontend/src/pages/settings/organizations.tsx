@@ -91,7 +91,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
         </header>
 
         <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
-          {error ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">{error}</div> : null}
+          {error ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">{error}</div> : null}
         </div>
 
         <div className="mb-4 flex items-center justify-between">
@@ -102,14 +102,14 @@ export default function SettingsOrganizationsContent(): ReactElement {
         {isLoading ? <div className="text-xs text-brand-textMuted">Loading organizations...</div> : null}
         {!isLoading && memberships.length === 0 ? <div className="text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
 
-        <div className={memberships.length > 0 ? "border-t border-[#d2dfdf]" : ""}>
+        <div className={memberships.length > 0 ? "border-t border-brand-borderMuted" : ""}>
           {memberships.map((membership) => (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d2dfdf] px-1 py-3 last:border-b-0" key={membership.id}>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0" key={membership.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{membership.name}</p>
                 <p className="text-[0.6875rem] text-brand-textMuted">
                   @{membership.handle}
-                  <span className="ml-2 rounded-full border border-[#d2dfdf] px-2 py-0.5 text-[0.625rem] font-medium">{membership.role}</span>
+                  <span className="ml-2 rounded-full border border-brand-borderMuted px-2 py-0.5 text-[0.625rem] font-medium">{membership.role}</span>
                 </p>
               </div>
               <button
@@ -136,7 +136,9 @@ export default function SettingsOrganizationsContent(): ReactElement {
               <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Create a shared workspace for your team.</p>
             </div>
           </div>
-          {createError ? <div className="rounded-[0.625rem] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{createError}</div> : null}
+          {createError ? (
+            <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-2.5 py-2 text-xs text-danger-text">{createError}</div>
+          ) : null}
           <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Handle
             <input className={lineInputClass} type="text" placeholder="acme" value={newHandle} onChange={(e) => { setNewHandle(e.target.value); }} />

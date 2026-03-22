@@ -20,7 +20,7 @@ export default function SectionHeader({ title, subtitle, sectionLabel = "Section
         >{sectionLabel}</p>
         <h2 className="font-display text-[2.125rem] leading-none text-brand-text" style={{ height: RULED_LINE }}>{title}</h2>
       </div>
-      <div className="rounded-full border border-[#cfdddd] bg-white/90 px-3 py-1 text-[0.75rem] text-brand-textMuted">
+      <div className="rounded-full border border-brand-borderMuted bg-white/90 px-3 py-1 text-[0.75rem] text-brand-textMuted">
         {subtitle}
       </div>
     </header>

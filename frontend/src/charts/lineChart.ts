@@ -1,3 +1,5 @@
+import { colors } from "lib/colors";
+
 const X_TICK_TARGET = 6;
 const Y_TICK_TARGET = 5;
 
@@ -206,10 +208,10 @@ export const drawLineChart = (
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
-  const background = options.background ?? "#ffffff";
-  const gridColor = options.gridColor ?? "#e5eeee";
-  const axisColor = options.axisColor ?? "#cdd9d9";
-  const textColor = options.textColor ?? "#5b6b6b";
+  const background = options.background ?? colors.chart.bg;
+  const gridColor = options.gridColor ?? colors.chart.grid;
+  const axisColor = options.axisColor ?? colors.chart.axis;
+  const textColor = options.textColor ?? colors.chart.text;
   const font = options.font ?? "11px Space Grotesk, system-ui, sans-serif";
 
   ctx.fillStyle = background;
@@ -269,7 +271,7 @@ export const drawLineChart = (
 
   for (const line of series) {
     if (line.points.length === 0) { continue; }
-    ctx.strokeStyle = line.color ?? "#1a7b7d";
+    ctx.strokeStyle = line.color ?? colors.brand.accent;
     ctx.lineWidth = line.lineWidth ?? 2;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
@@ -291,7 +293,7 @@ export const drawLineChart = (
   if (hoverOverlay) {
     const x = xScale(hoverOverlay.point.x);
     const y = yScale(hoverOverlay.point.y);
-    const hoverColor = hoverOverlay.color ?? "#8fd0d1";
+    const hoverColor = hoverOverlay.color ?? colors.chart.hover;
 
     ctx.strokeStyle = hoverColor;
     ctx.lineWidth = 1;
@@ -300,7 +302,7 @@ export const drawLineChart = (
     ctx.lineTo(x, padding.top + plotHeight);
     ctx.stroke();
 
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = colors.brand.surface;
     ctx.strokeStyle = hoverColor;
     ctx.lineWidth = 2;
     ctx.beginPath();

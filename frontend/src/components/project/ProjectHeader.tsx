@@ -17,8 +17,8 @@ export default function ProjectHeader({ handle, projectName }: ProjectHeaderProp
       <h1 className="mt-1 flex flex-wrap items-center gap-2.5 font-display text-[2.125rem] leading-none text-brand-text">
         <div
           className={[
-            "relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-[#c3d7d7]",
-            "bg-[#d9ecec] text-xs font-semibold text-brand-accentStrong"
+            "relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-brand-borderStrong",
+            "bg-brand-accentMuted text-xs font-semibold text-brand-accentStrong"
           ].join(" ")}
         >
           {ownerInitial}

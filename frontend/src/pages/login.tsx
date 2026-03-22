@@ -59,7 +59,7 @@ export default function LoginRoute(): ReactElement {
             void handleSubmit(event);
           }}
         >
-          {error ? <div className="rounded-[0.625rem] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{error}</div> : null}
+          {error ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-2.5 py-2 text-xs text-danger-text">{error}</div> : null}
 
           <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Email address

@@ -10,6 +10,7 @@ import LineChart from "components/charts/LineChart";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { colors } from "lib/colors";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
@@ -41,7 +42,7 @@ export default function RunChartsPage(): ReactElement {
 
   const chartSeries = useMemo(() => {
     const keys = new Set<string>(scalars.flatMap((scalar) => Object.keys(scalar.values)));
-    const runColor = "#1a7b7d";
+    const runColor = colors.brand.accent;
     return Array.from(keys).sort().map((key) => {
       const points = scalars.flatMap((scalar, scalarIndex) => {
         const value = scalar.values[key];
@@ -243,7 +244,7 @@ export default function RunChartsPage(): ReactElement {
                 </svg>
               </span>
               <span>{prefix}</span>
-              <span className="h-5 w-5 leading-5 text-center rounded bg-[#d6e3e5] text-[0.6875rem] font-semibold text-brand-textMuted">
+              <span className="h-5 w-5 leading-5 text-center rounded bg-log-badge text-[0.6875rem] font-semibold text-brand-textMuted">
                 {series.length}
               </span>
             </button>

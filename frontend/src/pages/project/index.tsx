@@ -39,7 +39,7 @@ export default function ProjectPage(): ReactElement {
     : [{ label: handle, href: `/${handle}` }, { label: projectName, href: basePath }, { label: activeTab }];
 
   return (
-    <div className="min-h-screen bg-[#e9efed] text-brand-text">
+    <div className="min-h-screen bg-brand-bgStrong text-brand-text">
       <Navbar breadcrumbs={breadcrumbs} tabs={tabs} activeTabId={activeTab} tabsMaxWidth="100vw" />
 
       <Switch>

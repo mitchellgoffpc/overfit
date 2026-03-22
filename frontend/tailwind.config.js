@@ -1,19 +1,30 @@
+import { colors } from "./src/lib/colors.ts";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        brand: {
-          bg: "#f2f6f6",
-          surface: "#ffffff",
-          surfaceMuted: "#f7faf9",
-          text: "#0e1b1b",
-          textMuted: "#5b6b6b",
-          accent: "#1a7b7d",
-          accentStrong: "#0f5859",
-          border: "#d9e4e4",
-        },
+        brand: colors.brand,
+        ink: colors.ink,
+        hover: colors.hover,
+        code: colors.code,
+        nav: colors.nav,
+        log: colors.log,
+        file: colors.file,
+        notebook: colors.notebook,
+        pill: colors.pill,
+        danger: colors.danger,
+        success: colors.success,
+        signal: colors.signal,
+        chart: colors.chart,
+        heatmap: colors.heatmap,
+        "status-queued": colors.status.queued,
+        "status-running": colors.status.running,
+        "status-finished": colors.status.finished,
+        "status-failed": colors.status.failed,
+        "status-cancelled": colors.status.cancelled,
       },
       boxShadow: {
         soft: "0 10px 30px rgba(12, 36, 36, 0.08)",

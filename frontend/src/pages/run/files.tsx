@@ -65,7 +65,7 @@ export default function RunFilesPage(): ReactElement {
 
       {/* Column headers */}
       <div
-        className={"grid grid-cols-[1fr_9rem_5.5rem_3.5rem] items-center bg-[#f0f5f3]/60 -mx-6 px-6"
+        className={"grid grid-cols-[1fr_9rem_5.5rem_3.5rem] items-center bg-file-rowHover/60 -mx-6 px-6"
           + " font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted"}
         style={{ height: RULED_LINE }}
       >
@@ -92,7 +92,7 @@ export default function RunFilesPage(): ReactElement {
                 <span className="flex items-center gap-2 overflow-hidden text-[0.8125rem]">
                   <FontAwesomeIcon icon={fileIcon(entry)} className="w-4 shrink-0 text-[0.75rem] text-brand-textMuted" />
                   {entry.isDirectory ? (
-                    <span className="truncate font-medium text-[#2a5c4e]">{entry.name}/</span>
+                    <span className="truncate font-medium text-file-folder">{entry.name}/</span>
                   ) : (
                     <span className="truncate text-brand-text">{entry.name}</span>
                   )}
@@ -122,7 +122,7 @@ export default function RunFilesPage(): ReactElement {
               <Link
                 key={entry.name}
                 className={"grid grid-cols-[1fr_9rem_5.5rem_3.5rem] items-center px-[1.5rem] no-underline transition-colors"
-                  + " cursor-pointer hover:bg-[#e8f0ed]/60"}
+                  + " cursor-pointer hover:bg-hover/60"}
                 style={{ height: RULED_LINE }}
                 href={entryHref(entry)}
               >
@@ -131,7 +131,7 @@ export default function RunFilesPage(): ReactElement {
             ) : (
               <div
                 key={entry.name}
-                className="grid grid-cols-[1fr_9rem_5.5rem_3.5rem] items-center px-[1.5rem] transition-colors hover:bg-[#f0f5f3]/60"
+                className="grid grid-cols-[1fr_9rem_5.5rem_3.5rem] items-center px-[1.5rem] transition-colors hover:bg-file-rowHover/60"
                 style={{ height: RULED_LINE }}
               >
                 {inner}

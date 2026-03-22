@@ -31,14 +31,14 @@ export default function ProjectRunsPage(): ReactElement {
 
   return (
       <NotebookShell maxWidth="calc(100% - 5rem)">
-        <div className="pointer-events-none absolute bottom-0 left-[18.25rem] top-0 w-px bg-[#d4dfdf]" aria-hidden />
+        <div className="pointer-events-none absolute bottom-0 left-[18.25rem] top-0 w-px bg-brand-borderMuted" aria-hidden />
 
         <div className="relative py-5 pl-[4.125rem] pr-5">
           <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <ProjectHeader handle={handle} projectName={projectName} />
             {project ? (
               <span
-                className={"inline-flex items-center rounded-full border border-[#d4dfdf] bg-white/90 px-2 py-px"
+                className={"inline-flex items-center rounded-full border border-brand-borderMuted bg-white/90 px-2 py-px"
                   + " text-[0.6875rem] leading-4 text-brand-textMuted"}
               >
                 {project.visibility === "public" ? "Public ledger" : "Private ledger"}

@@ -6,11 +6,11 @@ interface RunStatusBadgeProps {
 }
 
 const statusClasses: Record<Run["status"], string> = {
-  queued: "bg-[#f8eee0] text-[#8c5a1a] border border-[#e9d7bf]",
-  running: "bg-[#e3f3f2] text-brand-accentStrong border border-[#cbe2e1]",
-  finished: "bg-[#e6f3ea] text-[#1e5b36] border border-[#cfe6d7]",
-  failed: "bg-[#fde8e6] text-[#b42318] border border-[#f7c8c2]",
-  cancelled: "bg-[#eef1f3] text-[#4a5560] border border-[#d7dde2]",
+  queued: "bg-status-queued-bg text-status-queued-text border border-status-queued-border",
+  running: "bg-status-running-bg text-status-running-text border border-status-running-border",
+  finished: "bg-status-finished-bg text-status-finished-text border border-status-finished-border",
+  failed: "bg-status-failed-bg text-status-failed-text border border-status-failed-border",
+  cancelled: "bg-status-cancelled-bg text-status-cancelled-text border border-status-cancelled-border",
 };
 
 const formatStatus = (status: Run["status"]): string => status.replace(/^\w/, (char) => char.toUpperCase());

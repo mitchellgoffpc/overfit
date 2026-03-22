@@ -48,10 +48,10 @@ export default function RunLogsPage(): ReactElement {
     return (
       <div className="grid grid-cols-[4.5rem_1fr] items-center gap-3 px-3" style={{ height: RULED_LINE }} key={line.lineNumber}>
         <span className="flex justify-end px-1 text-right text-brand-textMuted/70">{line.lineNumber}</span>
-        <span className="text-[#2f3e41]">
+        <span className="text-log-text">
           {!timestamp ? content : (
             <>
-              <span className="leading-5 mr-2 inline-flex items-center whitespace-nowrap rounded bg-[#d6e3e5] px-1.5 text-[#243336]">{timestamp}</span>
+              <span className="leading-5 mr-2 inline-flex items-center whitespace-nowrap rounded bg-log-badge px-1.5 text-log-textMuted">{timestamp}</span>
               <span className="break-words">{message}</span>
             </>
           )}
@@ -102,7 +102,7 @@ export default function RunLogsPage(): ReactElement {
           {!logError && !scope && visibleLines.length === 0 ? <div className="px-3 py-2 text-[0.8125rem] text-brand-textMuted">Loading logs...</div> : null}
           {!logError && scope && visibleLines.length === 0 ? <div className="px-3 py-2 text-[0.8125rem] text-brand-textMuted">No logs yet.</div> : null}
           {visibleLines.length > 0 ? (
-            <div className="font-mono text-[0.75rem] text-[#2f3e41]" style={{ lineHeight: RULED_LINE }}>
+            <div className="font-mono text-[0.75rem] text-log-text" style={{ lineHeight: RULED_LINE }}>
               {visibleLines.map(renderLine)}
             </div>
           ) : null}

@@ -31,10 +31,10 @@ export default function RunDetailRoute(): ReactElement {
     { id: "logs", label: "Logs", href: `${basePath}/logs`, icon: faFileLines },
     { id: "files", label: "Files", href: `${basePath}/files`, icon: faFolderOpen }
   ];
-  const statusColorClass = run?.status === "running" ? "bg-[#24b26b]" : run?.status === "failed" ? "bg-[#bb5f5f]" : "bg-brand-border";
+  const statusColorClass = run?.status === "running" ? "bg-signal-running" : run?.status === "failed" ? "bg-signal-failed" : "bg-brand-border";
 
   return (
-    <div className="min-h-screen bg-[#e9efed] text-brand-text">
+    <div className="min-h-screen bg-brand-bgStrong text-brand-text">
       <Navbar
         breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: runName }]}
         tabs={tabs}
@@ -44,13 +44,13 @@ export default function RunDetailRoute(): ReactElement {
 
       <NotebookShell columns="18.75rem 1fr" maxWidth="calc(100% - 5rem)">
         <aside
-          className="relative border-b border-[#d2dfdf] px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
+          className="relative border-b border-brand-borderMuted px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
           style={{ paddingTop: `calc(${String(RULED_LINE_HEIGHT)}rem + 1px)` }}
         >
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Lab Notebook</p>
           <h1 className="font-display text-[2.0625rem] leading-none text-brand-text" style={{ height: RULED_LINE }}>{runName}</h1>
 
-          <div className="mt-5 rounded-[0.75rem] border border-[#d2dede] bg-white/85 px-3 py-3">
+          <div className="mt-5 rounded-[0.75rem] border border-brand-borderMuted bg-white/85 px-3 py-3">
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
             {run ? (
               <>

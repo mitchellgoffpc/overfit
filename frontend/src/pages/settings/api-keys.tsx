@@ -83,7 +83,7 @@ export default function SettingsKeysContent(): ReactElement {
         </header>
 
         <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
-          {apiKeysError ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">
+          {apiKeysError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
             {apiKeysError}
           </div> : null}
         </div>
@@ -110,7 +110,7 @@ export default function SettingsKeysContent(): ReactElement {
         </div>
 
         {createdKeyToken ? (
-          <div className="mb-4 rounded-xl border border-[#d3dddd] bg-white p-3">
+          <div className="mb-4 rounded-xl border border-brand-borderMuted bg-white p-3">
             <p className="text-xs font-semibold text-brand-text">Copy this key now. You won&apos;t be able to see it again.</p>
             <p className="mt-1 font-mono text-xs text-brand-textMuted">{createdKeyToken}</p>
           </div>
@@ -124,9 +124,9 @@ export default function SettingsKeysContent(): ReactElement {
         {isApiKeysLoading ? <div className="text-xs text-brand-textMuted">Loading API keys...</div> : null}
         {!isApiKeysLoading && apiKeys.length === 0 ? <div className="text-xs text-brand-textMuted">No API keys yet.</div> : null}
 
-        <div className={apiKeys.length > 0 ? "border-t border-[#d2dfdf]" : ""}>
+        <div className={apiKeys.length > 0 ? "border-t border-brand-borderMuted" : ""}>
           {apiKeys.map((key) => (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d2dfdf] px-1 py-3 last:border-b-0" key={key.id}>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0" key={key.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{key.label ?? "Untitled key"}</p>
                 <p className="text-[0.6875rem] text-brand-textMuted">

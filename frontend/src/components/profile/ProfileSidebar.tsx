@@ -12,14 +12,14 @@ interface ProfileSidebarProps {
 }
 
 export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: ProfileSidebarProps): ReactElement {
-  const avatarClass = "relative grid h-24 w-24 place-items-center overflow-hidden rounded-full border border-[#bfd0d0]"
-    + " bg-[#d9ecec] text-2xl font-semibold text-brand-accentStrong";
-  const editProfileClass = "rounded-xl border border-[#203738] bg-[#203738] px-4 py-2 text-center text-sm font-semibold"
-    + " text-white no-underline transition hover:bg-[#16292a]";
+  const avatarClass = "relative grid h-24 w-24 place-items-center overflow-hidden rounded-full border border-brand-borderStrong"
+    + " bg-brand-accentMuted text-2xl font-semibold text-brand-accentStrong";
+  const editProfileClass = "rounded-xl border border-ink bg-ink px-4 py-2 text-center text-sm font-semibold"
+    + " text-white no-underline transition hover:bg-ink-hover";
 
   if (!user) {
     return (
-      <aside className="relative flex h-full flex-col gap-5 border-b border-[#d4dddd] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
+      <aside className="relative flex h-full flex-col gap-5 border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
@@ -35,14 +35,14 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar`;
 
   return (
-    <aside className="relative flex h-full flex-col gap-5 border-b border-[#d4dddd] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
+    <aside className="relative flex h-full flex-col gap-5 border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
       />
 
       <div className="relative grid gap-4">
-        <div className="rounded-[0.875rem] border border-[#d4dede] bg-white/85 p-3">
+        <div className="rounded-[0.875rem] border border-brand-borderMuted bg-white/85 p-3">
           <div className="grid place-items-center">
             <div className={avatarClass}>
               {initials}
@@ -75,7 +75,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
         ) : null}
       </div>
 
-      <div className="relative grid gap-3 rounded-2xl border border-[#d4dede] bg-white/85 px-4 py-4 text-sm">
+      <div className="relative grid gap-3 rounded-2xl border border-brand-borderMuted bg-white/85 px-4 py-4 text-sm">
         <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Stats</p>
         <div className="flex items-center justify-between">
           <span className="text-brand-textMuted">Projects</span>
@@ -91,7 +91,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
         </div>
       </div>
 
-      <div className="relative grid gap-2 rounded-2xl border border-[#d4dede] bg-white/85 px-4 py-4 text-sm">
+      <div className="relative grid gap-2 rounded-2xl border border-brand-borderMuted bg-white/85 px-4 py-4 text-sm">
         <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Links</p>
         <div className="grid gap-1.5 text-[0.8125rem]">
           <span className="text-brand-text">{user.email}</span>

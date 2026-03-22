@@ -167,5 +167,9 @@ export default [
   {
     files: ["**/*.config.{ts,js}", "**/vite.config.ts", "**/vitest.config.ts", "vitest.workspace.ts", "eslint.config.js"],
     ...tseslint.configs["flat/disable-type-checked"],
+    rules: {
+      ...tseslint.configs["flat/disable-type-checked"].rules,
+      "no-restricted-imports": "off",
+    },
   }
 ];

@@ -6,7 +6,7 @@ import RunStatusBadge from "components/RunStatusBadge";
 import { buildProjectNameMap, formatRunTime } from "helpers";
 
 const runItemClass = "flex items-center justify-between gap-3 rounded-[0.875rem] border border-transparent"
-  + " bg-white/80 px-4 py-3 hover:border-[#c7d8d7] hover:bg-white";
+  + " bg-white/80 px-4 py-3 hover:border-brand-borderStrong hover:bg-white";
 
 interface RunsPanelProps {
   readonly runs: Run[];
@@ -20,7 +20,7 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
   const projectNames = buildProjectNameMap(projects);
 
   return (
-    <section className="rounded-[0.875rem] border border-[#cfdddd] bg-[#f9fcfb]/70 p-4">
+    <section className="rounded-[0.875rem] border border-brand-borderMuted bg-brand-surfaceTinted/70 p-4">
       {runs.length > 0 ? (
         <div className="mb-4 flex flex-col gap-3 pb-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -29,7 +29,7 @@ export default function RunsPanel({ runs, projects, userHandle, isLoading, error
             <p className="mt-1.5 text-[0.8125rem] text-brand-textMuted">Latest activity across your projects.</p>
           </div>
           <div className="flex items-center">
-            <div className="rounded-full border border-[#cfdddd] bg-white/90 px-3 py-1 text-[0.75rem] text-brand-textMuted">
+            <div className="rounded-full border border-brand-borderMuted bg-white/90 px-3 py-1 text-[0.75rem] text-brand-textMuted">
               showing {runs.length}
             </div>
           </div>

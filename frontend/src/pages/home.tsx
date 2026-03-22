@@ -33,17 +33,17 @@ export default function IndexRoute(): ReactElement {
   const failedCount = useMemo(() => runs.filter((run) => run.status === "failed").length, [runs]);
   const userHandle = user?.handle ?? "workspace";
   return (
-    <div className="min-h-screen bg-[#e9efed] text-brand-text">
+    <div className="min-h-screen bg-brand-bgStrong text-brand-text">
       <Navbar breadcrumbs={[{ label: "Home" }]} />
 
       <NotebookShell columns="18.75rem 1fr" maxWidth="calc(100% - 5rem)">
 
-        <aside className="relative border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
+        <aside className="relative border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
           <h1 className="mt-1 font-display text-[2.0625rem] leading-none text-brand-text">Home</h1>
           <p className="mt-1 font-mono text-[0.6875rem] text-brand-textMuted">@{userHandle} / dashboard</p>
 
-          <div className="mt-3 rounded-xl border border-[#d2dede] bg-white/85 px-3 py-3">
+          <div className="mt-3 rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
             <div className="mt-2 flex items-center justify-between text-[0.75rem]">
               <span className="text-brand-textMuted">total</span>
@@ -51,18 +51,18 @@ export default function IndexRoute(): ReactElement {
             </div>
             <div className="mt-1 flex items-center justify-between text-[0.75rem]">
               <span className="text-brand-textMuted">running</span>
-              <span className="font-semibold text-[#2d7172]">{runningCount}</span>
+              <span className="font-semibold text-signal-accent">{runningCount}</span>
             </div>
             <div className="mt-1 flex items-center justify-between text-[0.75rem]">
               <span className="text-brand-textMuted">failed</span>
-              <span className="font-semibold text-[#bb5f5f]">{failedCount}</span>
+              <span className="font-semibold text-signal-failed">{failedCount}</span>
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-[#d2dede] bg-white/85 px-3 py-3">
+          <div className="mt-4 rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Projects</p>
-              <span className="rounded-full border border-[#d0dddd] bg-white px-2 py-0.5 text-[0.625rem] font-semibold text-brand-textMuted">
+              <span className="rounded-full border border-brand-borderMuted bg-white px-2 py-0.5 text-[0.625rem] font-semibold text-brand-textMuted">
                 {projects.length}
               </span>
             </div>
@@ -72,11 +72,11 @@ export default function IndexRoute(): ReactElement {
               <div className="grid gap-1.5">
                 {projects.map((project) => (
                   <Link
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[0.75rem] hover:bg-[#edf5f3]"
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[0.75rem] hover:bg-hover"
                     href={`/${userHandle}/${project.name}`}
                     key={project.id}
                   >
-                    <span className="h-2 w-2 rounded-full bg-[#2d7172]" />
+                    <span className="h-2 w-2 rounded-full bg-signal-accent" />
                     <span className="truncate font-semibold">{project.name}</span>
                   </Link>
                 ))}
@@ -94,14 +94,15 @@ export default function IndexRoute(): ReactElement {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
-                className="rounded-lg border border-[#c2d7d6] bg-[#eff6f5] px-3 py-1.5 text-[0.75rem] font-semibold text-brand-text transition hover:bg-white"
+                className={"rounded-lg border border-brand-borderStrong bg-hover px-3 py-1.5 text-[0.75rem]"
+                  + " font-semibold text-brand-text transition hover:bg-white"}
                 type="button"
               >
                 View reports
               </button>
               <button
-                className={"rounded-lg border border-[#b9d4d3] bg-[#d9eceb] px-3 py-1.5"
-                  + " text-[0.75rem] font-semibold text-brand-text transition hover:bg-[#e6f3f2]"}
+                className={"rounded-lg border border-brand-borderStrong bg-brand-accentMuted px-3 py-1.5"
+                  + " text-[0.75rem] font-semibold text-brand-text transition hover:bg-hover"}
                 type="button"
               >
                 + New run

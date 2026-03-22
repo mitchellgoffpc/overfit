@@ -16,7 +16,7 @@ export default function RunArtifactsPage(): ReactElement {
       {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
       <section
-        className={"rounded-[0.875rem] border border-[#d2dede] bg-white/90 p-4 text-[0.8125rem]"
+        className={"rounded-[0.875rem] border border-brand-borderMuted bg-white/90 p-4 text-[0.8125rem]"
           + " text-brand-textMuted shadow-[0_0.5rem_1.25rem_rgba(23,43,43,0.06)]"}
       >
         Artifacts coming soon.

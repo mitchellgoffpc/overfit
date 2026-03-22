@@ -19,7 +19,7 @@ function MemberAvatar({ member }: { readonly member: OrganizationMemberWithRole 
 
   return (
     <Link href={`/${member.handle}`} title={member.name} className="no-underline">
-      <div className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[#d9ecec] text-xs font-semibold text-brand-accentStrong">
+      <div className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-brand-accentMuted text-xs font-semibold text-brand-accentStrong">
         {initials}
         <img
           className="absolute inset-0 h-full w-full object-cover"
@@ -36,7 +36,7 @@ function ProjectCard({ project, handle }: { readonly project: Project; readonly 
   return (
     <Link
       className={"grid gap-2 rounded-2xl border border-brand-border bg-brand-surfaceMuted p-4"
-        + " text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]"}
+        + " text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-hover"}
       href={`/${handle}/${project.name}`}
     >
       <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
 
       <div className="mx-auto w-full max-w-6xl px-6 py-8">
         <header className="mb-8 flex items-start gap-6">
-          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-[#d9ecec] text-2xl font-bold text-brand-accentStrong">
+          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-brand-accentMuted text-2xl font-bold text-brand-accentStrong">
             {organization.name.charAt(0).toUpperCase()}
           </div>
           <div className="grid gap-1">

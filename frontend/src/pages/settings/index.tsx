@@ -5,20 +5,22 @@ import { Redirect, Route, Switch, useLocation } from "wouter";
 
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
+import { colors } from "lib/colors";
 import SettingsKeysContent from "pages/settings/api-keys";
 import SettingsOrganizationsContent from "pages/settings/organizations";
 import SettingsProfileContent from "pages/settings/profile";
 
+const { profile: profileTab, organizations: orgsTab, apiKeys: apiKeysTab } = colors.settingsTab;
 const tabs = [
-  { id: "profile", path: "/settings/profile", label: "Profile", icon: faUser, tint: "#f6fbf8", tintActive: "#fcfffd" },
-  { id: "organizations", path: "/settings/organizations", label: "Organizations", icon: faBuilding, tint: "#f4f8fc", tintActive: "#fbfdff" },
-  { id: "api-keys", path: "/settings/api-keys", label: "API Keys", icon: faKey, tint: "#f8f5fc", tintActive: "#fdfbff" },
+  { id: "profile", path: "/settings/profile", label: "Profile", icon: faUser, tint: profileTab.tint, tintActive: profileTab.tintActive },
+  { id: "organizations", path: "/settings/organizations", label: "Organizations", icon: faBuilding, tint: orgsTab.tint, tintActive: orgsTab.tintActive },
+  { id: "api-keys", path: "/settings/api-keys", label: "API Keys", icon: faKey, tint: apiKeysTab.tint, tintActive: apiKeysTab.tintActive },
 ] as const satisfies readonly { id: string; path: string; label: string; icon: IconDefinition; tint: string; tintActive: string }[];
 
 export default function SettingsPage(): ReactElement {
   const [location] = useLocation();
   const activeTab = tabs.find((tab) => tab.path === location) ?? tabs[0];
-  const pageClass = "min-h-screen bg-[#e9efed] text-brand-text";
+  const pageClass = "min-h-screen bg-brand-bgStrong text-brand-text";
   return (
     <div className={pageClass}>
       <Navbar

@@ -7,10 +7,10 @@ import { apiBase, getInitials, RULED_LINE } from "helpers";
 import { inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 
-const notesTextareaClass = "min-h-24 w-full rounded-[0.625rem] border border-[#d2dddd] bg-white/70 px-3 py-2.5"
+const notesTextareaClass = "min-h-24 w-full rounded-[0.625rem] border border-brand-borderMuted bg-white/70 px-3 py-2.5"
   + " text-sm outline-none transition focus:border-brand-accent";
-const avatarFrameClass = "relative grid h-40 w-40 place-items-center overflow-hidden rounded-full border border-[#bfd0d0]"
-  + " bg-[#dceaea] text-4xl font-semibold text-brand-accentStrong";
+const avatarFrameClass = "relative grid h-40 w-40 place-items-center overflow-hidden rounded-full border border-brand-borderStrong"
+  + " bg-brand-accentMuted text-4xl font-semibold text-brand-accentStrong";
 
 interface ProfileSettingsCardProps {
   readonly user: User;
@@ -95,16 +95,16 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
         </header>
 
         <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
-          {saveError ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">
+          {saveError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
             {saveError}
           </div> : null}
-          {saveStatus ? <div className="rounded-[0.625rem] border border-[#bde4c7] bg-[#e9f8ee] px-3 py-1.5 text-xs text-[#1e6a3a]">
+          {saveStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
             {saveStatus}
           </div> : null}
-          {avatarError ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">
+          {avatarError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
             {avatarError}
           </div> : null}
-          {avatarStatus ? <div className="rounded-[0.625rem] border border-[#bde4c7] bg-[#e9f8ee] px-3 py-1.5 text-xs text-[#1e6a3a]">
+          {avatarStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
             {avatarStatus}
           </div> : null}
         </div>
@@ -151,7 +151,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
           </div>
 
           <div className="grid content-start justify-items-center gap-3">
-            <div className="w-full max-w-[13.125rem] rounded-xl border border-[#d3dddd] bg-white p-3">
+            <div className="w-full max-w-[13.125rem] rounded-xl border border-brand-borderMuted bg-white p-3">
               <p className="mb-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Portrait</p>
               <div className={avatarFrameClass}>
                 {!isAvatarMissing ? (

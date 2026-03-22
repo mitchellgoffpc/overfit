@@ -5,12 +5,13 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
 import { apiBase, getInitials } from "helpers";
+import { colors } from "lib/colors";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 
 const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition"
   + " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
-const menuItemClass = "block px-4 py-2 text-sm text-brand-text hover:bg-[#f3f7f7]";
+const menuItemClass = "block px-4 py-2 text-sm text-brand-text hover:bg-hover";
 
 export interface Breadcrumb {
   readonly label: string;
@@ -90,8 +91,8 @@ export default function Navbar({
           + " font-mono uppercase tracking-[0.08em] no-underline transition-all";
         const sizeClass = isActive ? "h-9" : "h-8 hover:h-9";
         const stateClass = isActive
-          ? "z-20 border-[#b9cbcb] text-brand-text shadow-[0_-4px_10px_rgba(20,45,45,0.08)]"
-          : "z-10 border-[#cfdada] text-brand-textMuted opacity-95 shadow-[0_-4px_10px_rgba(20,45,45,0.08)]"
+          ? "z-20 border-nav-tabActive text-brand-text shadow-[0_-4px_10px_rgba(20,45,45,0.08)]"
+          : "z-10 border-nav-tabInactive text-brand-textMuted opacity-95 shadow-[0_-4px_10px_rgba(20,45,45,0.08)]"
             + " hover:text-brand-text";
         return (
           <Link
@@ -99,7 +100,7 @@ export default function Navbar({
             href={tab.href}
             className={`${sizeClass} ${baseClass} ${stateClass}`}
             aria-current={isActive ? "page" : undefined}
-            style={{ backgroundColor: isActive ? tab.tintActive ?? "#fcfffd" : tab.tint ?? "#f6fbf8" }}
+            style={{ backgroundColor: isActive ? tab.tintActive ?? colors.settingsTab.profile.tintActive : tab.tint ?? colors.settingsTab.profile.tint }}
           >
             {isActive ? (
               <span className="absolute -bottom-1 left-1 right-1 h-1.5 rounded-sm" style={{ background: "rgba(26,123,125,0.24)" }} />
@@ -113,7 +114,7 @@ export default function Navbar({
   );
 
   return (
-    <nav className="relative z-30 border-b border-brand-border bg-[#f0f6f7]">
+    <nav className="relative z-30 border-b border-brand-border bg-nav-bg">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6">
         <div className="flex flex-wrap items-center gap-4 py-2.5">
           <Link className="flex items-center gap-3 text-inherit no-underline" href="/">
@@ -175,7 +176,7 @@ export default function Navbar({
                   <p className="mt-1 text-[0.6875rem] leading-tight text-brand-textMuted">{user.email}</p>
                 </div>
                 <div
-                  className={"relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[#d9ecec]"
+                  className={"relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-brand-accentMuted"
                     + " text-sm font-semibold text-brand-accentStrong"}
                 >
                   {initials}

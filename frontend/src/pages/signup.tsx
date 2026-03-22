@@ -5,8 +5,8 @@ import { Link, Redirect, useLocation } from "wouter";
 
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
 
-const inputErrorClass = "rounded-[0.625rem] border border-[#b42318] bg-white px-3 py-2.5 text-sm outline-none"
-  + " focus:border-[#b42318] focus:ring-2 focus:ring-[#b42318]/20";
+const inputErrorClass = "rounded-[0.625rem] border border-danger-text bg-white px-3 py-2.5 text-sm outline-none"
+  + " focus:border-danger-text focus:ring-2 focus:ring-danger-text/20";
 const inputNormalClass = "rounded-[0.625rem] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
 
@@ -83,7 +83,7 @@ export default function SignupRoute(): ReactElement {
             void handleSubmit(event);
           }}
         >
-          {error ? <div className="rounded-[0.625rem] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{error}</div> : null}
+          {error ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-2.5 py-2 text-xs text-danger-text">{error}</div> : null}
 
           <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Email address
@@ -102,7 +102,7 @@ export default function SignupRoute(): ReactElement {
                 void handleEmailBlur();
               }}
             />
-            <span className={emailHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
+            <span className={emailHintError ? "text-xs font-medium text-danger-text" : "text-xs font-normal text-brand-textMuted"}>
               {emailHintError ?? ""}
             </span>
           </label>
@@ -124,7 +124,7 @@ export default function SignupRoute(): ReactElement {
                 setPasswordHintError(password ? testPassword(password) : null);
               }}
             />
-            <span className={passwordHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
+            <span className={passwordHintError ? "text-xs font-medium text-danger-text" : "text-xs font-normal text-brand-textMuted"}>
               {passwordHintError ?? PASSWORD_HINT}
             </span>
           </label>
@@ -146,7 +146,7 @@ export default function SignupRoute(): ReactElement {
                 void handleUsernameBlur();
               }}
             />
-            <span className={usernameHintError ? "text-xs font-medium text-[#b42318]" : "text-xs font-normal text-brand-textMuted"}>
+            <span className={usernameHintError ? "text-xs font-medium text-danger-text" : "text-xs font-normal text-brand-textMuted"}>
               {usernameHintError ?? USERNAME_HINT}
             </span>
           </label>

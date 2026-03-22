@@ -9,10 +9,10 @@ interface ProfileActivityHeatmapProps {
 const WEEK_COUNT = 52;
 
 const levelClasses = [
-  "bg-[#e7ecef]",
-  "bg-[#cbe7e1]",
-  "bg-[#8fd3c8]",
-  "bg-[#4fb8aa]",
+  "bg-heatmap-level0",
+  "bg-heatmap-level1",
+  "bg-heatmap-level2",
+  "bg-heatmap-level3",
   "bg-brand-accentStrong",
 ];
 
@@ -64,7 +64,7 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
   }, [runs]);
 
   return (
-    <section className="rounded-[1.125rem] border border-[#d4dede] bg-[#f9fcfb]/90 p-5 shadow-soft">
+    <section className="rounded-[1.125rem] border border-brand-borderMuted bg-brand-surfaceTinted/90 p-5 shadow-soft">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-brand-textMuted">Section C</p>
@@ -99,7 +99,7 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
               {weekColumns.map((week, weekIndex) => (
                 <div className="grid grid-rows-[repeat(7,_1fr)] gap-1" key={week[0]?.key ?? String(weekIndex)}>
                   {week.map((day) => {
-                    const levelClass = levelClasses[day.level] ?? "bg-[#e7ecef]";
+                    const levelClass = levelClasses[day.level] ?? "bg-heatmap-level0";
                     const label = String(day.count) + " runs on " + day.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                     return (
                       <span

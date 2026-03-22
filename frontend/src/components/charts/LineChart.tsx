@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { LineChartGeometry, LineChartHoverOverlay, LineChartOptions, LinePoint, LineSeries } from "charts/lineChart";
 import { drawLineChart, getLineChartGeometry } from "charts/lineChart";
+import { colors } from "lib/colors";
 
 interface LineChartProps {
   readonly series: LineSeries[];
@@ -75,10 +76,10 @@ export default function LineChart({ series, height = 220, className, xLabelForma
       padding: { left: 36, right: 12, top: 10, bottom: 24 },
       xTicks: 6,
       yTicks: 5,
-      background: "#ffffff",
-      gridColor: "#edf2f2",
-      axisColor: "#d7e2e2",
-      textColor: "#627070",
+      background: colors.chart.bg,
+      gridColor: colors.chart.grid,
+      axisColor: colors.chart.axis,
+      textColor: colors.chart.text,
       font: "10px Space Grotesk, system-ui, sans-serif",
     };
     if (xLabelFormatter) { base.xLabelFormatter = xLabelFormatter; }
@@ -95,7 +96,7 @@ export default function LineChart({ series, height = 220, className, xLabelForma
     if (hoverStep === null || hoverStep === undefined || series.length === 0) { return null; }
     const match = findClosestPoint(series, hoverStep, cursorDataY);
     if (!match) { return null; }
-    return { point: match.point, color: series[match.seriesIndex]?.color ?? "#1a7b7d" };
+    return { point: match.point, color: series[match.seriesIndex]?.color ?? colors.brand.accent };
   }, [cursorDataY, hoverStep, series]);
 
   useEffect(() => {
