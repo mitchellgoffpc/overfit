@@ -8,6 +8,7 @@ import LoginPage from "pages/login";
 import NotFoundPage from "pages/not-found";
 import ProfilePage from "pages/profile";
 import ProjectPage from "pages/project";
+import RunPage from "pages/run";
 import SettingsPage from "pages/settings";
 import SignupPage from "pages/signup";
 import { useAuthStore } from "stores/auth";
@@ -48,6 +49,8 @@ export function AppRouter(): ReactElement {
               <Route path="/" component={HomePage} />
               <Route path="/profile" component={CurrentUserProfileRedirect} />
               <Route path="/settings/*" component={SettingsPage} />
+              <Route path="/:handle/:projectName/runs/:runName/*" component={RunPage} />
+              <Route path="/:handle/:projectName/runs/:runName" component={RunPage} />
               <Route path="/:handle/:projectName/*" component={ProjectPage} />
               <Route path="/:handle/:projectName" component={ProjectPage} />
               <Route path="/:handle" component={ProfilePage} />

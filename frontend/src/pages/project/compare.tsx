@@ -1,4 +1,3 @@
-import { faCodeBranch, faGear, faList } from "@fortawesome/free-solid-svg-icons";
 import type { Run, Scalar } from "@underfit/types";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -6,7 +5,6 @@ import { useParams } from "wouter";
 
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
-import Navbar from "components/Navbar";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { fetchRunScalars } from "stores/scalars";
@@ -53,8 +51,6 @@ export default function ProjectCompareRoute(): ReactElement {
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const fetchProject = useProjectStore((state) => state.fetchProject);
   const runsByKey = useRunStore((state) => state.runsByKey);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
@@ -66,17 +62,9 @@ export default function ProjectCompareRoute(): ReactElement {
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
   const [hiddenRunNames, setHiddenRunNames] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    if (handle) { void fetchProjects(handle); }
-  }, [fetchProjects, handle]);
-
   const projectList = Object.values(projectsByKey);
   const projectKey = buildProjectKey(handle, projectName);
   const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
-
-  useEffect(() => {
-    if (!project) { void fetchProject(handle, projectName); }
-  }, [fetchProject, handle, project, projectName]);
 
   useEffect(() => {
     void fetchProjectRuns(handle, projectName);
@@ -268,22 +256,9 @@ export default function ProjectCompareRoute(): ReactElement {
       </button>
     );
   };
-  const tabs = [
-    { id: "runs", label: "Runs", href: `/${handle}/${projectName}`, icon: faList },
-    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare`, icon: faCodeBranch },
-    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings`, icon: faGear }
-  ];
 
   return (
-    <div className="min-h-screen bg-[#e9efed] text-brand-text">
-      <Navbar
-        breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: "compare" }]}
-        tabs={tabs}
-        activeTabId="compare"
-        tabsMaxWidth="100vw"
-      />
-
-      <div className={notebookShellClass} style={{ maxWidth: "calc(100% - 80px)" }}>
+    <div className={notebookShellClass} style={{ maxWidth: "calc(100% - 80px)" }}>
         <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[14px] bg-[#dce7e4]" aria-hidden />
         <div
           className="pointer-events-none absolute inset-0"
@@ -391,6 +366,5 @@ export default function ProjectCompareRoute(): ReactElement {
           ) : null}
         </main>
       </div>
-    </div>
   );
 }

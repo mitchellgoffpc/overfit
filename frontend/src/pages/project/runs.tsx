@@ -1,10 +1,8 @@
-import { faCodeBranch, faGear, faList } from "@fortawesome/free-solid-svg-icons";
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { useParams } from "wouter";
 
-import Navbar from "components/Navbar";
-import ProjectRunsTable from "components/ProjectRunsTable";
+import ProjectRunsTable from "components/project/RunsTable";
 import { apiBase } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
@@ -14,16 +12,10 @@ export default function ProjectRunsPage(): ReactElement {
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const fetchProject = useProjectStore((state) => state.fetchProject);
   const runsByKey = useRunStore((state) => state.runsByKey);
   const runError = useRunStore((state) => state.error);
   const isRunsLoading = useRunStore((state) => state.isLoading);
   const fetchProjectRuns = useRunStore((state) => state.fetchProjectRuns);
-
-  useEffect(() => {
-    if (handle) { void fetchProjects(handle); }
-  }, [fetchProjects, handle]);
 
   useEffect(() => {
     if (!isProjectsLoading) { void fetchProjectRuns(handle, projectName); }
@@ -33,29 +25,13 @@ export default function ProjectRunsPage(): ReactElement {
   const runList = Object.values(runsByKey);
   const projectKey = buildProjectKey(handle, projectName);
   const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
-  useEffect(() => {
-    if (!project) { void fetchProject(handle, projectName); }
-  }, [fetchProject, handle, project, projectName]);
   const projectRuns = project ? runList.filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [];
   const showProjectNotFound = !project && !isProjectsLoading;
-  const tabs = [
-    { id: "runs", label: "Runs", href: `/${handle}/${projectName}`, icon: faList },
-    { id: "compare", label: "Compare", href: `/${handle}/${projectName}/compare`, icon: faCodeBranch },
-    { id: "settings", label: "Settings", href: `/${handle}/${projectName}/settings`, icon: faGear }
-  ];
   const ownerInitial = handle[0]?.toUpperCase() ?? "?";
   const ownerAvatarSrc = `${apiBase}/accounts/${encodeURIComponent(handle)}/avatar`;
 
   return (
-    <div className="min-h-screen bg-[#e9efed] text-brand-text">
-      <Navbar
-        breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName }]}
-        tabs={tabs}
-        activeTabId="runs"
-        tabsMaxWidth="100vw"
-      />
-
-      <main
+    <main
         className={[
           "relative mx-auto w-full overflow-hidden border-x border-b border-[#c4d1d1]",
           "bg-[#f8fcfa] shadow-[0_14px_36px_rgba(30,52,52,0.18)]"
@@ -115,6 +91,5 @@ export default function ProjectRunsPage(): ReactElement {
           ) : null}
         </div>
       </main>
-    </div>
   );
 }

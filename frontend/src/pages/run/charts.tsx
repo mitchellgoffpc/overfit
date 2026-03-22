@@ -1,9 +1,12 @@
-import type { Scalar } from "@underfit/types";
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "wouter";
 
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
+import SectionHeader from "components/run/SectionHeader";
+import { useRunStore } from "stores/runs";
+import { useScalarStore } from "stores/scalars";
 
 const tooltipClass = "pointer-events-none absolute z-10 max-w-[240px] rounded-[10px] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
@@ -13,12 +16,6 @@ interface ChartSeries {
   readonly points: { x: number; y: number }[];
   readonly color: string;
   readonly lineWidth: number;
-}
-
-interface ChartsTabProps {
-  readonly scalars: Scalar[];
-  readonly runName: string;
-  readonly isLoading: boolean;
 }
 
 const xFormatter = (value: number) => value.toFixed(0);
@@ -37,7 +34,20 @@ const getClosestPoint = (series: ChartSeries, targetX: number): { x: number; y: 
   return closest;
 };
 
-export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProps): ReactElement {
+export default function RunChartsPage(): ReactElement {
+  const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
+  const run = useRunStore((state) => state.runsByKey[`${handle}/${projectName}/${runName}`]);
+  const runError = useRunStore((state) => state.error);
+  const isRunsLoading = useRunStore((state) => state.isLoading);
+  const scalars = useScalarStore((state) => state.scalars);
+  const scalarError = useScalarStore((state) => state.error);
+  const isScalarsLoading = useScalarStore((state) => state.isLoading);
+  const fetchScalars = useScalarStore((state) => state.fetchScalars);
+
+  useEffect(() => {
+    void fetchScalars(handle, projectName, runName);
+  }, [fetchScalars, handle, projectName, runName]);
+
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
 
@@ -98,7 +108,7 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
             <span className="max-w-[160px] truncate">{runName}</span>
           </div>
         </div>
-        {!hasPoints && !isLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
+        {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
         <div className="relative">
           {hovered && closest ? (
             <div className={tooltipClass} style={tooltipStyle}>
@@ -127,7 +137,11 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
   };
 
   return (
-    <>
+    <main className="relative p-[1.5rem]">
+      <SectionHeader title="Scalar Plots" subtitle="training + validation metrics" />
+      {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
+      {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
+      {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
       {sections.map(({ prefix, series }) => (
         <section className="mb-6 last:mb-0" key={prefix}>
           <header className="mb-3 flex items-center justify-between gap-2">
@@ -154,6 +168,6 @@ export default function ChartsTab({ scalars, runName, isLoading }: ChartsTabProp
           )}
         </section>
       ))}
-    </>
+    </main>
   );
 }
