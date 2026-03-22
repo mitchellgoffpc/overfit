@@ -8,7 +8,7 @@ import SectionHeader from "components/run/SectionHeader";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
 
-const tooltipClass = "pointer-events-none absolute z-10 max-w-[240px] rounded-[10px] border border-brand-border"
+const tooltipClass = "pointer-events-none absolute z-10 max-w-60 rounded-[0.625rem] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
 
 interface ChartSeries {
@@ -97,22 +97,22 @@ export default function RunChartsPage(): ReactElement {
     const closest = hovered ? getClosestPoint(series, hovered.step) : null;
     const isLeft = (hovered?.xRatio ?? 0) < 0.5;
     const tooltipStyle = !hovered ? undefined
-      : { left: `${String(hovered.cursorX)}px`, top: "8px", transform: isLeft ? "translateX(12px)" : "translateX(calc(-100% - 12px))" };
+      : { left: `${String(hovered.cursorX)}px`, top: "0.5rem", transform: isLeft ? "translateX(0.75rem)" : "translateX(calc(-100% - 0.75rem))" };
 
     return (
-      <div className="relative rounded-[12px] border border-brand-border bg-brand-surface px-2 pb-[6px] pt-2 shadow-soft" key={series.id}>
+      <div className="relative rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft" key={series.id}>
         <div className="mb-1 flex flex-col items-center gap-0">
-          <h2 className="text-[13px] font-semibold text-brand-text">{label}</h2>
-          <div className="flex items-center gap-2 text-[11px] text-brand-textMuted">
+          <h2 className="text-[0.8125rem] font-semibold text-brand-text">{label}</h2>
+          <div className="flex items-center gap-2 text-[0.6875rem] text-brand-textMuted">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
-            <span className="max-w-[160px] truncate">{runName}</span>
+            <span className="max-w-40 truncate">{runName}</span>
           </div>
         </div>
-        {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[13px] text-brand-textMuted">No scalar data yet.</div> : null}
+        {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
         <div className="relative">
           {hovered && closest ? (
             <div className={tooltipClass} style={tooltipStyle}>
-              <div className="flex items-center justify-between gap-3 text-[12px] text-brand-text">
+              <div className="flex items-center justify-between gap-3 text-[0.75rem] text-brand-text">
                 <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: series.color }} />
                   <span className="truncate">{label}</span>
@@ -123,7 +123,7 @@ export default function RunChartsPage(): ReactElement {
             </div>
           ) : null}
           <LineChart
-            className="h-[220px] w-full"
+            className="h-[13.75rem] w-full"
             series={series.points.length > 0 ? [series] : []}
             height={220}
             xLabelFormatter={xFormatter}
@@ -156,7 +156,7 @@ export default function RunChartsPage(): ReactElement {
                 </svg>
               </span>
               <span>{prefix}</span>
-              <span className="rounded-full border border-brand-border px-2 py-0.5 text-[11px] font-semibold text-brand-textMuted">
+              <span className="rounded-full border border-brand-border px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
                 {series.length}
               </span>
             </button>

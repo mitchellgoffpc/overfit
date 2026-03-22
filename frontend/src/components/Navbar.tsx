@@ -86,7 +86,7 @@ export default function Navbar({
     <>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
-        const baseClass = "relative inline-flex items-start gap-1.5 rounded-t-[10px] border border-b-0 px-3 py-2.5 text-[11px]"
+        const baseClass = "relative inline-flex items-start gap-1.5 rounded-t-[0.625rem] border border-b-0 px-3 py-2.5 text-[0.6875rem]"
           + " font-mono uppercase tracking-[0.08em] no-underline transition-all";
         const sizeClass = isActive ? "h-9" : "h-8 hover:h-9";
         const stateClass = isActive
@@ -104,7 +104,7 @@ export default function Navbar({
             {isActive ? (
               <span className="absolute -bottom-1 left-1 right-1 h-1.5 rounded-sm" style={{ background: "rgba(26,123,125,0.24)" }} />
             ) : null}
-            {tab.icon ? <FontAwesomeIcon icon={tab.icon} className="h-3 w-3 translate-y-[2px]" /> : null}
+            {tab.icon ? <FontAwesomeIcon icon={tab.icon} className="h-3 w-3 translate-y-px" /> : null}
             <span>{tab.label}</span>
           </Link>
         );
@@ -117,12 +117,12 @@ export default function Navbar({
       <div className="flex flex-wrap items-center justify-between gap-3 px-6">
         <div className="flex flex-wrap items-center gap-4 py-2.5">
           <Link className="flex items-center gap-3 text-inherit no-underline" href="/">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-accent text-[18px] font-semibold text-white">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-accent text-[1.125rem] font-semibold text-white">
               <span className="font-display">U</span>
             </div>
             <div>
               <p className="text-sm font-semibold leading-tight">Underfit</p>
-              <p className="mt-0.5 text-[11px] leading-tight text-brand-textMuted">Workspace</p>
+              <p className="mt-0.5 text-[0.6875rem] leading-tight text-brand-textMuted">Workspace</p>
             </div>
           </Link>
 
@@ -171,8 +171,8 @@ export default function Navbar({
                 onClick={() => { setIsMenuOpen((prev) => !prev); }}
               >
                 <div className="hidden text-right sm:block">
-                  <p className="text-[13px] font-semibold leading-tight">{name}</p>
-                  <p className="mt-1 text-[11px] leading-tight text-brand-textMuted">{user.email}</p>
+                  <p className="text-[0.8125rem] font-semibold leading-tight">{name}</p>
+                  <p className="mt-1 text-[0.6875rem] leading-tight text-brand-textMuted">{user.email}</p>
                 </div>
                 <div
                   className={"relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[#d9ecec]"
@@ -191,7 +191,7 @@ export default function Navbar({
               {isMenuOpen ? (
                 <div
                   className={"absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2"
-                    + " shadow-[0_16px_32px_rgba(15,23,42,0.14)]"}
+                    + " shadow-[0_1rem_2rem_rgba(15,23,42,0.14)]"}
                   role="menu"
                 >
                   <Link className={menuItemClass} role="menuitem" href={profileHref}>

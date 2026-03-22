@@ -64,14 +64,14 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
   }, [runs]);
 
   return (
-    <section className="rounded-[18px] border border-[#d4dede] bg-[#f9fcfb]/90 p-5 shadow-soft">
+    <section className="rounded-[1.125rem] border border-[#d4dede] bg-[#f9fcfb]/90 p-5 shadow-soft">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand-textMuted">Section C</p>
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-brand-textMuted">Section C</p>
           <h2 className="mt-1 text-xl">Activity</h2>
-          <p className="mt-1 text-[13px] text-brand-textMuted">Runs created in the last {WEEK_COUNT} weeks.</p>
+          <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Runs created in the last {WEEK_COUNT} weeks.</p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[11px] text-brand-textMuted">
+        <div className="flex items-center gap-2 font-mono text-[0.6875rem] text-brand-textMuted">
           <span>Less</span>
           <div className="flex items-center gap-1">
             {levelClasses.map((classes) => (
@@ -83,19 +83,19 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
       </div>
 
       <div className="grid gap-3">
-        <div className="grid grid-cols-[32px_1fr] items-start gap-3">
-          <div className="grid grid-rows-[repeat(7,_1fr)] gap-1 pt-[24px] text-[11px] text-brand-textMuted">
+        <div className="grid grid-cols-[2rem_1fr] items-start gap-3">
+          <div className="grid grid-rows-[repeat(7,_1fr)] gap-1 pt-6 text-[0.6875rem] text-brand-textMuted">
             {["", "Mon", "", "Wed", "", "Fri", ""].map((label, index) => (
               <span className="h-3 leading-3" key={`day-label-${String(index)}`}>{label}</span>
             ))}
           </div>
           <div className="grid gap-2">
-            <div className="inline-grid auto-cols-[12px] grid-flow-col gap-1 text-[11px] text-brand-textMuted">
+            <div className="inline-grid auto-cols-[0.75rem] grid-flow-col gap-1 text-[0.6875rem] text-brand-textMuted">
               {monthHeaders.map((label, index) => (
                 <span className="h-4 text-left leading-4" key={`month-${String(index)}`}>{label}</span>
               ))}
             </div>
-            <div className="inline-grid auto-cols-[12px] grid-flow-col gap-1">
+            <div className="inline-grid auto-cols-[0.75rem] grid-flow-col gap-1">
               {weekColumns.map((week, weekIndex) => (
                 <div className="grid grid-rows-[repeat(7,_1fr)] gap-1" key={week[0]?.key ?? String(weekIndex)}>
                   {week.map((day) => {
@@ -103,7 +103,7 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
                     const label = String(day.count) + " runs on " + day.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                     return (
                       <span
-                        className={`h-3 w-3 rounded-[3px] ${levelClass}`}
+                        className={`h-3 w-3 rounded-sm ${levelClass}`}
                         key={day.key + "-" + String(weekIndex)}
                         title={label}
                       />

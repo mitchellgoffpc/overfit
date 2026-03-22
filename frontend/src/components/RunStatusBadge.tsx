@@ -17,7 +17,7 @@ const formatStatus = (status: Run["status"]): string => status.replace(/^\w/, (c
 
 export default function RunStatusBadge({ status }: RunStatusBadgeProps): ReactElement {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium leading-none ${statusClasses[status]}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[0.6875rem] font-medium leading-none ${statusClasses[status]}`}>
       {formatStatus(status)}
     </span>
   );

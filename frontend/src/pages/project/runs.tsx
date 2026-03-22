@@ -34,24 +34,24 @@ export default function ProjectRunsPage(): ReactElement {
     <main
         className={[
           "relative mx-auto w-full overflow-hidden border-x border-b border-[#c4d1d1]",
-          "bg-[#f8fcfa] shadow-[0_14px_36px_rgba(30,52,52,0.18)]"
+          "bg-[#f8fcfa] shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)]"
         ].join(" ")}
-        style={{ maxWidth: "calc(100% - 80px)" }}
+        style={{ maxWidth: "calc(100% - 5rem)" }}
       >
-        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[14px] bg-[#dce7e4]" aria-hidden />
+        <div className="pointer-events-none absolute -inset-x-6 -inset-y-4 -z-10 rounded-[0.875rem] bg-[#dce7e4]" aria-hidden />
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 30px" }}
+          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
         />
         <div className="pointer-events-none absolute bottom-0 left-10 top-0 z-[100] w-px bg-[#efb1b1]/70" aria-hidden />
-        <div className="pointer-events-none absolute bottom-0 left-[292px] top-0 w-px bg-[#d4dfdf]" aria-hidden />
+        <div className="pointer-events-none absolute bottom-0 left-[18.25rem] top-0 w-px bg-[#d4dfdf]" aria-hidden />
 
-        <div className="relative py-5 pl-[66px] pr-5">
+        <div className="relative py-5 pl-[4.125rem] pr-5">
           <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-              <h1 className="mt-1 flex flex-wrap items-center gap-2.5 font-display text-[34px] leading-none text-brand-text">
+              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
+              <h1 className="mt-1 flex flex-wrap items-center gap-2.5 font-display text-[2.125rem] leading-none text-brand-text">
                 <div
                   className={[
                     "relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-[#c3d7d7]",
@@ -72,14 +72,14 @@ export default function ProjectRunsPage(): ReactElement {
             {project ? (
               <span
                 className={"inline-flex items-center rounded-full border border-[#d4dfdf] bg-white/90 px-2 py-px"
-                  + " text-[11px] leading-4 text-brand-textMuted"}
+                  + " text-[0.6875rem] leading-4 text-brand-textMuted"}
               >
                 {project.visibility === "public" ? "Public ledger" : "Private ledger"}
               </span>
             ) : null}
           </header>
 
-          {showProjectNotFound ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
+          {showProjectNotFound ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {project ? (
             <ProjectRunsTable
               runs={projectRuns}

@@ -8,13 +8,13 @@ import { createOrganization, fetchMyMemberships, leaveOrganization } from "store
 
 type Membership = Organization & { role: OrganizationRole };
 
-const inkButtonClass = "rounded-[10px] border border-[#1f3637] bg-[#1f3637] px-4 py-2 text-sm font-semibold text-white"
+const inkButtonClass = "rounded-[0.625rem] border border-[#1f3637] bg-[#1f3637] px-4 py-2 text-sm font-semibold text-white"
   + " transition hover:bg-[#152a2b] disabled:cursor-wait disabled:opacity-70";
-const paperButtonClass = "rounded-[10px] border border-[#cfd8d8] bg-white px-3 py-2 text-xs font-semibold"
+const paperButtonClass = "rounded-[0.625rem] border border-[#cfd8d8] bg-white px-3 py-2 text-xs font-semibold"
   + " text-brand-text transition hover:bg-[#f5f9f9] disabled:cursor-wait disabled:opacity-70";
-const lineInputClass = "w-full rounded-[10px] border border-[#d2dddd] bg-white/70 px-3 py-2.5 text-sm"
+const lineInputClass = "w-full rounded-[0.625rem] border border-[#d2dddd] bg-white/70 px-3 py-2.5 text-sm"
   + " outline-none transition focus:border-brand-accent";
-const leaveButtonClass = "rounded-[10px] border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-xs font-semibold"
+const leaveButtonClass = "rounded-[0.625rem] border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-xs font-semibold"
   + " text-[#b42318] hover:border-[#f87171] hover:bg-[#fee2e2] disabled:cursor-wait disabled:opacity-70";
 
 export default function SettingsOrganizationsContent(): ReactElement {
@@ -91,13 +91,13 @@ export default function SettingsOrganizationsContent(): ReactElement {
   };
 
   return (
-    <section className="grid lg:grid-cols-[300px_1fr]">
+    <section className="grid lg:grid-cols-[18.75rem_1fr]">
       <aside className="border-b border-[#d2dfdf] px-5 py-5 lg:border-b-0 lg:border-r lg:border-[#d2dfdf] lg:pl-14 lg:pr-5 lg:pt-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-        <h2 className="mt-1 font-display text-[34px] leading-none text-brand-text">Settings</h2>
-        <p className="mt-2 font-mono text-[11px] text-brand-textMuted" style={{ lineHeight: "30px" }}>{notebookDate}</p>
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] mt-[28px] text-brand-textMuted" style={{ lineHeight: "30px" }}>Summary</p>
-        <div className="flex items-center justify-between text-[12px]" style={{ height: "30px" }}>
+        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
+        <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Settings</h2>
+        <p className="mt-2 font-mono text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>{notebookDate}</p>
+        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] mt-7 text-brand-textMuted" style={{ lineHeight: "1.875rem" }}>Summary</p>
+        <div className="flex items-center justify-between text-[0.75rem]" style={{ height: "1.875rem" }}>
           <span className="text-brand-textMuted">memberships</span>
           <span className="font-semibold text-brand-text">{memberships.length}</span>
         </div>
@@ -105,16 +105,16 @@ export default function SettingsOrganizationsContent(): ReactElement {
 
       <div className="relative p-6">
         <header className="mb-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-brand-textMuted">Section B</p>
-          <h2 className="mt-1 font-display text-[34px] leading-none text-brand-text">Organizations</h2>
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section B</p>
+          <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Organizations</h2>
         </header>
 
-        <div className="flex flex-wrap gap-2 mb-[30px]">
-          {error ? <div className="rounded-[10px] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">{error}</div> : null}
+        <div className="flex flex-wrap gap-2 mb-[1.875rem]">
+          {error ? <div className="rounded-[0.625rem] border border-[#f7c1c1] bg-[#fff0ef] px-3 py-1.5 text-xs text-[#8f2d2d]">{error}</div> : null}
         </div>
 
         <div className="mb-4 flex items-center justify-between">
-          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand-textMuted">Your organizations</p>
+          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Your organizations</p>
           <button className={inkButtonClass} type="button" onClick={openCreateModal}>New organization</button>
         </div>
 
@@ -126,9 +126,9 @@ export default function SettingsOrganizationsContent(): ReactElement {
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#d2dfdf] px-1 py-3 last:border-b-0" key={membership.id}>
               <div className="grid gap-1">
                 <p className="text-sm font-semibold">{membership.name}</p>
-                <p className="text-[11px] text-brand-textMuted">
+                <p className="text-[0.6875rem] text-brand-textMuted">
                   @{membership.handle}
-                  <span className="ml-2 rounded-full border border-[#d2dfdf] px-2 py-0.5 text-[10px] font-medium">{membership.role}</span>
+                  <span className="ml-2 rounded-full border border-[#d2dfdf] px-2 py-0.5 text-[0.625rem] font-medium">{membership.role}</span>
                 </p>
               </div>
               <button
@@ -147,20 +147,20 @@ export default function SettingsOrganizationsContent(): ReactElement {
       <Modal open={showCreate} onClose={() => { setShowCreate(false); }}>
         <div className="grid gap-3.5">
           <div className="grid place-items-center gap-2.5 text-center">
-            <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-brand-text text-[22px] text-white">
+            <div className="grid h-12 w-12 place-items-center rounded-[0.875rem] bg-brand-text text-[1.375rem] text-white">
               <span className="font-display">U</span>
             </div>
             <div>
               <p className="text-xl font-semibold">New organization</p>
-              <p className="mt-1 text-[13px] text-brand-textMuted">Create a shared workspace for your team.</p>
+              <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Create a shared workspace for your team.</p>
             </div>
           </div>
-          {createError ? <div className="rounded-[10px] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{createError}</div> : null}
-          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+          {createError ? <div className="rounded-[0.625rem] border border-[#fecaca] bg-[#fee4e2] px-2.5 py-2 text-xs text-[#b42318]">{createError}</div> : null}
+          <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Handle
             <input className={lineInputClass} type="text" placeholder="acme" value={newHandle} onChange={(e) => { setNewHandle(e.target.value); }} />
           </label>
-          <label className="grid gap-1.5 text-[13px] font-medium text-brand-text">
+          <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Display name
             <input className={lineInputClass} type="text" placeholder="Acme Corp" value={newName} onChange={(e) => { setNewName(e.target.value); }} />
           </label>

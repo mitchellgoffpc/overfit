@@ -35,7 +35,7 @@ function MemberAvatar({ member }: { readonly member: OrganizationMemberWithRole 
 function ProjectCard({ project, handle }: { readonly project: Project; readonly handle: string }): ReactElement {
   return (
     <Link
-      className={"grid gap-2 rounded-[16px] border border-brand-border bg-brand-surfaceMuted p-4"
+      className={"grid gap-2 rounded-2xl border border-brand-border bg-brand-surfaceMuted p-4"
         + " text-inherit no-underline transition hover:border-brand-accent/40 hover:bg-[#eaf2f2]"}
       href={`/${handle}/${project.name}`}
     >
@@ -98,7 +98,7 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
           </div>
         </header>
 
-        <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-8">
+        <div className="lg:grid lg:grid-cols-[1fr_16.25rem] lg:gap-8">
           <main>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl">Projects</h2>
@@ -114,14 +114,17 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
               onChange={(e) => { setSearch(e.target.value); }}
             />
 
-            {projectError ? <div className="py-3 text-[13px] text-brand-textMuted">{projectError}</div> : null}
+            {projectError ? <div className="py-3 text-[0.8125rem] text-brand-textMuted">{projectError}</div> : null}
             {!projectError && isProjectsLoading
-              ? <div className="py-3 text-[13px] text-brand-textMuted">Loading projects...</div>
+              ? <div className="py-3 text-[0.8125rem] text-brand-textMuted">Loading projects...</div>
               : null}
 
             {!projectError && !isProjectsLoading ? (
               filteredProjects.length === 0 ? (
-                <div className="rounded-[14px] border border-dashed border-brand-border bg-brand-surfaceMuted px-4 py-6 text-[13px] text-brand-textMuted">
+                <div
+                  className={"rounded-[0.875rem] border border-dashed border-brand-border bg-brand-surfaceMuted"
+                    + " px-4 py-6 text-[0.8125rem] text-brand-textMuted"}
+                >
                   {search ? "No projects match your search." : "No projects yet."}
                 </div>
               ) : (
@@ -135,7 +138,7 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
           </main>
 
           <aside className="mt-8 lg:mt-0">
-            <div className="rounded-[16px] border border-brand-border bg-brand-surface p-4">
+            <div className="rounded-2xl border border-brand-border bg-brand-surface p-4">
               <h3 className="mb-3 text-sm font-semibold">People</h3>
               {members.length === 0 ? (
                 <p className="text-xs text-brand-textMuted">No members.</p>

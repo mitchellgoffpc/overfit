@@ -15,9 +15,9 @@ export default function ProjectSettingsRoute(): ReactElement {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6 py-6">
-      {!project && !isProjectsLoading ? <div className="mb-4 py-3 text-[13px] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
+      {!project && !isProjectsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
       {project ? (
-        <section className="rounded-[18px] border border-brand-border bg-brand-surface p-5 text-[14px] text-brand-textMuted shadow-soft">
+        <section className="rounded-[1.125rem] border border-brand-border bg-brand-surface p-5 text-[0.875rem] text-brand-textMuted shadow-soft">
           Project settings coming soon.
         </section>
       ) : null}

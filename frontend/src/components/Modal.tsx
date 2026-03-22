@@ -19,7 +19,7 @@ export default function Modal({ open, onClose, children }: ModalProps): ReactEle
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-[18px] border border-brand-border bg-brand-surface p-6 shadow-lg" onClick={(e) => { e.stopPropagation(); }}>
+      <div className="w-full max-w-sm rounded-[1.125rem] border border-brand-border bg-brand-surface p-6 shadow-lg" onClick={(e) => { e.stopPropagation(); }}>
         {children}
       </div>
     </div>

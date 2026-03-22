@@ -23,7 +23,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
-          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.16) 1px, transparent 1px)", backgroundSize: "100% 30px" }}
+          style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.16) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
         />
         <div className="relative px-1 py-1.5 text-xs text-brand-textMuted">Log in to view profile.</div>
       </aside>
@@ -40,11 +40,11 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
-        style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.16) 1px, transparent 1px)", backgroundSize: "100% 30px" }}
+        style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.16) 1px, transparent 1px)", backgroundSize: "100% 1.875rem" }}
       />
 
       <div className="relative grid gap-4">
-        <div className="rounded-[14px] border border-[#d4dede] bg-white/85 p-3">
+        <div className="rounded-[0.875rem] border border-[#d4dede] bg-white/85 p-3">
           <div className="grid place-items-center">
             <div className={avatarClass}>
               {initials}
@@ -64,7 +64,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
               <p className="text-lg font-semibold">{name}</p>
               <p className="text-xs text-brand-textMuted">@{user.handle}</p>
             </div>
-            <p className="text-[13px] text-brand-textMuted">{bio}</p>
+            <p className="text-[0.8125rem] text-brand-textMuted">{bio}</p>
           </div>
         </div>
         {isOwnProfile ? (
@@ -77,8 +77,8 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
         ) : null}
       </div>
 
-      <div className="relative grid gap-3 rounded-[16px] border border-[#d4dede] bg-white/85 px-4 py-4 text-sm">
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand-textMuted">Stats</p>
+      <div className="relative grid gap-3 rounded-2xl border border-[#d4dede] bg-white/85 px-4 py-4 text-sm">
+        <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Stats</p>
         <div className="flex items-center justify-between">
           <span className="text-brand-textMuted">Projects</span>
           <span className="font-semibold">{projects.length}</span>
@@ -93,9 +93,9 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
         </div>
       </div>
 
-      <div className="relative grid gap-2 rounded-[16px] border border-[#d4dede] bg-white/85 px-4 py-4 text-sm">
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-brand-textMuted">Links</p>
-        <div className="grid gap-1.5 text-[13px]">
+      <div className="relative grid gap-2 rounded-2xl border border-[#d4dede] bg-white/85 px-4 py-4 text-sm">
+        <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Links</p>
+        <div className="grid gap-1.5 text-[0.8125rem]">
           <span className="text-brand-text">{user.email}</span>
           <span className="text-brand-textMuted">underfit.dev/{user.handle}</span>
           <span className="text-brand-textMuted">San Diego, CA</span>
