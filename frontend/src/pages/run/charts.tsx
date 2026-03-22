@@ -164,20 +164,23 @@ export default function RunChartsPage(): ReactElement {
         </header>
         {collapsedSections[`media:${key}`] ? null : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((item) => (
-              <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={item.id}>
-                {item.type === "image" ? (
-                  <img src={getMediaFileUrl(handle, projectName, runName, item.id)} alt={item.key} className="w-full rounded-lg" />
-                ) : item.type === "video" ? (
-                  <video src={getMediaFileUrl(handle, projectName, runName, item.id)} controls className="w-full rounded-lg" />
-                ) : (
-                  <audio src={getMediaFileUrl(handle, projectName, runName, item.id)} controls className="w-full" />
-                )}
-                {item.metadata && "caption" in item.metadata ? (
-                  <p className="mt-1.5 text-center text-[0.75rem] text-brand-textMuted">{String(item.metadata["caption"])}</p>
-                ) : null}
-              </div>
-            ))}
+            {visible.flatMap((item) => Array.from({ length: item.count }, (_, i) => {
+              const url = getMediaFileUrl(handle, projectName, runName, item.id, i);
+              return (
+                <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={`${item.id}-${String(i)}`}>
+                  {item.type === "image" ? (
+                    <img src={url} alt={item.key} className="w-full rounded-lg" />
+                  ) : item.type === "video" ? (
+                    <video src={url} controls className="w-full rounded-lg" />
+                  ) : (
+                    <audio src={url} controls className="w-full" />
+                  )}
+                  {item.metadata && "caption" in item.metadata ? (
+                    <p className="mt-1.5 text-center text-[0.75rem] text-brand-textMuted">{String(item.metadata["caption"])}</p>
+                  ) : null}
+                </div>
+              );
+            }))}
           </div>
         )}
       </section>

@@ -8,8 +8,8 @@ type MediaFetchResponse = { ok: true; body: Media[]; status: number } | { ok: fa
 export const fetchRunMedia = async (handle: string, projectName: string, runName: string): Promise<MediaFetchResponse> =>
   await request<Media[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/media`);
 
-export const getMediaFileUrl = (handle: string, projectName: string, runName: string, id: string): string =>
-  `${apiBase}/accounts/${handle}/projects/${projectName}/runs/${runName}/media/${id}/file`;
+export const getMediaFileUrl = (handle: string, projectName: string, runName: string, id: string, index = 0): string =>
+  `${apiBase}/accounts/${handle}/projects/${projectName}/runs/${runName}/media/${id}/file?index=${String(index)}`;
 
 interface MediaState {
   media: Media[];

@@ -17,6 +17,7 @@ export const createMediaTable = async (db: Database): Promise<void> => {
     .addColumn("step", "integer")
     .addColumn("type", "text", (col) => col.notNull())
     .addColumn("storageKey", "text", (col) => col.notNull())
+    .addColumn("count", "integer", (col) => col.notNull())
     .addColumn("metadata", "text")
     .addColumn("createdAt", "text", (col) => col.notNull())
     .execute();
@@ -31,7 +32,7 @@ export const createMedia = async (db: Database, media: Omit<Media, "createdAt">)
   const row: MediaRow = { ...payload, metadata: payload.metadata ? JSON.stringify(payload.metadata) : null };
   const result = await db
     .insertInto(table)
-    .columns(["id", "runId", "key", "step", "type", "storageKey", "metadata", "createdAt"])
+    .columns(["id", "runId", "key", "step", "type", "storageKey", "count", "metadata", "createdAt"])
     .expression((eb) => eb
       .selectFrom("runs")
       .select([
@@ -41,6 +42,7 @@ export const createMedia = async (db: Database, media: Omit<Media, "createdAt">)
         eb.val(row.step).as("step"),
         eb.val(row.type).as("type"),
         eb.val(row.storageKey).as("storageKey"),
+        eb.val(row.count).as("count"),
         eb.val(row.metadata).as("metadata"),
         eb.val(row.createdAt).as("createdAt"),
       ])

@@ -117,6 +117,7 @@ export interface Media {
   step: number | null;
   type: MediaType;
   storageKey: string;
+  count: number;
   metadata: Record<string, unknown> | null;
   createdAt: Timestamp;
 }
