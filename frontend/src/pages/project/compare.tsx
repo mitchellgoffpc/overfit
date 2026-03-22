@@ -3,10 +3,13 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
+import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
+import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
+import { formatRunTime } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { fetchRunScalars } from "stores/scalars";
@@ -14,30 +17,13 @@ import { fetchRunScalars } from "stores/scalars";
 const tooltipClass = "pointer-events-none absolute z-10 max-w-[17.5rem] rounded-[0.625rem] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
 const runColors = ["#1a7b7d", "#e16367", "#5f86d5", "#a06ac9", "#d48834", "#2f9f77", "#ca5d94", "#61738a"];
-const xFormatter = (value: number) => value.toFixed(0);
-const yFormatter = (value: number) => value.toFixed(2);
 const sectionLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-interface ChartSeries {
-  readonly id: string;
+interface CompareChartSeries extends LineSeries {
   readonly runName: string;
-  readonly points: { x: number; y: number }[];
   readonly color: string;
   readonly lineWidth: number;
 }
-
-const getClosestPoint = (series: ChartSeries, targetX: number): { x: number; y: number } | null => {
-  let closest: { x: number; y: number } | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const point of series.points) {
-    const distance = Math.abs(point.x - targetX);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      closest = point;
-    }
-  }
-  return closest;
-};
 
 const getSeriesPoints = (scalars: Scalar[], metric: string): { x: number; y: number }[] =>
   scalars.flatMap((scalar, scalarIndex) => {
@@ -45,9 +31,6 @@ const getSeriesPoints = (scalars: Scalar[], metric: string): { x: number; y: num
     if (typeof value !== "number") { return []; }
     return [{ x: scalar.step ?? scalarIndex, y: value }];
   });
-const formatCreatedAt = (value: string): string =>
-  new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-
 export default function ProjectCompareRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
@@ -174,7 +157,7 @@ export default function ProjectCompareRoute(): ReactElement {
     });
   };
 
-  const renderMetricChart = (prefix: string, metric: string, series: ChartSeries[]) => {
+  const renderMetricChart = (prefix: string, metric: string, series: CompareChartSeries[]) => {
     const label = metric.includes("/") ? metric.split("/").slice(1).join("/") : metric;
     const hovered = hoveredSections[prefix] ?? null;
     const tooltipSeries = hovered ? series.flatMap((line) => {
@@ -254,7 +237,7 @@ export default function ProjectCompareRoute(): ReactElement {
           <span className="truncate text-[0.75rem] font-semibold leading-5">{run.name}</span>
         </div>
         <div className="ml-2 flex items-center gap-2 text-[0.625rem] text-brand-textMuted">
-          <span>{formatCreatedAt(run.createdAt)}</span>
+          <span>{formatRunTime(run.createdAt)}</span>
           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-[#24b26b]" : "bg-brand-border"}`} />
         </div>
       </button>

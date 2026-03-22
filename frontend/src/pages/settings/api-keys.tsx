@@ -3,14 +3,8 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
 import SettingsSidebar from "components/settings/SettingsSidebar";
+import { dangerButtonClass, inkButtonClass, lineInputClass } from "pages/settings/styles";
 import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
-
-const inkButtonClass = "rounded-[0.625rem] border border-[#1f3637] bg-[#1f3637] px-4 py-2 text-sm font-semibold text-white"
-  + " transition hover:bg-[#152a2b] disabled:cursor-wait disabled:opacity-70";
-const lineInputClass = "w-full rounded-[0.625rem] border border-[#d2dddd] bg-white/70 px-3 py-2.5 text-sm"
-  + " outline-none transition focus:border-brand-accent";
-const deleteButtonClass = "rounded-[0.625rem] border border-[#fca5a5] bg-[#fef2f2] px-3 py-2 text-xs font-semibold"
-  + " text-[#b42318] hover:border-[#f87171] hover:bg-[#fee2e2] disabled:cursor-wait disabled:opacity-70";
 
 export default function SettingsKeysContent(): ReactElement {
   const status = useAuthStore((state) => state.status);
@@ -139,7 +133,7 @@ export default function SettingsKeysContent(): ReactElement {
                 </p>
               </div>
               <button
-                className={deleteButtonClass}
+                className={dangerButtonClass}
                 type="button"
                 onClick={() => {
                   void handleDeleteKey(key.id);

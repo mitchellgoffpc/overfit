@@ -32,6 +32,8 @@ type SendMethod = "POST" | "PATCH" | "PUT";
 export const send = async <T>(path: string, method: SendMethod, payload: Record<string, unknown>): Promise<APIResponse<T>> =>
   await request(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
 
+export const getInitials = (name: string): string => name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+
 export const formatDate = (timestamp: string, options?: Intl.DateTimeFormatOptions): string => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) { return "Unknown"; }

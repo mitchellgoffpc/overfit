@@ -3,15 +3,10 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useState } from "react";
 
 import SettingsSidebar from "components/settings/SettingsSidebar";
-import { apiBase } from "helpers";
+import { apiBase, getInitials } from "helpers";
+import { inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 
-const inkButtonClass = "rounded-[0.625rem] border border-[#1f3637] bg-[#1f3637] px-4 py-2 text-sm font-semibold text-white"
-  + " transition hover:bg-[#152a2b] disabled:cursor-wait disabled:opacity-70";
-const paperButtonClass = "rounded-[0.625rem] border border-[#cfd8d8] bg-white px-3 py-2 text-xs font-semibold"
-  + " text-brand-text transition hover:bg-[#f5f9f9] disabled:cursor-wait disabled:opacity-70";
-const lineInputClass = "w-full rounded-[0.625rem] border border-[#d2dddd] bg-white/70 px-3 py-2.5 text-sm"
-  + " outline-none transition focus:border-brand-accent";
 const notesTextareaClass = "min-h-24 w-full rounded-[0.625rem] border border-[#d2dddd] bg-white/70 px-3 py-2.5"
   + " text-sm outline-none transition focus:border-brand-accent";
 const avatarFrameClass = "relative grid h-40 w-40 place-items-center overflow-hidden rounded-full border border-[#bfd0d0]"
@@ -33,7 +28,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [avatarVersion, setAvatarVersion] = useState(() => Date.now());
   const [isAvatarMissing, setIsAvatarMissing] = useState(false);
-  const initials = useMemo(() => user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(), [user.name]);
+  const initials = useMemo(() => getInitials(user.name), [user.name]);
   const avatarSrc = useMemo(() => `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`, [avatarVersion, user.handle]);
 
   const handleSaveProfile = async () => {

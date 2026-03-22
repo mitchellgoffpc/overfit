@@ -2,6 +2,8 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
+import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
+import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
 import SectionHeader from "components/run/SectionHeader";
@@ -10,29 +12,6 @@ import { useScalarStore } from "stores/scalars";
 
 const tooltipClass = "pointer-events-none absolute z-10 max-w-60 rounded-[0.625rem] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
-
-interface ChartSeries {
-  readonly id: string;
-  readonly points: { x: number; y: number }[];
-  readonly color: string;
-  readonly lineWidth: number;
-}
-
-const xFormatter = (value: number) => value.toFixed(0);
-const yFormatter = (value: number) => value.toFixed(2);
-
-const getClosestPoint = (series: ChartSeries, targetX: number): { x: number; y: number } | null => {
-  let closest: { x: number; y: number } | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const point of series.points) {
-    const distance = Math.abs(point.x - targetX);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      closest = point;
-    }
-  }
-  return closest;
-};
 
 export default function RunChartsPage(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
@@ -91,7 +70,7 @@ export default function RunChartsPage(): ReactElement {
     });
   };
 
-  const renderSeries = (prefix: string, series: ChartSeries) => {
+  const renderSeries = (prefix: string, series: LineSeries) => {
     const label = series.id.includes("/") ? series.id.split("/").slice(1).join("/") : series.id;
     const hovered = hoveredSections[prefix] ?? null;
     const closest = hovered ? getClosestPoint(series, hovered.step) : null;

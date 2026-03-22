@@ -5,13 +5,11 @@ import { Link, Route, Switch, useLocation, useParams } from "wouter";
 
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
+import { formatRunTime } from "helpers";
 import RunArtifactsPage from "pages/run/artifacts";
 import RunChartsPage from "pages/run/charts";
 import RunLogsPage from "pages/run/logs";
 import { buildRunKey, useRunStore } from "stores/runs";
-
-const formatTimestamp = (value: string): string =>
-  new Date(value).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export default function RunDetailRoute(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
@@ -68,11 +66,11 @@ export default function RunDetailRoute(): ReactElement {
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[0.75rem]">
                   <span className="text-brand-textMuted">created</span>
-                  <span className="font-semibold">{formatTimestamp(run.createdAt)}</span>
+                  <span className="font-semibold">{formatRunTime(run.createdAt)}</span>
                 </div>
                 <div className="mt-1 flex items-center justify-between text-[0.75rem]">
                   <span className="text-brand-textMuted">updated</span>
-                  <span className="font-semibold">{formatTimestamp(run.updatedAt)}</span>
+                  <span className="font-semibold">{formatRunTime(run.updatedAt)}</span>
                 </div>
               </>
             ) : (

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { apiBase } from "helpers";
+import { apiBase, getInitials } from "helpers";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 
@@ -44,7 +44,7 @@ export default function Navbar({
   const logout = useAuthStore((state) => state.logout);
   const profileHref = user ? `/${user.handle}` : "/";
   const name = user?.name ?? "";
-  const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const initials = getInitials(name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const avatarSrc = user ? `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar` : "";

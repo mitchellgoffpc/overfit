@@ -2,7 +2,7 @@ import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { Link } from "wouter";
 
-import { apiBase, formatDate } from "helpers";
+import { apiBase, formatDate, getInitials } from "helpers";
 
 interface ProfileSidebarProps {
   readonly user: User | null;
@@ -31,7 +31,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   }
 
   const name = user.name;
-  const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  const initials = getInitials(name);
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
   const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar`;
 
