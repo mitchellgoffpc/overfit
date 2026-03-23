@@ -7,11 +7,12 @@ import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
 import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
+import CollapsibleSection from "components/CollapsibleSection";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
-import { formatRunTime, RULED_LINE } from "helpers";
+import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { colors, runPalette } from "lib/colors";
 import { fetchRunMedia, getMediaFileUrl } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
@@ -20,8 +21,6 @@ import { fetchRunScalars } from "stores/scalars";
 
 const tooltipClass = "pointer-events-none absolute z-10 max-w-[17.5rem] rounded-[0.625rem] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
-const sectionLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
 interface CompareChartSeries extends LineSeries {
   readonly runName: string;
   readonly color: string;
@@ -193,7 +192,6 @@ export default function ProjectCompareRoute(): ReactElement {
   };
 
   const renderMetricChart = (prefix: string, metric: string, series: CompareChartSeries[]) => {
-    const label = metric.includes("/") ? metric.split("/").slice(1).join("/") : metric;
     const hovered = hoveredSections[prefix] ?? null;
     const tooltipSeries = hovered ? series.flatMap((line) => {
       const point = getClosestPoint(line, hovered.step);
@@ -206,12 +204,12 @@ export default function ProjectCompareRoute(): ReactElement {
 
     return (
       <div
-        className={"relative rounded-[0.875rem] border border-brand-borderMuted bg-white/95 px-3 pb-2 pt-3"
-          + " shadow-[0_0.5rem_1.25rem_rgba(23,43,43,0.06)]"}
+        className="relative flex flex-col rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft"
+        style={{ height: `${String(9 * RULED_LINE_HEIGHT)}rem` }}
         key={metric}
       >
-        <div className="mb-1.5 flex flex-col items-center gap-0">
-          <h2 className="text-[0.8125rem] font-semibold text-brand-text">{label}</h2>
+        <div className="mb-1 flex flex-col items-center gap-0">
+          <h2 className="text-[0.8125rem] font-semibold text-brand-text">{metric}</h2>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[0.6875rem] text-brand-textMuted">
             {series.map((line) => (
               <div className="flex items-center gap-1.5" key={line.id}>
@@ -222,7 +220,7 @@ export default function ProjectCompareRoute(): ReactElement {
           </div>
         </div>
         {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
-        <div className="relative">
+        <div className="relative min-h-0 flex-1">
           {hovered && tooltipSeries.length > 0 ? (
             <div className={tooltipClass} style={tooltipStyle}>
               <div className="mb-1 text-[0.6875rem] text-brand-textMuted">step {xFormatter(hovered.step)}</div>
@@ -240,9 +238,9 @@ export default function ProjectCompareRoute(): ReactElement {
             </div>
           ) : null}
           <LineChart
-            className="h-[14.375rem] w-full"
+            className="h-full w-full"
             series={series.filter((line) => line.points.length > 0)}
-            height={230}
+            height={220}
             xLabelFormatter={xFormatter}
             yLabelFormatter={yFormatter}
             hoverStep={hovered?.step ?? null}
@@ -364,43 +362,48 @@ export default function ProjectCompareRoute(): ReactElement {
     <NotebookShell columns="18.25rem 1fr" maxWidth="calc(100% - 5rem)">
 
         {!showProjectNotFound ? (
-          <aside className="relative border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-[4.125rem] lg:pr-5">
-            <div className="lg:h-[15.375rem]">
+          <aside
+            className="relative border-b border-brand-borderMuted px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
+            style={{ paddingTop: `calc(${String(RULED_LINE_HEIGHT)}rem + 1px)` }}
+          >
+            <div>
               <ProjectHeader handle={handle} projectName={projectName} />
 
-              <div className="mt-3 rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
-                <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
-                <div className="mt-2 flex items-center justify-between text-[0.75rem]">
-                  <span className="text-brand-textMuted">total</span>
-                  <span className="font-semibold">{projectRuns.length}</span>
+              <div className="pt-4" style={{ height: `${RULED_LINE_HEIGHT * 6}rem` }}>
+                <div className="rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
+                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
+                  <div className="mt-2 flex items-center justify-between text-[0.75rem]">
+                    <span className="text-brand-textMuted">total</span>
+                    <span className="font-semibold">{projectRuns.length}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[0.75rem]">
+                    <span className="text-brand-textMuted">running</span>
+                    <span className="font-semibold text-signal-accent">{runningCount}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[0.75rem]">
+                    <span className="text-brand-textMuted">failed</span>
+                    <span className="font-semibold text-signal-failed">{failedCount}</span>
+                  </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[0.75rem]">
-                  <span className="text-brand-textMuted">running</span>
-                  <span className="font-semibold text-signal-accent">{runningCount}</span>
-                </div>
-                <div className="mt-1 flex items-center justify-between text-[0.75rem]">
-                  <span className="text-brand-textMuted">failed</span>
-                  <span className="font-semibold text-signal-failed">{failedCount}</span>
-                </div>
-              </div>
 
-              <div className="mt-3 flex gap-2">
-                <button
-                  className={"flex-1 rounded-lg border border-brand-borderStrong bg-hover px-2 py-1.5"
-                    + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
-                  onClick={() => { setHiddenRunNames({}); }}
-                  type="button"
-                >
-                  Show all
-                </button>
-                <button
-                  className={"flex-1 rounded-lg border border-brand-borderMuted bg-white/80 px-2 py-1.5"
-                    + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
-                  onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
-                  type="button"
-                >
-                  Hide all
-                </button>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    className={"flex-1 rounded-lg border border-brand-borderStrong bg-hover px-2 py-1.5"
+                      + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
+                    onClick={() => { setHiddenRunNames({}); }}
+                    type="button"
+                  >
+                    Show all
+                  </button>
+                  <button
+                    className={"flex-1 rounded-lg border border-brand-borderMuted bg-white/80 px-2 py-1.5"
+                      + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
+                    onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
+                    type="button"
+                  >
+                    Hide all
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -411,7 +414,7 @@ export default function ProjectCompareRoute(): ReactElement {
           </aside>
         ) : null}
 
-        <main className="relative px-6 pb-6">
+        <main className="relative px-[1.5rem] pb-[1.5rem]">
           <SectionHeader
             title="Comparison Plots"
             subtitle={`plotting ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`}
@@ -425,44 +428,31 @@ export default function ProjectCompareRoute(): ReactElement {
             <section>
               {isRunsLoading || isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Loading charts...</div> : null}
               {visibleRuns.length === 0 ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Select at least one run to view charts.</div> : null}
-              {sections.map(({ prefix, charts }, sectionIndex) => (
-                <section className="mb-7 last:mb-0" key={prefix}>
-                  <header className="mb-3 flex items-center justify-between gap-2">
-                    <button
-                      className="flex items-center gap-2 text-left text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
-                      type="button"
-                      onClick={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
-                    >
-                      <span className={`transition-transform ${collapsedSections[prefix] ? "-rotate-90" : "rotate-0"}`}>
-                        <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-                          <path d="M4 6.25 8 10l4-3.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" />
-                        </svg>
-                      </span>
-                      <span>Section {sectionLabels[sectionIndex] ?? "Z"} · {prefix}</span>
-                      <span className="rounded-full border border-brand-borderMuted bg-white px-2 py-0.5 text-[0.6875rem] font-semibold text-brand-textMuted">
-                        {charts.length}
-                      </span>
-                    </button>
-                  </header>
-                  {collapsedSections[prefix] ? null : (
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                      {charts.map((item) => renderMetricChart(prefix, item.id, item.series))}
-                    </div>
-                  )}
-                </section>
+              {sections.map(({ prefix, charts }) => (
+                <CollapsibleSection
+                  key={prefix}
+                  label={prefix}
+                  count={charts.length}
+                  collapsed={collapsedSections[prefix] ?? false}
+                  onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
+                >
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
+                    {charts.map((item) => renderMetricChart(prefix, item.id, item.series))}
+                  </div>
+                </CollapsibleSection>
               ))}
               {!isScalarsLoading && sections.length === 0 ? <div className="text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
               {mediaKeys.length > 0 ? (
-                <section className="mt-7">
-                  <SectionHeader
-                    title="Media Comparison"
-                    subtitle={`comparing ${String(mediaKeys.length)} ${mediaKeys.length === 1 ? "key" : "keys"} across ${String(visibleRuns.length)} runs`}
-                    sectionLabel={`Section ${sectionLabels[sections.length] ?? "Z"}`}
-                  />
+                <CollapsibleSection
+                  label="media"
+                  count={mediaKeys.length}
+                  collapsed={collapsedSections["media"] ?? false}
+                  onToggle={() => { setCollapsedSections((prev) => ({ ...prev, media: !(prev["media"] ?? false) })); }}
+                >
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {mediaKeys.map(({ key, steps, maxCount }) => renderMediaComparison(key, steps, maxCount))}
                   </div>
-                </section>
+                </CollapsibleSection>
               ) : null}
             </section>
           ) : null}

@@ -7,9 +7,10 @@ import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
 import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
+import CollapsibleSection from "components/CollapsibleSection";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
-import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { RULED_LINE_HEIGHT } from "helpers";
 import { colors } from "lib/colors";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
@@ -184,39 +185,26 @@ export default function RunChartsPage(): ReactElement {
     }
 
     return (
-      <section className="mb-6 last:mb-0" key={key}>
-        <header className="flex items-center justify-between gap-2" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
-          <button
-            className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
-            type="button"
-            onClick={() => { setCollapsedSections((prev) => ({ ...prev, [`media:${key}`]: !(prev[`media:${key}`] ?? false) })); }}
-          >
-            <span className={`transition-transform ${collapsedSections[`media:${key}`] ? "-rotate-90" : "rotate-0"}`}>
-              <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-                <path d="M4 6.25 8 10l4-3.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" />
-              </svg>
-            </span>
-            <span>{key}</span>
-            <span className="inline-flex h-6 items-center rounded-md bg-brand-border/60 px-1.5 text-[0.6875rem] font-semibold text-brand-textMuted">
-              {items.length}
-            </span>
-          </button>
-          {steps.length > 1 && !collapsedSections[`media:${key}`] ? (
-            <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
-          ) : null}
-        </header>
-        {collapsedSections[`media:${key}`] ? null : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visible.flatMap((item) => Array.from({ length: item.count }, (_, i) => {
-              return (
-                <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={`${item.id}-${String(i)}`}>
-                  {renderMediaFile(item, i)}
-                </div>
-              );
-            }))}
-          </div>
-        )}
-      </section>
+      <CollapsibleSection
+        key={key}
+        label={key}
+        count={items.length}
+        collapsed={collapsedSections[`media:${key}`] ?? false}
+        onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [`media:${key}`]: !(prev[`media:${key}`] ?? false) })); }}
+        trailing={steps.length > 1
+          ? <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
+          : undefined}
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {visible.flatMap((item) => Array.from({ length: item.count }, (_, i) => {
+            return (
+              <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={`${item.id}-${String(i)}`}>
+                {renderMediaFile(item, i)}
+              </div>
+            );
+          }))}
+        </div>
+      </CollapsibleSection>
     );
   };
 
@@ -227,34 +215,17 @@ export default function RunChartsPage(): ReactElement {
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
       {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
       {sections.map(({ prefix, series }) => (
-        <section className="last:mb-0" key={prefix}>
-          <header
-            className="flex items-center justify-between gap-2"
-            style={collapsedSections[prefix] ? undefined : { marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}
-          >
-            <button
-              className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-brand-textMuted"
-              type="button"
-              style={{ lineHeight: RULED_LINE }}
-              onClick={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
-            >
-              <span className={`transition-transform ${collapsedSections[prefix] ? "-rotate-90" : "rotate-0"}`}>
-                <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 16 16">
-                  <path d="M4 6.25 8 10l4-3.75" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" />
-                </svg>
-              </span>
-              <span>{prefix}</span>
-              <span className="h-5 w-5 leading-5 text-center rounded bg-log-badge text-[0.6875rem] font-semibold text-brand-textMuted">
-                {series.length}
-              </span>
-            </button>
-          </header>
-          {collapsedSections[prefix] ? null : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
-              {series.map((item) => renderSeries(prefix, item))}
-            </div>
-          )}
-        </section>
+        <CollapsibleSection
+          key={prefix}
+          label={prefix}
+          count={series.length}
+          collapsed={collapsedSections[prefix] ?? false}
+          onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
+        >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
+            {series.map((item) => renderSeries(prefix, item))}
+          </div>
+        </CollapsibleSection>
       ))}
       {mediaByKey.length > 0 ? (
         <>
