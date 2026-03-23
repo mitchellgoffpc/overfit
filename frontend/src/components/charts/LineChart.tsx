@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { LineChartGeometry, LineChartHoverOverlay, LineChartOptions, LinePoint, LineSeries } from "charts/lineChart";
 import { drawLineChart, getLineChartGeometry } from "charts/lineChart";
-import { colors } from "lib/colors";
+import { colors } from "colors";
 
 interface LineChartProps {
   readonly series: LineSeries[];

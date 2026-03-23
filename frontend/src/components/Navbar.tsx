@@ -5,7 +5,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
 import Avatar from "components/Avatar";
-import { colors } from "lib/colors";
+import { colors } from "colors";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 

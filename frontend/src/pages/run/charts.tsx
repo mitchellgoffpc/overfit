@@ -9,7 +9,7 @@ import CollapsibleSection from "components/CollapsibleSection";
 import MediaPreview from "components/MediaPreview";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
-import { colors } from "lib/colors";
+import { colors } from "colors";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";

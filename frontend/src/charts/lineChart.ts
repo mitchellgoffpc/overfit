@@ -1,4 +1,4 @@
-import { colors } from "lib/colors";
+import { colors } from "colors";
 
 const X_TICK_TARGET = 6;
 const Y_TICK_TARGET = 5;

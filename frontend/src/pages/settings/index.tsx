@@ -5,7 +5,7 @@ import { Redirect, Route, Switch, useLocation } from "wouter";
 
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
-import { colors } from "lib/colors";
+import { colors } from "colors";
 import SettingsKeysContent from "pages/settings/api-keys";
 import SettingsOrganizationsContent from "pages/settings/organizations";
 import SettingsProfileContent from "pages/settings/profile";
