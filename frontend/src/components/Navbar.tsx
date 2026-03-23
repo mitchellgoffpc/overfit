@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { apiBase, getInitials } from "helpers";
+import Avatar from "components/Avatar";
 import { colors } from "lib/colors";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
@@ -45,10 +45,8 @@ export default function Navbar({
   const logout = useAuthStore((state) => state.logout);
   const profileHref = user ? `/${user.handle}` : "/";
   const name = user?.name ?? "";
-  const initials = getInitials(name);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const avatarSrc = user ? `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar` : "";
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -175,19 +173,7 @@ export default function Navbar({
                   <p className="text-[0.8125rem] font-semibold leading-tight">{name}</p>
                   <p className="mt-1 text-[0.6875rem] leading-tight text-brand-textMuted">{user.email}</p>
                 </div>
-                <div
-                  className={"relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-brand-accentMuted"
-                    + " text-sm font-semibold text-brand-accentStrong"}
-                >
-                  {initials}
-                  <img
-                    key={user.handle}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    src={avatarSrc}
-                    alt={`${name} avatar`}
-                    onError={(event) => { event.currentTarget.style.display = "none"; }}
-                  />
-                </div>
+                <Avatar handle={user.handle} name={name} className="h-9 w-9 text-sm" />
               </button>
               {isMenuOpen ? (
                 <div

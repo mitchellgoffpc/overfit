@@ -4,19 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
-import type { LineChartHover } from "components/charts/LineChart";
-import MetricChartCard from "components/charts/MetricChartCard";
-import CollapsibleSection from "components/CollapsibleSection";
+import ChartSections from "components/charts/ChartSections";
+import MediaPreview from "components/MediaPreview";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
 import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { colors, runPalette } from "lib/colors";
-import { fetchRunMedia, getMediaFileUrl } from "stores/media";
+import { fetchMultiRunMedia, getMediaFileUrl } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
-import { fetchRunScalars } from "stores/scalars";
+import { fetchMultiRunScalars } from "stores/scalars";
 
 export default function ProjectCompareRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
@@ -31,8 +30,6 @@ export default function ProjectCompareRoute(): ReactElement {
   const [isScalarsLoading, setIsScalarsLoading] = useState(false);
   const [scalarError, setScalarError] = useState<string | null>(null);
   const [mediaByRun, setMediaByRun] = useState<Record<string, Media[]>>({});
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-  const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
   const [hiddenRunNames, setHiddenRunNames] = useState<Record<string, boolean>>({});
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
   const [mediaIndexes, setMediaIndexes] = useState<Record<string, number>>({});
@@ -53,53 +50,29 @@ export default function ProjectCompareRoute(): ReactElement {
 
   useEffect(() => {
     let cancelled = false;
-
+    const runNames = projectRuns.map((r) => r.name);
     const load = async () => {
-      if (projectRuns.length === 0) {
-        if (!cancelled) {
-          setScalarsByRun({});
-          setIsScalarsLoading(false);
-          setScalarError(null);
-        }
-        return;
-      }
-
-      if (!cancelled) {
-        setIsScalarsLoading(true);
-        setScalarError(null);
-      }
-      const responses = await Promise.all(projectRuns.map(async (run) => ({ run, response: await fetchRunScalars(handle, projectName, run.name) })));
+      if (runNames.length === 0) { setScalarsByRun({}); setIsScalarsLoading(false); setScalarError(null); return; }
+      setIsScalarsLoading(true);
+      setScalarError(null);
+      const result = await fetchMultiRunScalars(handle, projectName, runNames);
       if (cancelled) { return; }
-      const nextScalarsByRun: Record<string, Scalar[]> = {};
-      const failedRuns: string[] = [];
-      for (const { run, response } of responses) {
-        if (response.ok) {
-          nextScalarsByRun[run.name] = response.body;
-        } else {
-          nextScalarsByRun[run.name] = [];
-          failedRuns.push(run.name);
-        }
-      }
-      setScalarsByRun(nextScalarsByRun);
+      setScalarsByRun(result.scalarsByRun);
+      setScalarError(result.error);
       setIsScalarsLoading(false);
-      setScalarError(failedRuns.length === 0 ? null : `Unable to load scalars for ${failedRuns.join(", ")}.`);
     };
-
     void load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [handle, projectName, projectRuns]);
 
   useEffect(() => {
     let cancelled = false;
+    const runNames = projectRuns.map((r) => r.name);
     const load = async () => {
-      if (projectRuns.length === 0) { if (!cancelled) { setMediaByRun({}); } return; }
-      const responses = await Promise.all(projectRuns.map(async (run) => ({ run, response: await fetchRunMedia(handle, projectName, run.name) })));
+      if (runNames.length === 0) { setMediaByRun({}); return; }
+      const result = await fetchMultiRunMedia(handle, projectName, runNames);
       if (cancelled) { return; }
-      const next: Record<string, Media[]> = {};
-      for (const { run, response } of responses) { next[run.name] = response.ok ? response.body : []; }
-      setMediaByRun(next);
+      setMediaByRun(result);
     };
     void load();
     return () => { cancelled = true; };
@@ -153,15 +126,6 @@ export default function ProjectCompareRoute(): ReactElement {
 
   const hasPoints = useMemo(() => chartSeries.some((item) => item.series.some((s) => s.points.length > 0)), [chartSeries]);
 
-  const onChartHover = (prefix: string, hover: LineChartHover | null) => {
-    setHoveredSections((prev) => {
-      const current = prev[prefix] ?? null;
-      if (!hover && !current) { return prev; }
-      if (hover?.step === current?.step) { return prev; }
-      return { ...prev, [prefix]: hover };
-    });
-  };
-
   const renderMediaComparison = (key: string, steps: number[], maxCount: number) => {
     const selectedStep = mediaSteps[key] ?? steps[steps.length - 1] ?? 0;
     const selectedIndex = mediaIndexes[key] ?? 0;
@@ -178,13 +142,7 @@ export default function ProjectCompareRoute(): ReactElement {
               <div className="flex flex-col items-center gap-1.5" key={run.name}>
                 <span className="text-[0.75rem] font-semibold" style={{ color }}>{run.name}</span>
                 {item ? (
-                  item.type === "image" ? (
-                    <img src={getMediaFileUrl(handle, projectName, run.name, item.id, selectedIndex)} alt={key} className="w-full rounded-lg" />
-                  ) : item.type === "video" ? (
-                    <video src={getMediaFileUrl(handle, projectName, run.name, item.id, selectedIndex)} controls className="w-full rounded-lg" />
-                  ) : (
-                    <audio src={getMediaFileUrl(handle, projectName, run.name, item.id, selectedIndex)} controls className="w-full" />
-                  )
+                  <MediaPreview type={item.type} src={getMediaFileUrl(handle, projectName, run.name, item.id, selectedIndex)} alt={key} />
                 ) : (
                   <div className={"flex h-24 w-full items-center justify-center rounded-lg border border-dashed"
                     + " border-brand-border text-[0.75rem] text-brand-textMuted"}>
@@ -338,29 +296,7 @@ export default function ProjectCompareRoute(): ReactElement {
             <section>
               {isRunsLoading || isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Loading charts...</div> : null}
               {visibleRuns.length === 0 ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Select at least one run to view charts.</div> : null}
-              {sections.map(({ prefix, charts }) => (
-                <CollapsibleSection
-                  key={prefix}
-                  label={prefix}
-                  count={charts.length}
-                  collapsed={collapsedSections[prefix] ?? false}
-                  onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
-                >
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
-                    {charts.map((item) => (
-                      <MetricChartCard
-                        key={item.id}
-                        metric={item.id}
-                        series={item.series}
-                        hovered={hoveredSections[prefix] ?? null}
-                        onHover={(hover) => { onChartHover(prefix, hover); }}
-                        hasPoints={hasPoints}
-                        isLoading={isScalarsLoading}
-                      />
-                    ))}
-                  </div>
-                </CollapsibleSection>
-              ))}
+              <ChartSections sections={sections} hasPoints={hasPoints} isLoading={isScalarsLoading} />
               {!isScalarsLoading && sections.length === 0 ? <div className="text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
             </section>
           ) : null}

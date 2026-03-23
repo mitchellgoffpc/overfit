@@ -3,8 +3,9 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 
+import Avatar from "components/Avatar";
 import Navbar from "components/Navbar";
-import { apiBase, formatDate } from "helpers";
+import { formatDate } from "helpers";
 import type { OrganizationMemberWithRole } from "stores/organizations";
 import { fetchOrganizationMembers } from "stores/organizations";
 import { useProjectStore } from "stores/projects";
@@ -14,20 +15,9 @@ interface OrganizationPageProps {
 }
 
 function MemberAvatar({ member }: { readonly member: OrganizationMemberWithRole }): ReactElement {
-  const initials = member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(member.handle)}/avatar`;
-
   return (
     <Link href={`/${member.handle}`} title={member.name} className="no-underline">
-      <div className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-brand-accentMuted text-xs font-semibold text-brand-accentStrong">
-        {initials}
-        <img
-          className="absolute inset-0 h-full w-full object-cover"
-          src={avatarSrc}
-          alt={member.name}
-          onError={(event) => { event.currentTarget.style.display = "none"; }}
-        />
-      </div>
+      <Avatar handle={member.handle} name={member.name} className="h-9 w-9 text-xs" />
     </Link>
   );
 }

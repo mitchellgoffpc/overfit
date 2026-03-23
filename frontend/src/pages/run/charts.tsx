@@ -4,12 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
-import type { LineChartHover } from "components/charts/LineChart";
-import MetricChartCard from "components/charts/MetricChartCard";
+import ChartSections from "components/charts/ChartSections";
 import CollapsibleSection from "components/CollapsibleSection";
+import MediaPreview from "components/MediaPreview";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
-import { RULED_LINE_HEIGHT } from "helpers";
 import { colors } from "lib/colors";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
@@ -35,7 +34,6 @@ export default function RunChartsPage(): ReactElement {
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
-  const [hoveredSections, setHoveredSections] = useState<Record<string, LineChartHover | null>>({});
 
   const chartSeries = useMemo(() => {
     const keys = new Set<string>(scalars.flatMap((scalar) => Object.keys(scalar.values)));
@@ -48,15 +46,6 @@ export default function RunChartsPage(): ReactElement {
 
   const hasPoints = chartSeries.some((item) => item.series.some((s) => s.points.length > 0));
   const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);
-
-  const onChartHover = (prefix: string, hover: LineChartHover | null) => {
-    setHoveredSections((prev) => {
-      const current = prev[prefix] ?? null;
-      if (!hover && !current) { return prev; }
-      if (hover?.step === current?.step) { return prev; }
-      return { ...prev, [prefix]: hover };
-    });
-  };
 
   const mediaByKey = useMemo(() => {
     const buckets = new Map<string, Media[]>();
@@ -73,18 +62,10 @@ export default function RunChartsPage(): ReactElement {
 
   const renderMediaFile = (item: Media, index: number) => {
     const url = getMediaFileUrl(handle, projectName, runName, item.id, index);
+    const caption = item.metadata && "caption" in item.metadata ? String(item.metadata["caption"]) : undefined;
     return (
       <div key={`${item.id}-${String(index)}`}>
-        {item.type === "image" ? (
-          <img src={url} alt={item.key} className="w-full rounded-lg" />
-        ) : item.type === "video" ? (
-          <video src={url} controls className="w-full rounded-lg" />
-        ) : (
-          <audio src={url} controls className="w-full" />
-        )}
-        {item.metadata && "caption" in item.metadata ? (
-          <p className="mt-1.5 text-center text-[0.75rem] text-brand-textMuted">{String(item.metadata["caption"])}</p>
-        ) : null}
+        <MediaPreview type={item.type} src={url} alt={item.key} caption={caption} />
       </div>
     );
   };
@@ -142,29 +123,7 @@ export default function RunChartsPage(): ReactElement {
       {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
       {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
-      {sections.map(({ prefix, charts }) => (
-        <CollapsibleSection
-          key={prefix}
-          label={prefix}
-          count={charts.length}
-          collapsed={collapsedSections[prefix] ?? false}
-          onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
-        >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
-            {charts.map((item) => (
-              <MetricChartCard
-                key={item.id}
-                metric={item.id}
-                series={item.series}
-                hovered={hoveredSections[prefix] ?? null}
-                onHover={(hover) => { onChartHover(prefix, hover); }}
-                hasPoints={hasPoints}
-                isLoading={isScalarsLoading}
-              />
-            ))}
-          </div>
-        </CollapsibleSection>
-      ))}
+      <ChartSections sections={sections} hasPoints={hasPoints} isLoading={isScalarsLoading} />
       {mediaByKey.length > 0 ? (
         <>
           <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" numLines={0} />

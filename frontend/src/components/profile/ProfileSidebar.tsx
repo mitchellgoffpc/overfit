@@ -2,7 +2,8 @@ import type { Project, Run, User } from "@underfit/types";
 import type { ReactElement } from "react";
 import { Link } from "wouter";
 
-import { apiBase, formatDate, getInitials } from "helpers";
+import Avatar from "components/Avatar";
+import { formatDate } from "helpers";
 
 interface ProfileSidebarProps {
   readonly user: User | null;
@@ -12,8 +13,6 @@ interface ProfileSidebarProps {
 }
 
 export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: ProfileSidebarProps): ReactElement {
-  const avatarClass = "relative grid h-24 w-24 place-items-center overflow-hidden rounded-full border border-brand-borderStrong"
-    + " bg-brand-accentMuted text-2xl font-semibold text-brand-accentStrong";
   const editProfileClass = "rounded-xl border border-ink bg-ink px-4 py-2 text-center text-sm font-semibold"
     + " text-white no-underline transition hover:bg-ink-hover";
 
@@ -30,9 +29,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   }
 
   const name = user.name;
-  const initials = getInitials(name);
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
-  const avatarSrc = `${apiBase}/accounts/${encodeURIComponent(user.handle)}/avatar`;
 
   return (
     <aside className="relative flex h-full flex-col gap-5 border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
@@ -44,18 +41,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
       <div className="relative grid gap-4">
         <div className="rounded-[0.875rem] border border-brand-borderMuted bg-white/85 p-3">
           <div className="grid place-items-center">
-            <div className={avatarClass}>
-              {initials}
-              <img
-                key={user.handle}
-                className="absolute inset-0 h-full w-full object-cover"
-                src={avatarSrc}
-                alt={`${name} avatar`}
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-            </div>
+            <Avatar handle={user.handle} name={name} className="h-24 w-24 border border-brand-borderStrong text-2xl" />
           </div>
           <div className="mt-3 grid gap-2 text-center">
             <div>

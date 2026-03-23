@@ -11,6 +11,13 @@ export const fetchRunMedia = async (handle: string, projectName: string, runName
 export const getMediaFileUrl = (handle: string, projectName: string, runName: string, id: string, index = 0): string =>
   `${apiBase}/accounts/${handle}/projects/${projectName}/runs/${runName}/media/${id}/file?index=${String(index)}`;
 
+export const fetchMultiRunMedia = async (handle: string, projectName: string, runNames: string[]): Promise<Record<string, Media[]>> => {
+  const responses = await Promise.all(runNames.map(async (runName) => ({ runName, response: await fetchRunMedia(handle, projectName, runName) })));
+  const mediaByRun: Record<string, Media[]> = {};
+  for (const { runName, response } of responses) { mediaByRun[runName] = response.ok ? response.body : []; }
+  return mediaByRun;
+};
+
 interface MediaState {
   media: Media[];
   isLoading: boolean;

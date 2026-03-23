@@ -8,6 +8,23 @@ type ScalarFetchResponse = { ok: true; body: Scalar[]; status: number } | { ok: 
 export const fetchRunScalars = async (handle: string, projectName: string, runName: string): Promise<ScalarFetchResponse> =>
   await request<Scalar[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
 
+interface MultiRunScalarsResult { scalarsByRun: Record<string, Scalar[]>; error: string | null }
+
+export const fetchMultiRunScalars = async (handle: string, projectName: string, runNames: string[]): Promise<MultiRunScalarsResult> => {
+  const responses = await Promise.all(runNames.map(async (runName) => ({ runName, response: await fetchRunScalars(handle, projectName, runName) })));
+  const scalarsByRun: Record<string, Scalar[]> = {};
+  const failedRuns: string[] = [];
+  for (const { runName, response } of responses) {
+    if (response.ok) {
+      scalarsByRun[runName] = response.body;
+    } else {
+      scalarsByRun[runName] = [];
+      failedRuns.push(runName);
+    }
+  }
+  return { scalarsByRun, error: failedRuns.length === 0 ? null : `Unable to load scalars for ${failedRuns.join(", ")}.` };
+};
+
 interface ScalarState {
   scalars: Scalar[];
   isLoading: boolean;
