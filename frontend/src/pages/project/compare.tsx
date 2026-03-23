@@ -3,10 +3,9 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
-import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
-import type { LineSeries } from "charts/lineChart";
+import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
 import type { LineChartHover } from "components/charts/LineChart";
-import LineChart from "components/charts/LineChart";
+import MetricChartCard from "components/charts/MetricChartCard";
 import CollapsibleSection from "components/CollapsibleSection";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
@@ -19,20 +18,6 @@ import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 import { fetchRunScalars } from "stores/scalars";
 
-const tooltipClass = "pointer-events-none absolute z-10 max-w-[17.5rem] rounded-[0.625rem] border border-brand-border"
-  + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";
-interface CompareChartSeries extends LineSeries {
-  readonly runName: string;
-  readonly color: string;
-  readonly lineWidth: number;
-}
-
-const getSeriesPoints = (scalars: Scalar[], metric: string): { x: number; y: number }[] =>
-  scalars.flatMap((scalar, scalarIndex) => {
-    const value = scalar.values[metric];
-    if (typeof value !== "number") { return []; }
-    return [{ x: scalar.step ?? scalarIndex, y: value }];
-  });
 export default function ProjectCompareRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
   const projectsByKey = useProjectStore((state) => state.projectsByKey);
@@ -141,7 +126,7 @@ export default function ProjectCompareRoute(): ReactElement {
       id: metric,
       series: visibleRuns.map((run, index) => ({
         id: `${metric}:${run.name}`,
-        runName: run.name,
+        label: run.name,
         points: getSeriesPoints(scalarsByRun[run.name] ?? [], metric),
         color: colorByRunName.get(run.name) ?? runPalette[index % runPalette.length] ?? colors.brand.accent,
         lineWidth: 2
@@ -149,21 +134,7 @@ export default function ProjectCompareRoute(): ReactElement {
     }));
   }, [colorByRunName, scalarsByRun, visibleRuns]);
 
-  const sections = useMemo(() => {
-    const buckets = new Map<string, typeof chartSeries>();
-    chartSeries.forEach((item) => {
-      const [firstSegment] = item.id.split("/");
-      const prefix = item.id.includes("/") ? (firstSegment ?? "other") : "other";
-      const list = buckets.get(prefix) ?? [];
-      list.push(item);
-      buckets.set(prefix, list);
-    });
-    return Array.from(buckets.keys()).sort().flatMap((prefix) => {
-      const list = buckets.get(prefix);
-      if (!list || list.length === 0) { return []; }
-      return [{ prefix, charts: list }];
-    });
-  }, [chartSeries]);
+  const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);
 
   const mediaKeys = useMemo(() => {
     const keySet = new Map<string, { steps: Set<number>; maxCount: number }>();
@@ -180,7 +151,7 @@ export default function ProjectCompareRoute(): ReactElement {
     }));
   }, [mediaByRun, visibleRuns]);
 
-  const hasPoints = useMemo(() => chartSeries.some((item) => item.series.some((series) => series.points.length > 0)), [chartSeries]);
+  const hasPoints = useMemo(() => chartSeries.some((item) => item.series.some((s) => s.points.length > 0)), [chartSeries]);
 
   const onChartHover = (prefix: string, hover: LineChartHover | null) => {
     setHoveredSections((prev) => {
@@ -189,66 +160,6 @@ export default function ProjectCompareRoute(): ReactElement {
       if (hover?.step === current?.step) { return prev; }
       return { ...prev, [prefix]: hover };
     });
-  };
-
-  const renderMetricChart = (prefix: string, metric: string, series: CompareChartSeries[]) => {
-    const hovered = hoveredSections[prefix] ?? null;
-    const tooltipSeries = hovered ? series.flatMap((line) => {
-      const point = getClosestPoint(line, hovered.step);
-      if (!point) { return []; }
-      return [{ runName: line.runName, color: line.color, value: point.y }];
-    }) : [];
-    const isLeft = (hovered?.xRatio ?? 0) < 0.5;
-    const tooltipStyle = !hovered ? undefined
-      : { left: `${String(hovered.cursorX)}px`, top: "0.5rem", transform: isLeft ? "translateX(0.75rem)" : "translateX(calc(-100% - 0.75rem))" };
-
-    return (
-      <div
-        className="relative flex flex-col rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft"
-        style={{ height: `${String(9 * RULED_LINE_HEIGHT)}rem` }}
-        key={metric}
-      >
-        <div className="mb-1 flex flex-col items-center gap-0">
-          <h2 className="text-[0.8125rem] font-semibold text-brand-text">{metric}</h2>
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[0.6875rem] text-brand-textMuted">
-            {series.map((line) => (
-              <div className="flex items-center gap-1.5" key={line.id}>
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: line.color }} />
-                <span className="max-w-[7.5rem] truncate">{line.runName}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        {!hasPoints && !isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
-        <div className="relative min-h-0 flex-1">
-          {hovered && tooltipSeries.length > 0 ? (
-            <div className={tooltipClass} style={tooltipStyle}>
-              <div className="mb-1 text-[0.6875rem] text-brand-textMuted">step {xFormatter(hovered.step)}</div>
-              <div className="space-y-1.5">
-                {tooltipSeries.map((item) => (
-                  <div className="flex items-center justify-between gap-3 text-[0.75rem] text-brand-text" key={item.runName}>
-                    <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="truncate">{item.runName}</span>
-                    </div>
-                    <span className="font-semibold">{yFormatter(item.value)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          <LineChart
-            className="h-full w-full"
-            series={series.filter((line) => line.points.length > 0)}
-            height={220}
-            xLabelFormatter={xFormatter}
-            yLabelFormatter={yFormatter}
-            hoverStep={hovered?.step ?? null}
-            onHover={(hover) => { onChartHover(prefix, hover); }}
-          />
-        </div>
-      </div>
-    );
   };
 
   const renderMediaComparison = (key: string, steps: number[], maxCount: number) => {
@@ -360,7 +271,6 @@ export default function ProjectCompareRoute(): ReactElement {
 
   return (
     <NotebookShell columns="18.25rem 1fr" maxWidth="calc(100% - 5rem)">
-
         {!showProjectNotFound ? (
           <aside
             className="relative border-b border-brand-borderMuted px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
@@ -369,7 +279,7 @@ export default function ProjectCompareRoute(): ReactElement {
             <div>
               <ProjectHeader handle={handle} projectName={projectName} />
 
-              <div className="pt-4" style={{ height: `${RULED_LINE_HEIGHT * 6}rem` }}>
+              <div className="pt-4" style={{ height: `${String(RULED_LINE_HEIGHT * 6)}rem` }}>
                 <div className="rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
                   <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
                   <div className="mt-2 flex items-center justify-between text-[0.75rem]">
@@ -416,7 +326,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
         <main className="relative px-[1.5rem] pb-[1.5rem]">
           <SectionHeader
-            title="Comparison Plots"
+            title="Scalar Plots"
             subtitle={`plotting ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`}
             sectionLabel="Section D"
           />
@@ -437,23 +347,29 @@ export default function ProjectCompareRoute(): ReactElement {
                   onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
                 >
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
-                    {charts.map((item) => renderMetricChart(prefix, item.id, item.series))}
+                    {charts.map((item) => (
+                      <MetricChartCard
+                        key={item.id}
+                        metric={item.id}
+                        series={item.series}
+                        hovered={hoveredSections[prefix] ?? null}
+                        onHover={(hover) => { onChartHover(prefix, hover); }}
+                        hasPoints={hasPoints}
+                        isLoading={isScalarsLoading}
+                      />
+                    ))}
                   </div>
                 </CollapsibleSection>
               ))}
               {!isScalarsLoading && sections.length === 0 ? <div className="text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}
-              {mediaKeys.length > 0 ? (
-                <CollapsibleSection
-                  label="media"
-                  count={mediaKeys.length}
-                  collapsed={collapsedSections["media"] ?? false}
-                  onToggle={() => { setCollapsedSections((prev) => ({ ...prev, media: !(prev["media"] ?? false) })); }}
-                >
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {mediaKeys.map(({ key, steps, maxCount }) => renderMediaComparison(key, steps, maxCount))}
-                  </div>
-                </CollapsibleSection>
-              ) : null}
+            </section>
+          ) : null}
+          {mediaKeys.length > 0 ? (
+            <section>
+              <SectionHeader title="Media" subtitle={`comparing across ${String(visibleRuns.length)} runs`} sectionLabel="Section E" numLines={0} />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {mediaKeys.map(({ key, steps, maxCount }) => renderMediaComparison(key, steps, maxCount))}
+              </div>
             </section>
           ) : null}
         </main>
