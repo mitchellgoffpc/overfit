@@ -3,9 +3,9 @@ import { faBuilding, faKey, faUser } from "@fortawesome/free-solid-svg-icons";
 import type { ReactElement } from "react";
 import { Redirect, Route, Switch, useLocation } from "wouter";
 
+import { colors } from "colors";
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
-import { colors } from "colors";
 import SettingsKeysContent from "pages/settings/api-keys";
 import SettingsOrganizationsContent from "pages/settings/organizations";
 import SettingsProfileContent from "pages/settings/profile";

@@ -4,8 +4,8 @@ import type { ReactElement } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import Avatar from "components/Avatar";
 import { colors } from "colors";
+import Avatar from "components/Avatar";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 

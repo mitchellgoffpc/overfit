@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
+import { colors, runPalette } from "colors";
 import ChartSections from "components/charts/ChartSections";
 import MediaPreview from "components/MediaPreview";
 import NotebookShell from "components/NotebookShell";
@@ -11,7 +12,6 @@ import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
 import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
-import { colors, runPalette } from "colors";
 import { fetchMultiRunMedia, getMediaFileUrl } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";

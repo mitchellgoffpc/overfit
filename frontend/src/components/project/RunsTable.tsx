@@ -3,9 +3,9 @@ import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 
+import { colors, runPalette } from "colors";
 import RunStatusBadge from "components/RunStatusBadge";
 import { formatDuration, formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
-import { colors, runPalette } from "colors";
 
 const headerCellClass = "flex items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
 const bodyCellClass = "flex items-center whitespace-nowrap px-2.5 text-[0.75rem] text-brand-text";
