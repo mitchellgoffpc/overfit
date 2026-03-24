@@ -41,7 +41,7 @@ const normalizeLogLines = (lines: LogLine[]): LogLine[] =>
   lines.flatMap((line) => line.content.split("\n").map((content) => ({ timestamp: line.timestamp, content })));
 
 const readLogSegment = async (storage: StorageBackend, storageKey: string, byteOffset: number, byteCount: number): Promise<string> => {
-  return (await storage.readRange(storageKey, byteOffset, byteCount)).toString("utf8");
+  return (await storage.read(storageKey, byteOffset, byteCount)).toString("utf8");
 };
 
 export function registerLogRoutes(app: RouteApp, db: Database, logBuffer: LogBuffer, storage: StorageBackend): void {

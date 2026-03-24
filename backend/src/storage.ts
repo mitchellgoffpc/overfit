@@ -29,11 +29,9 @@ export interface FileEntry {
 
 export interface StorageBackend {
   write: (storageKey: string, content: Buffer) => Promise<string>;
-  read: (storageKey: string) => Promise<Buffer>;
-  safeRead: (storageKey: string) => Promise<ReadResult>;
+  read: (storageKey: string, byteOffset?: number, byteCount?: number) => Promise<Buffer>;
+  safeRead: (storageKey: string, byteOffset?: number, byteCount?: number) => Promise<ReadResult>;
   append: (storageKey: string, content: Buffer) => Promise<AppendResult>;
-  readRange: (storageKey: string, byteOffset: number, byteCount: number) => Promise<Buffer>;
-  safeReadRange: (storageKey: string, byteOffset: number, byteCount: number) => Promise<ReadResult>;
   list: (prefix: string) => Promise<FileEntry[]>;
 }
 

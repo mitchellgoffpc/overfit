@@ -31,7 +31,7 @@ type CreateScalarsBody = z.infer<typeof CreateScalarsBodySchema>;
 type CreateScalarsResponse = { status: "buffered" } | { error: string; expectedStartLine: number };
 
 const readScalarSegment = async (storage: StorageBackend, storageKey: string, byteOffset: number, byteCount: number): Promise<Scalar[]> => {
-  const content = (await storage.readRange(storageKey, byteOffset, byteCount)).toString("utf8");
+  const content = (await storage.read(storageKey, byteOffset, byteCount)).toString("utf8");
   const lines = content.split("\n");
   if (lines[lines.length - 1] === "") {
     lines.pop();
