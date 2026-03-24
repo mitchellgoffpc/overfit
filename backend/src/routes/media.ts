@@ -11,8 +11,8 @@ import type { RouteApp, RouteHandler } from "helpers";
 import { createMedia, getMedia, listMedia } from "repositories/media";
 import { getRun } from "repositories/runs";
 import { requireAuth } from "routes/auth";
-import { getMediaStorageKey } from "storage";
-import type { StorageBackend } from "storage";
+import { getMediaStorageKey } from "storage/index";
+import type { StorageBackend } from "storage/index";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 250 * 1024 * 1024 } });
 

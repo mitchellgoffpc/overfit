@@ -32,6 +32,13 @@ export const createScalarSegment = async (db: Database, segment: Omit<ScalarSegm
   return payload;
 };
 
+export const updateScalarSegment = async (
+  db: Database, id: ID, updates: Pick<ScalarSegment, "endLine" | "endAt" | "byteCount">
+): Promise<ScalarSegment | undefined> => {
+  const result = await db.updateTable(table).set(updates).where("id", "=", id).executeTakeFirst();
+  return result.numUpdatedRows ? await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst() : undefined;
+};
+
 export const getLatestScalarSegment = async (db: Database, runId: ID, resolution = 0): Promise<ScalarSegment | undefined> => {
   return await db
     .selectFrom(table)
@@ -54,4 +61,8 @@ export const listScalarSegmentsForCursor = async (
     .where("startLine", "<", cursor + count)
     .orderBy("startLine", "asc")
     .execute();
+};
+
+export const deleteScalarSegments = async (db: Database, runId: ID, resolution: number): Promise<void> => {
+  await db.deleteFrom(table).where("runId", "=", runId).where("resolution", "=", resolution).execute();
 };

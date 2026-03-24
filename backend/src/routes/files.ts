@@ -5,7 +5,7 @@ import type { Database } from "db";
 import { formatZodError } from "helpers";
 import type { RouteApp, RouteHandler } from "helpers";
 import { getRun } from "repositories/runs";
-import type { FileEntry, StorageBackend } from "storage";
+import type { FileEntry, StorageBackend } from "storage/index";
 
 const ListFilesQuerySchema = z.object({
   path: z.string().optional()

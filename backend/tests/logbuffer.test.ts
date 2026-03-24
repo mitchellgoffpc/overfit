@@ -12,7 +12,7 @@ import { listLogSegmentsForCursor } from "repositories/logs";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";
 import { createUser } from "repositories/users";
-import { createStorage } from "storage";
+import { createStorage } from "storage/index";
 
 describe("logbuffer", () => {
   let db: Database;

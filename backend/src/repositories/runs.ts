@@ -11,6 +11,7 @@ import { table as usersTable } from "repositories/users";
 export type RunRow = Omit<Run, "user" | "projectName" | "projectOwner" | "config"> & { userId: ID; config: string | null };
 type CreateRunRow = Pick<Run, "projectId" | "name" | "status" | "config"> & { userId: ID };
 type UpdateRunRow = Partial<Pick<Run, "status" | "config">>;
+type UpdateRunByIdRow = Partial<Pick<Run, "projectId" | "name" | "status" | "config"> & { userId: ID }>;
 
 export const table = "runs";
 
@@ -63,7 +64,7 @@ export const listProjectRuns = async (db: Database, handle: string, projectName:
   return rows.map((row) => ({ ...row, config: row.config ? JSON.parse(row.config) as Record<string, unknown> : null }));
 };
 
-const getRunById = async (db: Database, id: ID): Promise<Run | undefined> => {
+export const getRunById = async (db: Database, id: ID): Promise<Run | undefined> => {
   const row = await selectRuns(db).where(`${table}.id`, "=", id).executeTakeFirst();
   return row ? { ...row, config: row.config ? JSON.parse(row.config) as Record<string, unknown> : null } : undefined;
 };
@@ -81,6 +82,26 @@ export const createRun = async (db: Database, run: CreateRunRow): Promise<Run | 
   const payload = { ...run, id: randomBytes(16).toString("hex"), createdAt: nowIso(), updatedAt: nowIso(), config: JSON.stringify(run.config) };
   const result = await db.insertInto(table).values(payload).onConflict((oc) => oc.columns(["projectId", "name"]).doNothing()).executeTakeFirst();
   return result.numInsertedOrUpdatedRows ? await getRunById(db, payload.id) : undefined;
+};
+
+export const createRunWithId = async (db: Database, run: CreateRunRow & { id: ID }): Promise<Run | undefined> => {
+  const payload = { ...run, createdAt: nowIso(), updatedAt: nowIso(), config: JSON.stringify(run.config) };
+  const result = await db.insertInto(table).values(payload).onConflict((oc) => oc.columns(["projectId", "name"]).doNothing()).executeTakeFirst();
+  return result.numInsertedOrUpdatedRows ? await getRunById(db, payload.id) : await getRunById(db, run.id);
+};
+
+export const updateRunById = async (db: Database, id: ID, updates: UpdateRunByIdRow): Promise<Run | undefined> => {
+  const config = updates.config === undefined ? undefined : JSON.stringify(updates.config);
+  const payload = {
+    projectId: updates.projectId,
+    userId: updates.userId,
+    name: updates.name,
+    status: updates.status,
+    updatedAt: nowIso(),
+    ...config !== undefined && { config }
+  };
+  const result = await db.updateTable(table).set(payload).where("id", "=", id).executeTakeFirst();
+  return result.numUpdatedRows ? await getRunById(db, id) : undefined;
 };
 
 export const updateRun = async (db: Database, handle: string, projectName: string, runName: string, updates: UpdateRunRow): Promise<Run | undefined> => {

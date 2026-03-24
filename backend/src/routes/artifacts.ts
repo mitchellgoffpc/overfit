@@ -8,8 +8,8 @@ import { checkJsonSize, formatZodError } from "helpers";
 import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { createArtifact, getArtifact, listArtifacts, updateArtifactUri } from "repositories/artifacts";
 import { requireAuth } from "routes/auth";
-import { getArtifactStorageKey } from "storage";
-import type { StorageBackend } from "storage";
+import { getArtifactStorageKey } from "storage/index";
+import type { StorageBackend } from "storage/index";
 
 const CreateArtifactPayloadSchema = z.strictObject({
   runId: z.string(),

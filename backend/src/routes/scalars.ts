@@ -10,7 +10,7 @@ import type { RouteApp, RouteHandler } from "helpers";
 import { getRun } from "repositories/runs";
 import { getLatestScalarSegment, listScalarSegmentsForCursor } from "repositories/scalars";
 import { requireAuth } from "routes/auth";
-import type { StorageBackend } from "storage";
+import type { StorageBackend } from "storage/index";
 
 const ScalarSchema = z.strictObject({
   step: z.number().nullable().exactOptional().prefault(null),

@@ -4,8 +4,8 @@ import type { LineBufferConfig } from "buffers/lines";
 import { LineBuffer } from "buffers/lines";
 import type { Database } from "db";
 import { createScalarSegment, getLatestScalarSegment } from "repositories/scalars";
-import { getScalarStorageKey } from "storage";
-import type { StorageBackend } from "storage";
+import { getScalarStorageKey } from "storage/index";
+import type { StorageBackend } from "storage/index";
 
 export const SCALAR_RESOLUTIONS = [
   { resolution: 0, stride: 1 },

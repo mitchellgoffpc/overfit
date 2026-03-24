@@ -23,7 +23,8 @@ import { registerProjectRoutes } from "routes/projects";
 import { registerRunRoutes } from "routes/runs";
 import { registerScalarRoutes } from "routes/scalars";
 import { registerUserRoutes } from "routes/users";
-import { createStorage } from "storage";
+import { StorageBackfillService } from "storage/backfill";
+import { createStorage } from "storage/index";
 
 export function createApp(config: AppConfig, db: Database): Express {
   const app = express();
@@ -32,6 +33,8 @@ export function createApp(config: AppConfig, db: Database): Express {
   const scalarBuffer = new ScalarBuffer(db, storage, config.logBuffer);
   logBuffer.start();
   scalarBuffer.start();
+  const storageBackfill = config.backfill.enabled ? new StorageBackfillService(db, storage, config.backfill, config.logBuffer) : null;
+  storageBackfill?.start();
 
   app.use(cors({ origin: true, credentials: true }));
   app.use(cookieParser());

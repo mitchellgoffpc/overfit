@@ -4,8 +4,8 @@ import type { LineBufferConfig } from "buffers/lines";
 import { LineBuffer, LineBufferConfigSchema } from "buffers/lines";
 import type { Database } from "db";
 import { createLogSegment } from "repositories/logs";
-import { getLogStorageKey } from "storage";
-import type { StorageBackend } from "storage";
+import { getLogStorageKey } from "storage/index";
+import type { StorageBackend } from "storage/index";
 
 export { LineBufferConfigSchema as LogBufferConfigSchema };
 export type LogBufferConfig = LineBufferConfig;

@@ -15,6 +15,7 @@
     "@types/multer": "^2.1.0",
     "@underfit/types": "^0.0.0",
     "better-sqlite3": "^12.6.2",
+    "chokidar": "^3.6.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",

@@ -32,6 +32,17 @@ export const createLogSegment = async (db: Database, segment: Omit<LogSegment, "
   return payload;
 };
 
+export const updateLogSegment = async (
+  db: Database, id: ID, updates: Pick<LogSegment, "endLine" | "endAt" | "byteCount">
+): Promise<LogSegment | undefined> => {
+  const result = await db.updateTable(table).set(updates).where("id", "=", id).executeTakeFirst();
+  return result.numUpdatedRows ? await db.selectFrom(table).selectAll().where("id", "=", id).executeTakeFirst() : undefined;
+};
+
+export const deleteLogSegments = async (db: Database, runId: ID, workerId: string): Promise<void> => {
+  await db.deleteFrom(table).where("runId", "=", runId).where("workerId", "=", workerId).execute();
+};
+
 export const getLatestLogSegment = async (db: Database, runId: ID, workerId: string): Promise<LogSegment | undefined> => {
   return await db
     .selectFrom(table)

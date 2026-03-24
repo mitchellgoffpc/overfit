@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { AppendResult, FileEntry, ReadResult, StorageBackend } from "storage";
+import chokidar from "chokidar";
+
+import type { AppendResult, FileEntry, ReadResult, StorageBackend } from "storage/index";
 
 export class FileStorageBackend implements StorageBackend {
   private readonly baseDir: string;
@@ -28,7 +30,7 @@ export class FileStorageBackend implements StorageBackend {
     return path.relative(this.baseDir, storagePath);
   }
 
-  async read(storageKey: string, byteOffset: number = 0, byteCount: number | undefined = undefined): Promise<Buffer> {
+  async read(storageKey: string, byteOffset = 0, byteCount?: number): Promise<Buffer> {
     const storagePath = this.resolveStoragePath(storageKey);
     if (byteOffset < 0) { throw new Error("byteOffset must be >= 0"); }
     if (byteCount !== undefined && byteCount < 0) { throw new Error("byteCount must be >= 0"); }
@@ -87,4 +89,41 @@ export class FileStorageBackend implements StorageBackend {
     return results;
   }
 
+  async listFiles(prefix: string): Promise<FileEntry[]> {
+    const results: FileEntry[] = [];
+    const queue: string[] = [prefix];
+    while (queue.length > 0) {
+      const currentPrefix = queue.shift() ?? "";
+      const entries = await this.list(currentPrefix);
+      for (const entry of entries) {
+        const storageKey = currentPrefix ? `${currentPrefix}/${entry.name}` : entry.name;
+        if (entry.isDirectory) {
+          queue.push(storageKey);
+        } else {
+          results.push({ ...entry, name: storageKey });
+        }
+      }
+    }
+    return results;
+  }
+
+  onEvent(callback: (storageKey: string | null) => void): () => Promise<void> {
+    const watcher = chokidar.watch(this.baseDir, { ignoreInitial: true, awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 } });
+    const mapPath = (rawPath: string): string | null => {
+      const relative = path.relative(this.baseDir, rawPath).replaceAll(path.sep, "/");
+      return relative && !relative.startsWith("../") ? relative : null;
+    };
+    for (const event of ["add", "change", "unlink", "addDir", "unlinkDir"]) {
+      watcher.on(event, (rawPath) => {
+        callback(mapPath(rawPath as string));
+      });
+    }
+    watcher.on("error", (error) => {
+      console.error("storage watcher error", error);
+      callback(null);
+    });
+
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
+    return () => watcher.close();
+  }
 }

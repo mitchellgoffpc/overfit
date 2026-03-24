@@ -6,17 +6,18 @@ import { z } from "zod";
 
 import { LogBufferConfigSchema } from "buffers/logs";
 import { DatabaseConfigSchema } from "db";
-import { StorageConfigSchema } from "storage";
+import { StorageBackfillConfigSchema } from "storage/backfill";
+import { StorageConfigSchema } from "storage/index";
 
 const ServerConfigSchema = z.strictObject({
   port: z.coerce.number().int().min(1).default(4000)
 }).prefault({});
-
 export const AppConfigSchema = z.strictObject({
   server: ServerConfigSchema,
   db: DatabaseConfigSchema,
   storage: StorageConfigSchema,
-  logBuffer: LogBufferConfigSchema
+  logBuffer: LogBufferConfigSchema,
+  backfill: StorageBackfillConfigSchema
 }).prefault({});
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 

@@ -9,7 +9,7 @@ import type { RouteApp, RouteHandler } from "helpers";
 import { getLatestLogSegment, listLogSegmentsForCursor } from "repositories/logs";
 import { getRun } from "repositories/runs";
 import { requireAuth } from "routes/auth";
-import type { StorageBackend } from "storage";
+import type { StorageBackend } from "storage/index";
 
 const CreateLogLineSchema = z.strictObject({
   timestamp: z.string().min(1),

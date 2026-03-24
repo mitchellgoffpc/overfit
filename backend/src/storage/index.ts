@@ -2,6 +2,7 @@ import path from "node:path";
 
 import type { ID } from "@underfit/types";
 import { z } from "zod";
+
 import { FileStorageBackend } from "storage/fs";
 
 export const StorageConfigSchema = z.discriminatedUnion("type", [
@@ -33,6 +34,8 @@ export interface StorageBackend {
   safeRead: (storageKey: string, byteOffset?: number, byteCount?: number) => Promise<ReadResult>;
   append: (storageKey: string, content: Buffer) => Promise<AppendResult>;
   list: (prefix: string) => Promise<FileEntry[]>;
+  listFiles: (prefix: string) => Promise<FileEntry[]>;
+  onEvent?: (callback: (storageKey: string | null) => void) => (() => Promise<void>);
 }
 
 export const getArtifactStorageKey = (runId: ID, artifactId: ID): string => path.join(runId, artifactId);
