@@ -12,8 +12,12 @@ import { StorageConfigSchema } from "storage/index";
 const ServerConfigSchema = z.strictObject({
   port: z.coerce.number().int().min(1).default(4000)
 }).prefault({});
+const AuthConfigSchema = z.strictObject({
+  enabled: z.boolean().default(true)
+}).prefault({});
 export const AppConfigSchema = z.strictObject({
   server: ServerConfigSchema,
+  auth: AuthConfigSchema,
   db: DatabaseConfigSchema,
   storage: StorageConfigSchema,
   logBuffer: LogBufferConfigSchema,

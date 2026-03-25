@@ -130,4 +130,10 @@ describe("auth routes", () => {
       vi.useRealTimers();
     }
   });
+
+  it("injects a local user when auth is disabled", async () => {
+    const localApp = createApp(AppConfigSchema.parse({ auth: { enabled: false } }), db);
+    const response = await request(localApp).get(`${API_BASE}/me`).expect(200);
+    expect(response.body).toMatchObject({ handle: "local", email: "local@underfit.local" });
+  });
 });

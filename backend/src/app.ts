@@ -12,7 +12,7 @@ import { registerAccountAvatarRoutes } from "routes/account-avatars";
 import { registerAccountRoutes } from "routes/accounts";
 import { registerApiKeyRoutes } from "routes/api-keys";
 import { registerArtifactRoutes } from "routes/artifacts";
-import { registerAuthRoutes } from "routes/auth";
+import { attachLocalUser, registerAuthRoutes } from "routes/auth";
 import { registerCollaboratorRoutes } from "routes/collaborators";
 import { registerFileRoutes } from "routes/files";
 import { registerLogRoutes } from "routes/logs";
@@ -44,6 +44,9 @@ export function createApp(config: AppConfig, db: Database): Express {
       next(err);
     });
   });
+  if (!config.auth.enabled) {
+    app.use(attachLocalUser(db));
+  }
 
   registerAuthRoutes(app, db);
   registerAccountRoutes(app, db);

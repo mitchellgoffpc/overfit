@@ -10,7 +10,7 @@ import {
   testHandle
 } from "@underfit/types";
 import type { User, UserAuth } from "@underfit/types";
-import type { RequestHandler, Response } from "express";
+import type { Request, RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import type { Database } from "db";
@@ -19,7 +19,7 @@ import type { Empty, RouteApp, RouteHandler } from "helpers";
 import { getUserByApiKey } from "repositories/api-keys";
 import { getSession, createSession, deleteSession } from "repositories/sessions";
 import { createUserAuth, getUserAuth } from "repositories/user-auth";
-import { createUser, getUserByEmail, getUser } from "repositories/users";
+import { createUser, getUserByEmail, getUser, getUserByHandle } from "repositories/users";
 
 const PASSWORD_ITERATIONS = 310000;
 const PASSWORD_DIGEST = "sha256";
@@ -27,6 +27,8 @@ const PASSWORD_BYTES = 32;
 const SALT_BYTES = 16;
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const SESSION_COOKIE_NAME = "underfit_session";
+const LOCAL_HANDLE = "local";
+const LOCAL_EMAIL = "local@underfit.local";
 
 const RegisterPayloadSchema = z.strictObject({
   email: z.string().trim().toLowerCase().min(1).refine(value => !testEmail(value)),
@@ -89,7 +91,31 @@ const getSessionToken = (cookies: Record<string, string>) => {
   return raw?.trim();
 };
 
+const getRequestUser = (req: Request): User | undefined => (req as Request & { user?: User }).user;
+const resolveLocalUser = async (db: Database): Promise<User | undefined> => {
+  return await getUserByHandle(db, LOCAL_HANDLE) ??
+    await createUser(db, { email: LOCAL_EMAIL, handle: LOCAL_HANDLE, name: "Local", bio: null });
+};
+
+export const attachLocalUser = (db: Database): RequestHandler => async (req, res, next) => {
+  const user = await resolveLocalUser(db);
+  if (!user) {
+    res.status(500).json({ error: "Unable to initialize local user" });
+    return;
+  }
+
+  req.user = user;
+  next();
+};
+
 export const requireAuth = (db: Database): RequestHandler => async (req, res, next) => {
+  const existingUser = getRequestUser(req);
+  if (existingUser) {
+    req.user = existingUser;
+    next();
+    return;
+  }
+
   const apiKeyToken = getBearerToken(req.headers);
   if (apiKeyToken) {
     const user = await getUserByApiKey(db, apiKeyToken);
