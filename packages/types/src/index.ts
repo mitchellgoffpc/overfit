@@ -3,6 +3,7 @@ export const accountTypes = ["USER", "ORGANIZATION"] as const;
 export const mediaTypes = ["image", "video", "audio"] as const;
 export const runStatus = ["queued", "running", "finished", "failed", "cancelled"] as const;
 export const projectVisibility = ["private", "public"] as const;
+export const artifactStatus = ["open", "finalized"] as const;
 
 export type ID = string;
 export type Handle = string;
@@ -12,6 +13,7 @@ export type RunStatus = (typeof runStatus)[number];
 export type OrganizationRole = (typeof organizationRoles)[number];
 export type AccountType = (typeof accountTypes)[number];
 export type ProjectVisibility = (typeof projectVisibility)[number];
+export type ArtifactStatus = (typeof artifactStatus)[number];
 
 export interface Account {
   id: ID;
@@ -100,13 +102,18 @@ export interface Run {
 
 export interface Artifact {
   id: ID;
-  runId: ID;
+  projectId: ID;
+  runId: ID | null;
+  step: number | null;
   name: string;
   type: string;
-  version: string;
+  status: ArtifactStatus;
+  storageKey: string;
+  declaredFileCount: number;
+  uploadedFileCount: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  uri: string | null;
+  finalizedAt: Timestamp | null;
   metadata: Record<string, unknown> | null;
 }
 

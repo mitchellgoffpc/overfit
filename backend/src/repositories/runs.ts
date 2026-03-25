@@ -47,6 +47,7 @@ export const createRunsTable = async (db: Database): Promise<void> => {
     .addColumn("updatedAt", "text", (col) => col.notNull())
     .addColumn("config", "text")
     .addUniqueConstraint("runs_project_id_name_unique", ["projectId", "name"])
+    .addUniqueConstraint("runs_project_id_id_unique", ["projectId", "id"])
     .execute();
 };
 

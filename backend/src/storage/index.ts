@@ -38,7 +38,11 @@ export interface StorageBackend {
   onEvent?: (callback: (storageKey: string | null) => void) => (() => Promise<void>);
 }
 
-export const getArtifactStorageKey = (runId: ID, artifactId: ID): string => path.join(runId, artifactId);
+export const getArtifactStoragePrefix = (projectId: ID, artifactId: ID, runId: ID | null): string =>
+  runId ? path.join(runId, "artifacts", artifactId) : path.join(projectId, "artifacts", artifactId);
+export const getArtifactManifestStorageKey = (storageKey: string): string => path.join(storageKey, "manifest.json");
+export const getArtifactFileStorageKey = (storageKey: string, filePath: string): string => path.join(storageKey, "files", filePath);
+export const getArtifactUploadMarkerStorageKey = (storageKey: string, filePath: string): string => path.join(storageKey, ".uploaded", filePath);
 export const getMediaStorageKey = (runId: ID, mediaId: ID, index: number): string => path.join(runId, "media", mediaId, String(index));
 export const getLogStorageKey = (runId: ID, workerId: string): string => path.join(runId, "logs", `${workerId}.log`);
 export const getScalarStorageKey = (runId: ID, resolution: number): string => path.join(runId, "scalars", `r${String(resolution)}.jsonl`);

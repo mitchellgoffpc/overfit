@@ -10,7 +10,6 @@ import { createApp } from "app";
 import { AppConfigSchema } from "config";
 import { createDatabase } from "db";
 import type { Database } from "db";
-import { MAX_JSON_BYTES } from "helpers";
 import { createApiKey } from "repositories/api-keys";
 import { createProject } from "repositories/projects";
 import { createRun } from "repositories/runs";
@@ -21,8 +20,8 @@ describe("artifacts routes", () => {
   let app: ReturnType<typeof createApp>;
   let storageBaseDir: string;
   let userId: string;
-  let runId: string;
   let projectId: string;
+  let runId: string;
   let auth: [string, string];
 
   beforeAll(async () => {
@@ -43,58 +42,143 @@ describe("artifacts routes", () => {
     auth = ["Authorization", `Bearer ${token}`];
   });
 
-  it("inserts and fetches an artifact", async () => {
-    const artifactPayload = { runId, name: "model", type: "model", version: "v1", uri: "s3://bucket/model" };
-    const insertResponse = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(artifactPayload).expect(200);
-    const artifactId = (insertResponse.body as { id: string }).id;
-    expect(artifactId).toEqual(expect.any(String));
-    const response = await request(app).get(`${API_BASE}/artifacts/${artifactId}`).expect(200);
-    expect(response.body).toMatchObject(artifactPayload);
+  it("creates and fetches a project-scoped artifact", async () => {
+    const payload = {
+      runId,
+      step: 10,
+      name: "model-checkpoint",
+      type: "model",
+      manifest: { files: [{ path: "weights.bin" }, { path: "config.json" }], references: ["https://example.com/reference"] }
+    };
+    const base = `${API_BASE}/accounts/ada/projects/underfit/artifacts`;
+    const createResponse = await request(app).post(base).set(...auth).send(payload).expect(200);
+    expect(createResponse.body).toMatchObject({
+      projectId,
+      runId,
+      step: 10,
+      name: "model-checkpoint",
+      type: "model",
+      status: "open",
+      declaredFileCount: 2,
+      uploadedFileCount: 0,
+      finalizedAt: null
+    });
+    expect((createResponse.body as { id: string; storageKey: string }).storageKey)
+      .toEqual(`${runId}/artifacts/${(createResponse.body as { id: string }).id}`);
+
+    const artifactId = (createResponse.body as { id: string }).id;
+    const getResponse = await request(app).get(`${API_BASE}/artifacts/${artifactId}`).expect(200);
+    expect(getResponse.body).toMatchObject({ id: artifactId, projectId, runId, step: 10 });
   });
 
-  it("rejects unknown artifacts", async () => {
-    const response = await request(app).get(`${API_BASE}/artifacts/missing`).expect(404);
-    expect(response.body).toMatchObject({ error: "Artifact not found" });
+  it("rejects run IDs from other projects", async () => {
+    const otherProjectId = (await createProject(db, { accountId: userId, name: "other", description: null }))!.id;
+    const otherRunId = (await createRun(db, { projectId: otherProjectId, userId, name: "Run 2", status: "running", config: null }))!.id;
+    const payload = { runId: otherRunId, name: "model", type: "model", manifest: { files: [{ path: "weights.bin" }] } };
+    const response = await request(app).post(`${API_BASE}/accounts/ada/projects/underfit/artifacts`).set(...auth).send(payload).expect(400);
+    expect(response.body).toMatchObject({ error: "Artifact could not be created" });
   });
 
-  it("rejects missing required fields", async () => {
-    const cases = [
-      { payload: { name: "model", type: "model" }, error: "runId: Invalid input: expected string, received undefined" },
-      { payload: { runId, type: "model" }, error: "name: Invalid input: expected string, received undefined" },
-      { payload: { runId, name: "model" }, error: "type: Invalid input: expected string, received undefined" },
-      { payload: { runId, name: "model", type: "model" }, error: "version: Invalid input: expected string, received undefined" }
-    ];
-    for (const { payload, error } of cases) {
-      const response = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
-      expect(response.body).toMatchObject({ error });
-    }
+  it("uploads declared files, downloads them, and blocks writes after finalize", async () => {
+    const createResponse = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/artifacts`)
+      .set(...auth)
+      .send({ name: "dataset", type: "dataset", manifest: { files: [{ path: "a.bin" }, { path: "dir/b.bin" }] } })
+      .expect(200);
+    const artifactId = (createResponse.body as { id: string }).id;
+    const fileBase = `${API_BASE}/artifacts/${artifactId}/files`;
+
+    const uploadA = await request(app)
+      .put(`${fileBase}/a.bin`)
+      .set(...auth)
+      .set("Content-Type", "application/octet-stream")
+      .send(Buffer.from("A"))
+      .expect(200);
+    expect(uploadA.body).toMatchObject({ uploadedFileCount: 1, status: "open" });
+    const uploadB = await request(app)
+      .put(`${fileBase}/dir/b.bin`)
+      .set(...auth)
+      .set("Content-Type", "application/octet-stream")
+      .send(Buffer.from("B"))
+      .expect(200);
+    expect(uploadB.body).toMatchObject({ uploadedFileCount: 2, status: "open" });
+
+    const download = await request(app).get(`${fileBase}/dir/b.bin`).expect(200);
+    expect(download.headers["content-type"]).toBe("application/octet-stream");
+    expect(download.body).toEqual(Buffer.from("B"));
+
+    const finalized = await request(app).post(`${API_BASE}/artifacts/${artifactId}/finalize`).set(...auth).send({}).expect(200);
+    expect(finalized.body).toMatchObject({ success: true });
+
+    const blocked = await request(app)
+      .put(`${fileBase}/a.bin`)
+      .set(...auth)
+      .set("Content-Type", "application/octet-stream")
+      .send(Buffer.from("A2"))
+      .expect(409);
+    expect(blocked.body).toMatchObject({ error: "Artifact is finalized and no longer accepts writes" });
   });
 
-  it("rejects invalid run references", async () => {
-    const payload = { runId: "missing-run", name: "model", type: "model", version: "v1" };
-    const response = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
-    expect(response.body).toMatchObject({ error: "Artifact runId does not reference an existing run" });
+  it("rejects uploads for paths not declared in the manifest", async () => {
+    const createResponse = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/artifacts`)
+      .set(...auth)
+      .send({ name: "artifact", type: "dataset", manifest: { files: [{ path: "allowed.bin" }] } })
+      .expect(200);
+    const artifactId = (createResponse.body as { id: string }).id;
+    const response = await request(app)
+      .put(`${API_BASE}/artifacts/${artifactId}/files/forbidden.bin`)
+      .set(...auth)
+      .set("Content-Type", "application/octet-stream")
+      .send(Buffer.from("data"))
+      .expect(400);
+    expect(response.body).toMatchObject({ error: "File path forbidden.bin is not declared in manifest" });
   });
 
-  it("uploads and downloads an artifact file", async () => {
-    const artifactPayload = { runId, name: "checkpoint", type: "model", version: "v1" };
-    const insertResponse = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(artifactPayload).expect(200);
-    const artifactId = (insertResponse.body as { id: string }).id;
+  it("rejects finalize when manifest files are missing", async () => {
+    const createResponse = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/artifacts`)
+      .set(...auth)
+      .send({ name: "artifact", type: "dataset", manifest: { files: [{ path: "present.bin" }, { path: "missing.bin" }] } })
+      .expect(200);
+    const artifactId = (createResponse.body as { id: string }).id;
+    await request(app)
+      .put(`${API_BASE}/artifacts/${artifactId}/files/present.bin`)
+      .set(...auth)
+      .set("Content-Type", "application/octet-stream")
+      .send(Buffer.from("data"))
+      .expect(200);
 
-    const content = Buffer.from("dummy file");
-    const fileUrl = `${API_BASE}/artifacts/${artifactId}/file`;
-    const uploadResponse = await request(app).put(fileUrl).set(...auth).set("Content-Type", "application/octet-stream").send(content).expect(200);
-    expect(uploadResponse.text).toContain(`"id":"${artifactId}"`);
-    expect(uploadResponse.text).toContain('"uri":"file://');
-
-    const downloadResponse = await request(app).get(`${API_BASE}/artifacts/${artifactId}/file`).expect(200);
-    expect(downloadResponse.headers["content-type"]).toBe("application/octet-stream");
-    expect(downloadResponse.body).toEqual(content);
+    const finalize = await request(app).post(`${API_BASE}/artifacts/${artifactId}/finalize`).set(...auth).send({}).expect(409);
+    expect(finalize.body).toMatchObject({
+      error: "Artifact cannot be finalized because some files are missing"
+    });
   });
 
-  it("rejects artifact creation when metadata exceeds max size", async () => {
-    const payload = { runId, name: "model", type: "model", version: "v1", metadata: { key: "x".repeat(MAX_JSON_BYTES) } };
-    const response = await request(app).put(`${API_BASE}/artifacts`).set(...auth).send(payload).expect(400);
-    expect(response.body).toMatchObject({ error: `metadata: Serialized JSON exceeds ${String(MAX_JSON_BYTES)} bytes` });
+  it("requires runId when step is provided", async () => {
+    const response = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/artifacts`)
+      .set(...auth)
+      .send({ step: 3, name: "artifact", type: "dataset", manifest: { files: [{ path: "a.bin" }] } })
+      .expect(400);
+    expect(response.body).toMatchObject({ error: "step: step requires runId" });
+  });
+
+  it("deduplicates duplicate files and references when creating artifacts", async () => {
+    const createResponse = await request(app)
+      .post(`${API_BASE}/accounts/ada/projects/underfit/artifacts`)
+      .set(...auth)
+      .send({
+        name: "dedupe-test",
+        type: "dataset",
+        manifest: {
+          files: [{ path: "a.bin" }, { path: "a.bin" }, { path: "b.bin" }],
+          references: ["https://example.com/r1", "https://example.com/r1", "https://example.com/r2"]
+        }
+      })
+      .expect(200);
+    expect(createResponse.body).toMatchObject({ declaredFileCount: 2 });
+    const created = createResponse.body as { id: string; storageKey: string };
+    expect(created.storageKey).toEqual(`${projectId}/artifacts/${created.id}`);
   });
 });
