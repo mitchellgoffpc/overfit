@@ -8,7 +8,7 @@ import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import globals from "globals";
 
-const projectConfigs = ["./frontend/tsconfig.eslint.json", "./backend/tsconfig.eslint.json", "./packages/types/tsconfig.eslint.json"];
+const projectConfigs = ["./tsconfig.json"];
 
 const baseRules = {
   ...(eslint.configs.recommended.rules ?? {}),
@@ -36,7 +36,7 @@ const additionalRules = {
 
   "import/first": "error",
   "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
-  "import/no-extraneous-dependencies": ["error", { "packageDir": [".", "./frontend", "./backend", "./packages/types"] }],
+  "import/no-extraneous-dependencies": ["error", { "packageDir": ["."] }],
   "import/newline-after-import": "error",
   "import/no-duplicates": "error",
   "import/no-unresolved": "error",
@@ -140,22 +140,11 @@ export default [
     }
   },
   {
-    files: ["frontend/**/*.{ts,tsx,js,jsx}"],
+    files: ["src/**/*.{ts,tsx,js,jsx}", "tests/**/*.{ts,tsx,js,jsx}"],
     languageOptions: {
       globals: {
         ...globals.browser
       }
-    }
-  },
-  {
-    files: ["backend/**/*.{ts,tsx,js,jsx}"],
-    languageOptions: {
-      globals: {
-        ...globals.node
-      }
-    },
-    rules: {
-      "no-console": "off"
     }
   },
   {
@@ -165,7 +154,7 @@ export default [
     }
   },
   {
-    files: ["**/*.config.{ts,js}", "**/vite.config.ts", "**/vitest.config.ts", "vitest.workspace.ts", "eslint.config.js"],
+    files: ["**/*.config.{ts,js}", "**/vite.config.ts", "**/vitest.config.ts", "eslint.config.js"],
     ...tseslint.configs["flat/disable-type-checked"],
     rules: {
       ...tseslint.configs["flat/disable-type-checked"].rules,

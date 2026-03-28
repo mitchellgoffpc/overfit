@@ -1,6 +1,6 @@
 # Project
 
-Underfit is an open-source model reporting dashboard for tracking experiments, metrics, and artifacts. It serves a similar role to Weights & Biases, with a focus on transparent, self-hostable reporting.
+Underfit is an open-source model reporting dashboard for tracking experiments, metrics, and artifacts. It serves a similar role to Weights & Biases, with a focus on transparent, self-hostable reporting. This repo contains the project frontend, written in react + typescript.
 
 # Contributing
 
@@ -15,18 +15,13 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 - Optimize for code that is immediately understandable, even if it does less defensive checking.
 - If a variable or function is only used once, inline it.
 
-## Frontend structure
+## Directory structure
 
 - Minimize defensive bloat. Assume successful API responses include all the expected fields unless there is a clear reason not to.
-- API logic must live in `frontend/src/stores/`. Never call `fetch`/`request`/`post` directly from pages or components. Choose placement by behavior:
+- API logic must live in `src/stores/`. Never call `fetch`/`request`/`post` directly from pages or components. Choose placement by behavior:
   - If a function reads/writes Zustand state (`set`, `get`, store fields), implement it as a store method.
   - If a function only performs HTTP requests and returns data/errors (no `set`/`get`/store field access), implement it as a top-level exported helper in the same store file.
   - When unsure, default to a top-level helper and only promote to a store method when state mutation is needed.
-
-## Backend structure
-
-- All validation logic is performed by the route handlers in backend/src/routes/.
-- Anything that touches the database should live in backend/src/repositories.
 
 ## Committing changes
 

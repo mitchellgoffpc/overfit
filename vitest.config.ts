@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "jsdom",
-    setupFiles: ["./frontend/tests/setup.ts"],
-    exclude: [".worktrees/**", "node_modules/**", "backend/dist/**", "frontend/dist/**"],
+    setupFiles: ["./tests/setup.ts"],
+    exclude: [".worktrees/**", "node_modules/**", "dist/**"],
     chaiConfig: {
       truncateThreshold: 0, // Set to 0 for no truncation
     },

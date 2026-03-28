@@ -2,31 +2,44 @@
   "name": "underfit",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "frontend",
-    "backend",
-    "packages/types"
-  ],
   "scripts": {
-    "dev": "bash scripts/dev.sh",
-    "dev:frontend": "npm run dev -w frontend",
-    "dev:backend": "npm run dev -w backend",
-    "build": "npm run build -w @underfit/types --silent && npm run build -w backend --silent && npm run build -w frontend --silent",
-    "typecheck": "npm run build -w @underfit/types --silent && sh -c 'npm run typecheck -w backend --silent; b=$?; npm run typecheck -w frontend --silent; f=$?; [ $b -eq 0 ] && [ $f -eq 0 ]'",
-    "lint": "eslint . --cache",
-    "test": "vitest run"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --cache"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/react-fontawesome": "^3.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "wouter": "^3.9.0",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.36.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9.8.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.4.0",
+    "jsdom": "^28.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3",
+    "vite": "^7.3.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"
   }
