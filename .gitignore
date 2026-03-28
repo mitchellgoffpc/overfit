@@ -1,19 +1,19 @@
 # Node
 node_modules/
 
-# Build
+# Distribution / packaging
 dist/
 
 # Env files
 .env
 .env.*
 
+# Cache
+.eslintcache
+
 # Misc
 .DS_Store
 .vscode/
 .claude
 .worktrees/
-.eslintcache
-
-# Local dev data
-.underfit/
+.ropeproject
