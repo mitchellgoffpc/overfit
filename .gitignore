@@ -1,51 +1,19 @@
 # Node
 node_modules/
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Build output
+# Build
 dist/
-build/
-out/
-
-# Coverage
-coverage/
-.nyc_output/
 
 # Env files
 .env
 .env.*
 
-# TypeScript
-*.tsbuildinfo
-
-# Vite
-.vite/
-
-# OS / editor
+# Misc
 .DS_Store
-Thumbs.db
-.idea/
 .vscode/
+.claude
+.worktrees/
+.eslintcache
 
 # Local dev data
 .underfit/
-
-# Tests
-.vitest/
-.eslintcache
-
-# Worktrees
-.worktrees/
-
-# Claude
-.claude
-
-# Scripts
-scripts/generate_wordlists.py
