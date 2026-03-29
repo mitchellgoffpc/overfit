@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR } from "helpers";
 import { useAccountsStore } from "stores/accounts";
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
-import { API_BASE, EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR } from "types";
+import { API_BASE } from "types";
 import type { User } from "types";
 
 const createResponse = (body: unknown, init?: { ok?: boolean; status?: number }) => ({

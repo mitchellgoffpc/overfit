@@ -3,14 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
+import { EMAIL_IN_USE_ERROR, EMAIL_INVALID_ERROR, USERNAME_HINT, USERNAME_IN_USE_ERROR } from "helpers";
 import SignupPage from "pages/signup";
-import {
-  API_BASE,
-  EMAIL_IN_USE_ERROR,
-  EMAIL_INVALID_ERROR,
-  USERNAME_HINT,
-  USERNAME_IN_USE_ERROR
-} from "types";
+import { API_BASE } from "types";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 

@@ -1,9 +1,8 @@
 import { create } from "zustand";
 
-import { request, send } from "helpers";
+import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, request, send, testEmail, testHandle } from "helpers";
 import { useAccountsStore } from "stores/accounts";
 import type { ApiKey, ApiKeyWithToken, User } from "types";
-import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, testEmail, testHandle } from "types";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 type AuthResult = { ok: true } | { ok: false; error: string };

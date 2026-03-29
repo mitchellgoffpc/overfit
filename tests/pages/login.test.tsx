@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
+import { CREDENTIALS_INVALID_ERROR } from "helpers";
 import LoginPage from "pages/login";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { API_BASE, CREDENTIALS_INVALID_ERROR } from "types";
+import { API_BASE } from "types";
 
 const navigateMock = vi.hoisted(() => vi.fn());
 

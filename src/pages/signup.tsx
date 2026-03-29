@@ -2,8 +2,8 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
+import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testHandle } from "helpers";
 import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
-import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testHandle } from "types";
 
 const inputErrorClass = "rounded-[0.625rem] border border-danger-text bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-danger-text focus:ring-2 focus:ring-danger-text/20";
