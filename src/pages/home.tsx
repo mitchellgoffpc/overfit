@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import WorkspaceRunsTable from "components/home/WorkspaceRunsTable";
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
+import SectionHeader from "components/SectionHeader";
 import { useAccountsStore } from "stores/accounts";
 import { useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
@@ -38,10 +39,8 @@ export default function IndexRoute(): ReactElement {
 
       <NotebookShell columns="18.75rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
 
-        <aside className="relative border-b border-brand-borderMuted px-4 py-5 lg:border-b-0 lg:border-r lg:py-6 lg:pr-5">
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-          <h1 className="mt-1 font-display text-[2.0625rem] leading-none text-brand-text">Home</h1>
-          <p className="mt-1 font-mono text-[0.6875rem] text-brand-textMuted">@{userHandle} / dashboard</p>
+        <aside className="relative border-b border-brand-borderMuted px-4 pb-5 lg:border-b-0 lg:border-r lg:pb-6 lg:pr-5">
+          <SectionHeader title="Home" subtitle={`@${userHandle}`} sectionLabel="Lab Notebook" />
 
           <div className="mt-3 rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
@@ -86,8 +85,9 @@ export default function IndexRoute(): ReactElement {
           </div>
         </aside>
 
-        <main className="relative px-4 py-5 lg:px-5 lg:py-6">
-          <WorkspaceRunsTable runs={runs} projects={projects} isLoading={isRunsLoading} error={runError} />
+        <main className="relative px-4 pb-5 lg:px-5 lg:pb-6">
+          <SectionHeader title="Runs" subtitle={`${String(runs.length)} total`} />
+          <WorkspaceRunsTable runs={runs} isLoading={isRunsLoading} error={runError} />
         </main>
       </NotebookShell>
     </div>

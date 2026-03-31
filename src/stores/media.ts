@@ -1,12 +1,11 @@
 import { create } from "zustand";
 
+import type { APIResponse } from "helpers";
 import { request } from "helpers";
 import { API_BASE } from "types";
 import type { Media } from "types";
 
-type MediaFetchResponse = { ok: true; body: Media[]; status: number } | { ok: false; error: string; status: number };
-
-export const fetchRunMedia = async (handle: string, projectName: string, runName: string): Promise<MediaFetchResponse> =>
+const fetchRunMedia = async (handle: string, projectName: string, runName: string): Promise<APIResponse<Media[]>> =>
   await request<Media[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/media`);
 
 export const getMediaFileUrl = (handle: string, projectName: string, runName: string, id: string, index = 0): string =>

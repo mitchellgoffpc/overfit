@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { fetchRunScalars, useScalarStore } from "stores/scalars";
+import { fetchMultiRunScalars, useScalarStore } from "stores/scalars";
 import { API_BASE } from "types";
 import type { Scalar } from "types";
 
@@ -40,16 +40,17 @@ describe("scalar store", () => {
     expect(useScalarStore.getState().error).toBeNull();
   });
 
-  it("exports a scalar request helper for multi-run pages", async () => {
+  it("exports a multi-run scalar helper for compare pages", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([scalar]));
 
-    const response = await fetchRunScalars("ada", "demo", "run-1");
+    const result = await fetchMultiRunScalars("ada", "demo", ["run-1"]);
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_BASE}/accounts/ada/projects/demo/runs/run-1/scalars`,
       { credentials: "include" }
     );
-    expect(response.ok).toBe(true);
+    expect(result.scalarsByRun["run-1"]).toEqual([scalar]);
+    expect(result.error).toBeNull();
   });
 
   it("stores the error when the request fails", async () => {

@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
 import Modal from "components/Modal";
-import SettingsSidebar from "components/settings/SettingsSidebar";
+import SectionHeader from "components/SectionHeader";
 import { RULED_LINE } from "helpers";
 import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import { useAuthStore } from "stores/auth";
@@ -81,48 +81,43 @@ export default function SettingsOrganizationsContent(): ReactElement {
   };
 
   return (
-    <section className="grid lg:grid-cols-[18.75rem_1fr]">
-      <SettingsSidebar sectionLabel="Summary" stats={[{ label: "memberships", value: memberships.length }]} />
+    <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
+      <SectionHeader title="Organizations" subtitle={`${String(memberships.length)} memberships`} sectionLabel="Section B" />
 
-      <div className="relative pb-6 px-4 pt-6 lg:p-6">
-        <header className="mb-3">
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section B</p>
-          <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Organizations</h2>
-        </header>
-
-        <div className="flex flex-wrap gap-2" style={{ marginBottom: RULED_LINE }}>
-          {error ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">{error}</div> : null}
+      {error ? (
+        <div className="flex flex-wrap gap-2" style={{ marginTop: RULED_LINE }}>
+          <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">{error}</div>
         </div>
+      ) : null}
 
-        <div className="mb-4 flex items-center justify-between">
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Your organizations</p>
-          <button className={inkButtonClass} type="button" onClick={openCreateModal}>New organization</button>
-        </div>
+      <div className="flex items-center justify-between" style={{ marginTop: RULED_LINE }}>
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Your organizations</p>
+        <button className={inkButtonClass} type="button" onClick={openCreateModal}>New organization</button>
+      </div>
 
-        {isLoading ? <div className="text-xs text-brand-textMuted">Loading organizations...</div> : null}
-        {!isLoading && memberships.length === 0 ? <div className="text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
+      {isLoading ? <div className="mt-3 text-xs text-brand-textMuted">Loading organizations...</div> : null}
+      {!isLoading && memberships.length === 0 ? <div className="mt-3 text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
 
-        <div className={memberships.length > 0 ? "border-t border-brand-borderMuted" : ""}>
-          {memberships.map((membership) => (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0" key={membership.id}>
-              <div className="grid gap-1">
-                <p className="text-sm font-semibold">{membership.name}</p>
-                <p className="text-[0.6875rem] text-brand-textMuted">
-                  @{membership.handle}
-                  <span className="ml-2 rounded-full border border-brand-borderMuted px-2 py-0.5 text-[0.625rem] font-medium">{membership.role}</span>
-                </p>
-              </div>
-              <button
-                className={dangerButtonClass}
-                type="button"
-                onClick={() => { setLeaveTarget(membership); }}
-                disabled={isLeaving === membership.handle}
-              >
-                {isLeaving === membership.handle ? "Leaving..." : "Leave"}
-              </button>
+      <div className={memberships.length > 0 ? "mt-3 border-t border-brand-borderMuted" : ""}>
+        {memberships.map((membership) => (
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0" key={membership.id}>
+            <div className="grid gap-1">
+              <p className="text-sm font-semibold">{membership.name}</p>
+              <p className="text-[0.6875rem] text-brand-textMuted">
+                @{membership.handle}
+                <span className="ml-2 rounded-full border border-brand-borderMuted px-2 py-0.5 text-[0.625rem] font-medium">{membership.role}</span>
+              </p>
             </div>
-          ))}
-        </div>
+            <button
+              className={dangerButtonClass}
+              type="button"
+              onClick={() => { setLeaveTarget(membership); }}
+              disabled={isLeaving === membership.handle}
+            >
+              {isLeaving === membership.handle ? "Leaving..." : "Leave"}
+            </button>
+          </div>
+        ))}
       </div>
 
       <Modal open={showCreate} onClose={() => { setShowCreate(false); }}>
@@ -188,6 +183,6 @@ export default function SettingsOrganizationsContent(): ReactElement {
           </div>
         </div>
       </Modal>
-    </section>
+    </main>
   );
 }

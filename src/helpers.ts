@@ -3,10 +3,13 @@ import type { Project } from "types";
 
 export const RULED_LINE_HEIGHT = 1.875;
 export const RULED_LINE = `${String(RULED_LINE_HEIGHT)}rem`;
+export const TABLE_HEADER_CELL_CLASS = "flex items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
+export const TABLE_BODY_CELL_CLASS = "flex items-center whitespace-nowrap px-2.5 text-[0.75rem] text-brand-text";
 
 interface APISuccessResponse<T> { ok: true; body: T; error?: never; status: number };
 interface APIFailureResponse { ok: false; body?: never; error: string; status: number };
-type APIResponse<T> = APISuccessResponse<T> | APIFailureResponse;
+export type APIResponse<T> = APISuccessResponse<T> | APIFailureResponse;
+export type ActionResult<T = never> = [T] extends [never] ? { ok: true } | { ok: false; error: string } : { ok: true; body: T } | { ok: false; error: string };
 
 export const request = async <T>(path: string, init?: RequestInit): Promise<APIResponse<T>> => {
   const url = path.startsWith("/") ? `${API_BASE}${path}` : `${API_BASE}/${path}`;

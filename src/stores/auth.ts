@@ -1,13 +1,11 @@
 import { create } from "zustand";
 
+import type { ActionResult } from "helpers";
 import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR, request, send, testEmail, testHandle } from "helpers";
 import { useAccountsStore } from "stores/accounts";
 import type { ApiKey, ApiKeyWithToken, User } from "types";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
-type AuthResult = { ok: true } | { ok: false; error: string };
-type ApiKeysResult = { ok: true; body: ApiKey[] } | { ok: false; error: string };
-type CreateApiKeyResult = { ok: true; body: ApiKeyWithToken } | { ok: false; error: string };
 interface AuthResponse { user: User };
 
 export const checkEmailValid = async (email: string): Promise<string | null> => {
@@ -29,17 +27,17 @@ export const checkHandleValid = async (handle: string): Promise<string | null> =
   return result.ok ? (result.body.exists ? USERNAME_IN_USE_ERROR : null) : result.error;
 };
 
-export const loadApiKeys = async (): Promise<ApiKeysResult> => {
+export const loadApiKeys = async (): Promise<ActionResult<ApiKey[]>> => {
   const { ok, error, body } = await request<ApiKey[]>("me/api-keys");
   return ok ? { ok: true, body } : { ok: false, error };
 };
 
-export const createApiKey = async (label: string): Promise<CreateApiKeyResult> => {
+export const createApiKey = async (label: string): Promise<ActionResult<ApiKeyWithToken>> => {
   const { ok, error, body } = await send<ApiKeyWithToken>("me/api-keys", "POST", { label });
   return ok ? { ok: true, body } : { ok: false, error };
 };
 
-export const deleteApiKey = async (id: string): Promise<AuthResult> => {
+export const deleteApiKey = async (id: string): Promise<ActionResult> => {
   const { ok, error } = await request<{ status: "ok" }>(`me/api-keys/${id}`, { method: "DELETE" });
   return ok ? { ok: true } : { ok: false, error };
 };
@@ -48,8 +46,8 @@ interface AuthState {
   status: AuthStatus;
   currentHandle: string | null;
   loadAuth: () => Promise<void>;
-  login: (email: string, password: string) => Promise<AuthResult>;
-  signup: (email: string, handle: string, password: string) => Promise<AuthResult>;
+  login: (email: string, password: string) => Promise<ActionResult>;
+  signup: (email: string, handle: string, password: string) => Promise<ActionResult>;
   logout: () => Promise<void>;
 }
 
@@ -59,12 +57,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadAuth: async () => {
     set({ status: "loading" });
-    const { ok, body, status } = await request<User>("me");
+    const { ok, body } = await request<User>("me");
     if (ok) {
       useAccountsStore.getState().setAccount(body);
       set({ status: "authenticated", currentHandle: body.handle });
-    } else if (status === 401) {
-      set({ status: "unauthenticated", currentHandle: null });
     } else {
       set({ status: "unauthenticated", currentHandle: null });
     }

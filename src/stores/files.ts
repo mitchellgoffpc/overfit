@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import type { APIResponse } from "helpers";
 import { request } from "helpers";
 
 export interface FileEntry {
@@ -9,9 +10,7 @@ export interface FileEntry {
   lastModified: string;
 }
 
-type FilesFetchResponse = { ok: true; body: FileEntry[]; status: number } | { ok: false; error: string; status: number };
-
-export const fetchRunFiles = async (handle: string, projectName: string, runName: string, path?: string): Promise<FilesFetchResponse> => {
+export const fetchRunFiles = async (handle: string, projectName: string, runName: string, path?: string): Promise<APIResponse<FileEntry[]>> => {
   const query = path ? `?path=${encodeURIComponent(path)}` : "";
   return await request<FileEntry[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/files${query}`);
 };

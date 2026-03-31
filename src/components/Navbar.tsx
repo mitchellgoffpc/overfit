@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
-import { colors } from "colors";
 import Avatar from "components/Avatar";
 import { useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
@@ -23,8 +22,6 @@ export interface NavbarTab {
   readonly label: string;
   readonly href: string;
   readonly icon?: IconDefinition;
-  readonly tint?: string;
-  readonly tintActive?: string;
 }
 
 interface NavbarProps {
@@ -98,7 +95,7 @@ export default function Navbar({
             href={tab.href}
             className={`${sizeClass} ${baseClass} ${stateClass}`}
             aria-current={isActive ? "page" : undefined}
-            style={{ backgroundColor: isActive ? tab.tintActive ?? colors.settingsTab.profile.tintActive : tab.tint ?? colors.settingsTab.profile.tint }}
+            style={{ backgroundColor: isActive ? "#fcfffd" : "#f6fbf8" }}
           >
             {isActive ? (
               <span className="absolute -bottom-1 left-1 right-1 h-1.5 rounded-sm" style={{ background: "rgba(26,123,125,0.24)" }} />

@@ -34,14 +34,11 @@ export const colors = {
   signal: { running: "#24b26b", failed: "#bb5f5f", accent: "#2d7172" },
   chart: { bg: "#ffffff", grid: "#edf2f2", axis: "#d7e2e2", text: "#627070", hover: "#8fd0d1" },
   heatmap: { level0: "#e7ecef", level1: "#cbe7e1", level2: "#8fd3c8", level3: "#4fb8aa" },
-  settingsTab: {
-    profile: { tint: "#f6fbf8", tintActive: "#fcfffd" },
-    organizations: { tint: "#f4f8fc", tintActive: "#fbfdff" },
-    apiKeys: { tint: "#f8f5fc", tintActive: "#fdfbff" },
-  },
 } as const;
 
 export const runPalette = [
   "#1a7b7d", "#e16367", "#5f86d5", "#a06ac9",
   "#d48834", "#2f9f77", "#ca5d94", "#61738a",
 ] as const;
+
+export const getRunColor = (index: number): string => runPalette[index % runPalette.length] ?? colors.brand.accent;

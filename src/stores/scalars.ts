@@ -1,11 +1,10 @@
 import { create } from "zustand";
 
+import type { APIResponse } from "helpers";
 import { request } from "helpers";
 import type { Scalar } from "types";
 
-type ScalarFetchResponse = { ok: true; body: Scalar[]; status: number } | { ok: false; error: string; status: number };
-
-export const fetchRunScalars = async (handle: string, projectName: string, runName: string): Promise<ScalarFetchResponse> =>
+const fetchRunScalars = async (handle: string, projectName: string, runName: string): Promise<APIResponse<Scalar[]>> =>
   await request<Scalar[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
 
 interface MultiRunScalarsResult { scalarsByRun: Record<string, Scalar[]>; error: string | null }

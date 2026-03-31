@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
-import { colors, runPalette } from "colors";
+import { colors, getRunColor } from "colors";
 import ChartSections from "components/charts/ChartSections";
 import MediaPreview from "components/MediaPreview";
 import NotebookShell from "components/NotebookShell";
@@ -79,7 +79,7 @@ export default function ProjectCompareRoute(): ReactElement {
   }, [handle, projectName, projectRuns]);
 
   const colorByRunName = useMemo(
-    () => new Map(projectRuns.map((run, index) => [run.name, runPalette[index % runPalette.length] ?? colors.brand.accent])),
+    () => new Map(projectRuns.map((run, index) => [run.name, getRunColor(index)])),
     [projectRuns]
   );
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
@@ -101,7 +101,7 @@ export default function ProjectCompareRoute(): ReactElement {
         id: `${metric}:${run.name}`,
         label: run.name,
         points: getSeriesPoints(scalarsByRun[run.name] ?? [], metric),
-        color: colorByRunName.get(run.name) ?? runPalette[index % runPalette.length] ?? colors.brand.accent,
+        color: colorByRunName.get(run.name) ?? getRunColor(index),
         lineWidth: 2
       }))
     }));
@@ -213,7 +213,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
   const renderRunItem = (run: Run, index: number) => {
     const isVisible = hiddenRunNames[run.name] !== true;
-    const color = runPalette[index % runPalette.length] ?? colors.brand.accent;
+    const color = getRunColor(index);
     const isActive = run.status === "running";
     return (
       <button

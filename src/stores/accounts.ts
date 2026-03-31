@@ -1,12 +1,11 @@
 import { create } from "zustand";
 
+import type { ActionResult } from "helpers";
 import { request, send } from "helpers";
 import { useAuthStore } from "stores/auth";
 import type { Organization, User } from "types";
 
-type UserResult = { ok: true } | { ok: false; error: string };
-
-export const uploadCurrentAccountAvatar = async (file: File): Promise<UserResult> => {
+export const uploadCurrentAccountAvatar = async (file: File): Promise<ActionResult> => {
   const body = await file.arrayBuffer();
   const { ok, error } = await request<{ status: "ok" }>("me/avatar", {
     method: "PUT",
@@ -16,7 +15,7 @@ export const uploadCurrentAccountAvatar = async (file: File): Promise<UserResult
   return ok ? { ok: true } : { ok: false, error };
 };
 
-export const deleteCurrentAccountAvatar = async (): Promise<UserResult> => {
+export const deleteCurrentAccountAvatar = async (): Promise<ActionResult> => {
   const { ok, error } = await request<{ status: "ok" }>("me/avatar", { method: "DELETE" });
   return ok ? { ok: true } : { ok: false, error };
 };
@@ -26,7 +25,7 @@ interface AccountsState {
   notFoundHandles: Set<string>;
   me: () => User | null;
   fetchAccount: (handle: string) => Promise<User | Organization | null>;
-  updateProfile: (name: string, bio: string) => Promise<UserResult>;
+  updateProfile: (name: string, bio: string) => Promise<ActionResult>;
   setAccount: (account: User | Organization) => void;
 }
 
