@@ -28,14 +28,14 @@ interface NavbarProps {
   readonly breadcrumbs: Breadcrumb[];
   readonly tabs?: NavbarTab[];
   readonly activeTabId?: string;
-  readonly tabsMaxWidth?: string;
+  readonly pageWidth?: string;
 }
 
 export default function Navbar({
   breadcrumbs,
   tabs = [],
   activeTabId,
-  tabsMaxWidth
+  pageWidth
 }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
   const user = useAccountsStore((state) => state.me());
@@ -76,7 +76,7 @@ export default function Navbar({
   };
 
   const tabsClass = "flex -mb-px items-end justify-end gap-2";
-  const accountMinWidth = tabsMaxWidth ? { minWidth: `calc((100vw - ${tabsMaxWidth}) / 2)` } : undefined;
+  const accountMinWidth = pageWidth ? { minWidth: `calc((100vw - ${pageWidth}) / 2)` } : undefined;
 
   const renderTabs = () => (
     <>

@@ -39,7 +39,6 @@ export default function RunDetailRoute(): ReactElement {
         breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: projectName, href: `/${handle}/${projectName}` }, { label: runName }]}
         tabs={tabs}
         activeTabId={activeTab}
-        tabsMaxWidth="100vw"
       />
 
       <NotebookShell columns="18.75rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">

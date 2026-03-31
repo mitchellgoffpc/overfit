@@ -33,10 +33,10 @@ export default function SettingsPage(): ReactElement {
         breadcrumbs={[{ label: "Settings" }]}
         tabs={tabs.map((tab) => ({ id: tab.id, label: tab.label, href: tab.path, icon: tab.icon }))}
         activeTabId={activeTab.id}
-        tabsMaxWidth="100vw"
+        pageWidth="80rem"
       />
 
-      <NotebookShell columns="18.75rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
+      <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
         <aside
           className="relative pb-5 px-4 lg:border-r lg:pb-6 lg:pr-5"
           style={{ paddingTop: `${String(RULED_LINE_HEIGHT)}rem` }}

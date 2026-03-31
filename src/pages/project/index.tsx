@@ -40,7 +40,7 @@ export default function ProjectPage(): ReactElement {
 
   return (
     <div className="min-h-screen bg-brand-bgStrong text-brand-text">
-      <Navbar breadcrumbs={breadcrumbs} tabs={tabs} activeTabId={activeTab} tabsMaxWidth="100vw" />
+      <Navbar breadcrumbs={breadcrumbs} tabs={tabs} activeTabId={activeTab} />
 
       <Switch>
         <Route path="/:handle/:projectName/compare" component={ProjectComparePage} />
