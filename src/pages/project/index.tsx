@@ -6,7 +6,7 @@ import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
 import Navbar from "components/Navbar";
 import ProjectComparePage from "pages/project/compare";
 import ProjectRunsPage from "pages/project/runs";
-import ProjectSettingsPage from "pages/project/settings";
+import ProjectSettingsPage from "pages/project/settings/index";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 
 export default function ProjectPage(): ReactElement {
@@ -27,7 +27,7 @@ export default function ProjectPage(): ReactElement {
   }, [fetchProject, handle, project, projectName]);
 
   const [location] = useLocation();
-  const activeTab = location.endsWith("/compare") ? "compare" : location.endsWith("/settings") ? "settings" : "runs";
+  const activeTab = location.endsWith("/compare") ? "compare" : location.includes("/settings") ? "settings" : "runs";
   const basePath = `/${handle}/${projectName}`;
   const tabs = [
     { id: "runs", label: "Runs", href: basePath, icon: faList },
@@ -44,6 +44,7 @@ export default function ProjectPage(): ReactElement {
 
       <Switch>
         <Route path="/:handle/:projectName/compare" component={ProjectComparePage} />
+        <Route path="/:handle/:projectName/settings/*" component={ProjectSettingsPage} />
         <Route path="/:handle/:projectName/settings" component={ProjectSettingsPage} />
         <Route path="/:handle/:projectName" component={ProjectRunsPage} />
         <Route path="/:handle/:projectName/*"><Redirect to={basePath} /></Route>
