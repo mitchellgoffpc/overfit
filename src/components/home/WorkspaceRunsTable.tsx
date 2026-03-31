@@ -32,9 +32,9 @@ export default function WorkspaceRunsTable({ runs, isLoading, error }: Workspace
             No runs yet across your projects.
           </div>
         ) : (
-          <div className="min-w-0 overflow-x-auto overflow-y-hidden" style={{ marginTop: RULED_LINE }}>
+          <div className="-mx-4 min-w-0 overflow-x-auto overflow-y-hidden lg:-mx-5" style={{ marginTop: RULED_LINE }}>
             <div className="min-w-full w-max">
-              <div className="grid" style={{ gridTemplateColumns: tableGridTemplateColumns, height: RULED_LINE }}>
+              <div className="grid px-4 lg:px-5" style={{ gridTemplateColumns: tableGridTemplateColumns, height: RULED_LINE }}>
                 <span className={TABLE_HEADER_CELL_CLASS}>Ln</span>
                 <span className={TABLE_HEADER_CELL_CLASS}>Name</span>
                 <span className={TABLE_HEADER_CELL_CLASS}>State</span>
@@ -49,7 +49,7 @@ export default function WorkspaceRunsTable({ runs, isLoading, error }: Workspace
                 const hovered = hoveredRunId === run.id;
                 return (
                   <div
-                    className={`grid items-center ${hovered ? "bg-brand-accent/5" : ""}`}
+                    className={`grid items-center px-4 lg:px-5 ${hovered ? "bg-brand-accent/5" : ""}`}
                     key={run.id}
                     style={{ gridTemplateColumns: tableGridTemplateColumns, height: RULED_LINE }}
                     onMouseEnter={() => { setHoveredRunId(run.id); }}

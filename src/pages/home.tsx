@@ -85,7 +85,7 @@ export default function IndexRoute(): ReactElement {
           </div>
         </aside>
 
-        <main className="relative px-4 pb-5 lg:px-5 lg:pb-6">
+        <main className="relative min-w-0 px-4 pb-5 lg:px-5 lg:pb-6">
           <SectionHeader title="Runs" subtitle={`${String(runs.length)} total`} />
           <WorkspaceRunsTable runs={runs} isLoading={isRunsLoading} error={runError} />
         </main>
