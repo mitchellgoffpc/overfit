@@ -27,10 +27,11 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
-  const [avatarVersion, setAvatarVersion] = useState(() => Date.now());
   const [isAvatarMissing, setIsAvatarMissing] = useState(false);
   const initials = useMemo(() => getInitials(user.name), [user.name]);
-  const avatarSrc = useMemo(() => `${API_BASE}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`, [avatarVersion, user.handle]);
+  const avatarVersion = useAccountsStore((state) => state.avatarVersion);
+  const invalidateAvatar = useAccountsStore((state) => state.invalidateAvatar);
+  const avatarSrc = `${API_BASE}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`;
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -58,7 +59,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
     if (result.ok) {
       setAvatarStatus("Profile picture updated");
       setIsAvatarMissing(false);
-      setAvatarVersion(Date.now());
+      invalidateAvatar();
       setIsAvatarSaving(false);
     } else {
       setAvatarError(result.error);
@@ -74,7 +75,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
     if (result.ok) {
       setAvatarStatus("Profile picture removed");
       setIsAvatarMissing(true);
-      setAvatarVersion(Date.now());
+      invalidateAvatar();
       setIsAvatarSaving(false);
     } else {
       setAvatarError(result.error);

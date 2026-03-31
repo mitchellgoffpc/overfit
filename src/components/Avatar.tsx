@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactElement } from "react";
 
 import { getInitials } from "helpers";
+import { useAccountsStore } from "stores/accounts";
 import { API_BASE } from "types";
 
 interface AvatarProps {
@@ -12,7 +13,8 @@ interface AvatarProps {
 
 export default function Avatar({ handle, name, className = "", style }: AvatarProps): ReactElement {
   const initials = getInitials(name);
-  const src = `${API_BASE}/accounts/${encodeURIComponent(handle)}/avatar`;
+  const avatarVersion = useAccountsStore((state) => state.avatarVersion);
+  const src = `${API_BASE}/accounts/${encodeURIComponent(handle)}/avatar?v=${avatarVersion.toString()}`;
 
   return (
     <div
@@ -21,6 +23,7 @@ export default function Avatar({ handle, name, className = "", style }: AvatarPr
     >
       {initials}
       <img
+        key={avatarVersion}
         className="absolute inset-0 h-full w-full object-cover"
         src={src}
         alt={`${name} avatar`}

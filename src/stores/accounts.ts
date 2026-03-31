@@ -23,15 +23,18 @@ export const deleteCurrentAccountAvatar = async (): Promise<ActionResult> => {
 interface AccountsState {
   accounts: Record<string, User | Organization>;
   notFoundHandles: Set<string>;
+  avatarVersion: number;
   me: () => User | null;
   fetchAccount: (handle: string) => Promise<User | Organization | null>;
   updateProfile: (name: string, bio: string) => Promise<ActionResult>;
   setAccount: (account: User | Organization) => void;
+  invalidateAvatar: () => void;
 }
 
 export const useAccountsStore = create<AccountsState>((set, get) => ({
   accounts: {},
   notFoundHandles: new Set(),
+  avatarVersion: Date.now(),
 
   me: () => {
     const currentHandle = useAuthStore.getState().currentHandle;
@@ -62,5 +65,9 @@ export const useAccountsStore = create<AccountsState>((set, get) => ({
 
   setAccount: (account: User | Organization) => {
     set((state) => ({ accounts: { ...state.accounts, [account.handle]: account } }));
+  },
+
+  invalidateAvatar: () => {
+    set({ avatarVersion: Date.now() });
   },
 }));
