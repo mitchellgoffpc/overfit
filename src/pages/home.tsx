@@ -2,9 +2,9 @@ import type { ReactElement } from "react";
 import { useEffect, useMemo } from "react";
 import { Link } from "wouter";
 
+import WorkspaceRunsTable from "components/home/WorkspaceRunsTable";
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
-import RunsPanel from "components/RunsPanel";
 import { useAccountsStore } from "stores/accounts";
 import { useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
@@ -86,31 +86,8 @@ export default function IndexRoute(): ReactElement {
           </div>
         </aside>
 
-        <main className="relative p-6">
-          <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section H</p>
-              <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Workspace Activity</h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                className={"rounded-lg border border-brand-borderStrong bg-hover px-3 py-1.5 text-[0.75rem]"
-                  + " font-semibold text-brand-text transition hover:bg-white"}
-                type="button"
-              >
-                View reports
-              </button>
-              <button
-                className={"rounded-lg border border-brand-borderStrong bg-brand-accentMuted px-3 py-1.5"
-                  + " text-[0.75rem] font-semibold text-brand-text transition hover:bg-hover"}
-                type="button"
-              >
-                + New run
-              </button>
-            </div>
-          </header>
-
-          <RunsPanel runs={runs} projects={projects} userHandle={userHandle} isLoading={isRunsLoading} error={runError} />
+        <main className="relative py-5 pl-5 pr-5 lg:py-6 lg:pl-5 lg:pr-5">
+          <WorkspaceRunsTable runs={runs} projects={projects} isLoading={isRunsLoading} error={runError} />
         </main>
       </NotebookShell>
     </div>
