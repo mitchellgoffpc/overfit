@@ -9,6 +9,7 @@ import CollapsibleSection from "components/CollapsibleSection";
 import MediaPreview from "components/MediaPreview";
 import SectionHeader from "components/SectionHeader";
 import StepSlider from "components/StepSlider";
+import { RULED_LINE } from "helpers";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
 import { useScalarStore } from "stores/scalars";
@@ -104,7 +105,7 @@ export default function RunChartsPage(): ReactElement {
           ? <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
           : undefined}
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {visible.flatMap((item) => Array.from({ length: item.count }, (_, i) => {
             return (
               <div className="rounded-xl border border-brand-border bg-brand-surface p-2 shadow-soft" key={`${item.id}-${String(i)}`}>
@@ -118,23 +119,27 @@ export default function RunChartsPage(): ReactElement {
   };
 
   return (
-    <main className="relative px-[1.5rem] pb-[1.5rem]">
-      <SectionHeader title="Scalar Plots" subtitle="training + validation metrics" />
+    <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
+      <SectionHeader title="Charts" subtitle="training + validation metrics" />
       {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
       {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
-      <ChartSections sections={sections} hasPoints={hasPoints} isLoading={isScalarsLoading} />
+      <div style={{ marginTop: RULED_LINE }}>
+        <ChartSections sections={sections} hasPoints={hasPoints} isLoading={isScalarsLoading} />
+      </div>
       {mediaByKey.length > 0 ? (
-        <>
-          <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" numLines={0} />
+        <div>
+          <SectionHeader title="Media" subtitle="logged images, video + audio" sectionLabel="Section B" />
           {mediaError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{mediaError}</div> : null}
-          {mediaByKey.some(({ items }) => items.some((m) => m.count > 1)) ? (
-            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {mediaByKey.filter(({ items }) => items.some((m) => m.count > 1)).map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
-            </div>
-          ) : null}
-          {mediaByKey.filter(({ items }) => !items.some((m) => m.count > 1)).map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
-        </>
+          <div style={{ marginTop: RULED_LINE }}>
+            {mediaByKey.some(({ items }) => items.some((m) => m.count > 1)) ? (
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {mediaByKey.filter(({ items }) => items.some((m) => m.count > 1)).map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
+              </div>
+            ) : null}
+            {mediaByKey.filter(({ items }) => !items.some((m) => m.count > 1)).map(({ key, items, steps }) => renderMediaGroup(key, items, steps))}
+          </div>
+        </div>
       ) : null}
     </main>
   );

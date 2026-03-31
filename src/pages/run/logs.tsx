@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE } from "helpers";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import type { ParsedLogLine } from "stores/logs";
 import { useLogStore } from "stores/logs";
 import { useRunStore } from "stores/runs";
@@ -46,13 +46,13 @@ export default function RunLogsPage(): ReactElement {
   const renderLine = (line: LogLine) => {
     const { timestamp, message, content } = line;
     return (
-      <div className="grid grid-cols-[4.5rem_1fr] items-center gap-3 px-3" style={{ height: RULED_LINE }} key={line.lineNumber}>
+      <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-start gap-3" style={{ minHeight: RULED_LINE }} key={line.lineNumber}>
         <span className="flex justify-end px-1 text-right text-brand-textMuted/70">{line.lineNumber}</span>
-        <span className="text-log-text">
+        <span className="min-w-0 whitespace-normal text-log-text">
           {!timestamp ? content : (
             <>
-              <span className="leading-5 mr-2 inline-flex items-center whitespace-nowrap rounded bg-log-badge px-1.5 text-log-textMuted">{timestamp}</span>
-              <span className="break-words">{message}</span>
+              <span className="mr-2 inline-flex items-center whitespace-nowrap rounded bg-log-badge px-1.5 leading-5 text-log-textMuted">{timestamp}</span>
+              <span>{message}</span>
             </>
           )}
         </span>
@@ -61,9 +61,13 @@ export default function RunLogsPage(): ReactElement {
   };
 
   return (
-    <main className="relative flex min-h-[32.5rem] flex-col px-[1.5rem] pb-[1.5rem]">
-      <SectionHeader title="Runtime Logs" subtitle="live stream + search" numLines={6}>
-        <div className="flex gap-2 flex-row items-center justify-between flex-grow">
+    <main className="relative flex min-h-[32.5rem] flex-col pb-[1.5rem] px-4 lg:px-[1.5rem]">
+      <SectionHeader title="Logs" subtitle="live stream + search" sectionLabel="Section C" />
+      <section
+        className="flex items-center gap-2"
+        style={{ height: `${String(RULED_LINE_HEIGHT * 3)}rem` }}
+      >
+        <div className="flex flex-1 items-center justify-between gap-2">
           <div className="flex flex-1 items-center gap-2 rounded-xl border border-brand-border bg-white px-3 py-2">
             <span className="text-[0.6875rem] uppercase tracking-[0.08em] text-brand-textMuted">Search</span>
             <input
@@ -74,9 +78,9 @@ export default function RunLogsPage(): ReactElement {
             />
           </div>
           {workerIds.length > 1 ? (
-            <label className="flex items-center gap-2 text-[0.75rem] text-brand-textMuted">
-              <span className="uppercase tracking-[0.08em]">Worker</span>
+            <div className="flex items-center">
               <select
+                aria-label="Worker"
                 className="rounded-xl border border-brand-border bg-white px-3 py-2 text-[0.8125rem] text-brand-text"
                 value={workerId}
                 onChange={(event) => { setWorkerId(event.target.value); }}
@@ -87,10 +91,10 @@ export default function RunLogsPage(): ReactElement {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           ) : null}
         </div>
-      </SectionHeader>
+      </section>
 
       {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
@@ -99,8 +103,8 @@ export default function RunLogsPage(): ReactElement {
         {logError ? <div className="mb-2 text-[0.8125rem] text-brand-textMuted">{logError}</div> : null}
 
         <div className="min-h-0 flex-1 overflow-auto border-b border-brand-border">
-          {!logError && !scope && visibleLines.length === 0 ? <div className="px-3 py-2 text-[0.8125rem] text-brand-textMuted">Loading logs...</div> : null}
-          {!logError && scope && visibleLines.length === 0 ? <div className="px-3 py-2 text-[0.8125rem] text-brand-textMuted">No logs yet.</div> : null}
+          {!logError && !scope && visibleLines.length === 0 ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">Loading logs...</div> : null}
+          {!logError && scope && visibleLines.length === 0 ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">No logs yet.</div> : null}
           {visibleLines.length > 0 ? (
             <div className="font-mono text-[0.75rem] text-log-text" style={{ lineHeight: RULED_LINE }}>
               {visibleLines.map(renderLine)}

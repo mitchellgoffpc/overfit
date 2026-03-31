@@ -11,9 +11,10 @@ interface NotebookShellProps {
 
 export default function NotebookShell({ columns, maxWidth, className, children }: NotebookShellProps): ReactElement {
   const baseClass = "relative mx-auto w-full overflow-hidden border-x border-b border-brand-borderStrong"
-    + " bg-notebook-bg shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)]";
+    + " bg-notebook-bg pl-10 shadow-[0_0.875rem_2.25rem_rgba(30,52,52,0.18)]";
   const gridClass = columns ? " lg:grid" : "";
   const style: CSSProperties = {};
+  style.paddingTop = "1px";
   if (columns) { style.gridTemplateColumns = columns; }
   if (maxWidth) { style.maxWidth = maxWidth; }
 
@@ -25,7 +26,7 @@ export default function NotebookShell({ columns, maxWidth, className, children }
         aria-hidden
         style={{ backgroundImage: "linear-gradient(to bottom, rgba(96,125,139,0.2) 1px, transparent 1px)", backgroundSize: `100% ${RULED_LINE}` }}
       />
-      <div className="pointer-events-none absolute bottom-0 left-10 top-0 w-px bg-notebook-marginLine/70" aria-hidden />
+      <div className="pointer-events-none absolute bottom-0 left-[calc(2.5rem-1px)] top-0 w-px bg-notebook-marginLine/70" aria-hidden />
       {children}
     </div>
   );

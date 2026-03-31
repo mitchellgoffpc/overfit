@@ -42,16 +42,16 @@ export default function RunDetailRoute(): ReactElement {
         tabsMaxWidth="100vw"
       />
 
-      <NotebookShell columns="18.75rem 1fr" maxWidth="calc(100% - 5rem)">
+      <NotebookShell columns="18.75rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
         <aside
-          className="relative border-b border-brand-borderMuted px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
-          style={{ paddingTop: `calc(${String(RULED_LINE_HEIGHT)}rem + 1px)` }}
+          className="relative pb-5 px-4 lg:border-r lg:pb-6 lg:pr-5"
+          style={{ paddingTop: `${String(RULED_LINE_HEIGHT)}rem` }}
         >
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Lab Notebook</p>
-          <h1 className="font-display text-[2.0625rem] leading-none text-brand-text" style={{ height: RULED_LINE }}>{runName}</h1>
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Run Ledger</p>
+          <h1 className="font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>{runName}</h1>
 
           <div className="mt-5 rounded-[0.75rem] border border-brand-borderMuted bg-white/85 px-3 py-3">
-            <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Overview</p>
             {run ? (
               <>
                 <div className="mt-2 flex items-center justify-between text-[0.75rem]">

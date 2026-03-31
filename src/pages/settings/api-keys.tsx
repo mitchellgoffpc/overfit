@@ -76,7 +76,7 @@ export default function SettingsKeysContent(): ReactElement {
     <section className="grid lg:grid-cols-[18.75rem_1fr]">
       <SettingsSidebar sectionLabel="Summary" stats={[{ label: "active keys", value: apiKeys.length }]} />
 
-      <div className="relative p-6">
+      <div className="relative pb-6 px-4 pt-6 lg:p-6">
         <header className="mb-3">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section C</p>
           <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">API Keys</h2>

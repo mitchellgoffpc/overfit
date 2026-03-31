@@ -131,20 +131,31 @@ export default function ProjectCompareRoute(): ReactElement {
     const selectedIndex = mediaIndexes[key] ?? 0;
 
     return (
-      <div className="rounded-[0.875rem] border border-brand-borderMuted bg-white/95 px-4 pb-4 pt-3 shadow-[0_0.5rem_1.25rem_rgba(23,43,43,0.06)]" key={key}>
-        <h3 className="mb-2 text-center text-[0.8125rem] font-semibold text-brand-text">{key}</h3>
-        <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${String(visibleRuns.length)}, minmax(0, 1fr))` }}>
+      <div
+        className="flex flex-col rounded-[0.875rem] border border-brand-borderMuted bg-white/95 px-4 pb-4 pt-3 shadow-[0_0.5rem_1.25rem_rgba(23,43,43,0.06)]"
+        style={{ height: `${String(9 * RULED_LINE_HEIGHT)}rem` }}
+        key={key}
+      >
+        <h3 className="mb-2 shrink-0 text-center text-[0.8125rem] font-semibold text-brand-text">{key}</h3>
+        <div className="grid min-h-0 flex-1 gap-3" style={{ gridTemplateColumns: `repeat(${String(visibleRuns.length)}, minmax(0, 1fr))` }}>
           {visibleRuns.map((run) => {
             const items = (mediaByRun[run.name] ?? []).filter((m) => m.key === key && m.step === selectedStep);
             const item = items[0];
             const color = colorByRunName.get(run.name) ?? colors.brand.accent;
             return (
-              <div className="flex flex-col items-center gap-1.5" key={run.name}>
-                <span className="text-[0.75rem] font-semibold" style={{ color }}>{run.name}</span>
+              <div className="flex min-h-0 min-w-0 flex-col items-center gap-1.5" key={run.name}>
+                <span className="w-full truncate text-center text-[0.75rem] font-semibold" style={{ color }} title={run.name}>{run.name}</span>
                 {item ? (
-                  <MediaPreview type={item.type} src={getMediaFileUrl(handle, projectName, run.name, item.id, selectedIndex)} alt={key} />
+                  <div className="min-h-0 w-full flex-1 overflow-hidden rounded-lg">
+                    <MediaPreview
+                      type={item.type}
+                      src={getMediaFileUrl(handle, projectName, run.name, item.id, selectedIndex)}
+                      alt={key}
+                      mediaClassName={item.type === "audio" ? "" : "h-full object-contain"}
+                    />
+                  </div>
                 ) : (
-                  <div className={"flex h-24 w-full items-center justify-center rounded-lg border border-dashed"
+                  <div className={"flex min-h-0 w-full flex-1 items-center justify-center rounded-lg border border-dashed"
                     + " border-brand-border text-[0.75rem] text-brand-textMuted"}>
                     No media
                   </div>
@@ -153,7 +164,7 @@ export default function ProjectCompareRoute(): ReactElement {
             );
           })}
         </div>
-        <div className="mt-3 flex flex-col items-center gap-2 border-t border-brand-borderMuted pt-3">
+        <div className="mt-3 flex shrink-0 flex-col items-center gap-2 border-t border-brand-borderMuted pt-3">
           {steps.length > 1 ? (
             <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
           ) : null}
@@ -228,11 +239,11 @@ export default function ProjectCompareRoute(): ReactElement {
   };
 
   return (
-    <NotebookShell columns="18.25rem 1fr" maxWidth="calc(100% - 5rem)">
+    <NotebookShell columns="18.25rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
         {!showProjectNotFound ? (
           <aside
-            className="relative border-b border-brand-borderMuted px-5 pb-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:pb-6"
-            style={{ paddingTop: `calc(${String(RULED_LINE_HEIGHT)}rem + 1px)` }}
+            className="relative border-brand-borderMuted pb-0 px-4 lg:border-r lg:pb-6 lg:pr-5"
+            style={{ paddingTop: `${String(RULED_LINE_HEIGHT)}rem` }}
           >
             <div>
               <ProjectHeader handle={handle} projectName={projectName} />
@@ -282,18 +293,18 @@ export default function ProjectCompareRoute(): ReactElement {
           </aside>
         ) : null}
 
-        <main className="relative px-[1.5rem] pb-[1.5rem]">
+        <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
           <SectionHeader
-            title="Scalar Plots"
-            subtitle={`plotting ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`}
-            sectionLabel="Section D"
+            title="Charts"
+            subtitle={`comparing ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`}
+            sectionLabel="Section B"
           />
 
           {showProjectNotFound ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
           {!showProjectNotFound ? (
-            <section>
+            <section style={{ marginTop: RULED_LINE }}>
               {isRunsLoading || isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Loading charts...</div> : null}
               {visibleRuns.length === 0 ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Select at least one run to view charts.</div> : null}
               <ChartSections sections={sections} hasPoints={hasPoints} isLoading={isScalarsLoading} />
@@ -302,8 +313,8 @@ export default function ProjectCompareRoute(): ReactElement {
           ) : null}
           {mediaKeys.length > 0 ? (
             <section>
-              <SectionHeader title="Media" subtitle={`comparing across ${String(visibleRuns.length)} runs`} sectionLabel="Section E" numLines={0} />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <SectionHeader title="Media" subtitle={`comparing ${String(visibleRuns.length)} / ${String(projectRuns.length)} runs`} sectionLabel="Section C" />
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginTop: RULED_LINE }}>
                 {mediaKeys.map(({ key, steps, maxCount }) => renderMediaComparison(key, steps, maxCount))}
               </div>
             </section>

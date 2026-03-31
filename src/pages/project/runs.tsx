@@ -5,6 +5,7 @@ import { useParams } from "wouter";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import ProjectRunsTable from "components/project/RunsTable";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { useRunStore } from "stores/runs";
 
@@ -30,18 +31,15 @@ export default function ProjectRunsPage(): ReactElement {
   const showProjectNotFound = !project && !isProjectsLoading;
 
   return (
-      <NotebookShell maxWidth="calc(100% - 5rem)">
+      <NotebookShell className="max-w-full md:max-w-[calc(100%-5rem)]">
         <div className="pointer-events-none absolute bottom-0 left-[18.25rem] top-0 w-px bg-brand-borderMuted" aria-hidden />
 
-        <div className="relative py-5 pl-[4.125rem] pr-5">
-          <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div className="relative pb-5 pl-4 pr-5" style={{ paddingTop: `${String(RULED_LINE_HEIGHT)}rem` }}>
+          <header className="flex flex-wrap items-center justify-between gap-3" style={{ marginBottom: RULED_LINE }}>
             <ProjectHeader handle={handle} projectName={projectName} />
             {project ? (
-              <span
-                className={"inline-flex items-center rounded-full border border-brand-borderMuted bg-white/90 px-2 py-px"
-                  + " text-[0.6875rem] leading-4 text-brand-textMuted"}
-              >
-                {project.visibility === "public" ? "Public ledger" : "Private ledger"}
+              <span className="hidden rounded-full border border-brand-borderMuted bg-white/90 px-3 py-1 text-[0.75rem] text-brand-textMuted xs:block">
+                {project.visibility === "public" ? "Public" : "Private"}
               </span>
             ) : null}
           </header>

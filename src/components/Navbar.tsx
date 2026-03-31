@@ -113,8 +113,8 @@ export default function Navbar({
 
   return (
     <nav className="relative z-30 border-b border-brand-border bg-nav-bg">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6">
-        <div className="flex flex-wrap items-center gap-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-3 px-6 md:flex-nowrap">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4 py-2.5 md:flex-nowrap">
           <Link className="flex items-center gap-3 text-inherit no-underline" href="/">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-accent text-[1.125rem] font-semibold text-white">
               <span className="font-display">U</span>
@@ -128,12 +128,12 @@ export default function Navbar({
           {breadcrumbs.length > 0 ? (
             <>
               <div className="hidden h-7 w-px bg-brand-border sm:block" />
-              <div className="flex items-center gap-1 text-sm">
+              <div className="min-w-0 flex-1 truncate text-sm">
                 {breadcrumbs.map((crumb, i) => {
                   const isLast = i === breadcrumbs.length - 1;
                   return (
                     <Fragment key={crumb.label}>
-                      {i > 0 ? <span className="text-brand-textMuted">/</span> : null}
+                      {i > 0 ? <span className="mx-1 text-brand-textMuted">/</span> : null}
                       {isLast ? (
                         <span className="font-semibold">{crumb.label}</span>
                       ) : crumb.href ? (
@@ -151,12 +151,10 @@ export default function Navbar({
           ) : null}
         </div>
 
-        <div className="ml-auto flex self-stretch items-end gap-3">
+        <div className="ml-auto flex shrink-0 self-stretch items-end gap-3">
           {tabs.length > 0 ? (
-            <div className="hidden md:block">
-              <div className="mx-auto w-full">
-                <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
-              </div>
+            <div className="hidden sm:block">
+              <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
             </div>
           ) : null}
 
@@ -169,7 +167,7 @@ export default function Navbar({
                 aria-expanded={isMenuOpen}
                 onClick={() => { setIsMenuOpen((prev) => !prev); }}
               >
-                <div className="hidden text-right sm:block">
+                <div className="hidden text-right xl:block">
                   <p className="text-[0.8125rem] font-semibold leading-tight">{name}</p>
                   <p className="mt-1 text-[0.6875rem] leading-tight text-brand-textMuted">{user.email}</p>
                 </div>
@@ -210,7 +208,7 @@ export default function Navbar({
       </div>
 
       {tabs.length > 0 ? (
-        <div className="px-6 md:hidden">
+        <div className="px-6 sm:hidden">
           <div className="mx-auto w-full">
             <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
           </div>

@@ -5,6 +5,9 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      screens: {
+        xs: "30rem",
+      },
       colors: {
         brand: colors.brand,
         ink: colors.ink,
@@ -31,7 +34,7 @@ export default {
       },
       fontFamily: {
         sans: ["Space Grotesk", "system-ui", "sans-serif"],
-        display: ["Fraunces", "serif"],
+        display: ["var(--font-display)", "serif"],
         headline: ["Sora", "Space Grotesk", "system-ui", "sans-serif"],
         mono: ["SFMono-Regular", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
       },

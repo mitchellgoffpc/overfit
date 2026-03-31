@@ -37,10 +37,10 @@ export default function MetricChartCard({ metric, series, hovered, onHover, hasP
 
   return (
     <div
-      className="relative flex flex-col rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft"
+      className="relative flex min-w-0 flex-col rounded-xl border border-brand-border bg-brand-surface px-2 pb-1.5 pt-2 shadow-soft"
       style={{ height: `${String(9 * RULED_LINE_HEIGHT)}rem` }}
     >
-      <div className="mb-1 flex flex-col items-center gap-0">
+      <div className="mb-1 flex flex-col items-center gap-0 px-1">
         <h2 className="text-[0.8125rem] font-semibold text-brand-text">{metric}</h2>
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[0.6875rem] text-brand-textMuted">
           {series.map((line) => (
@@ -85,7 +85,6 @@ export default function MetricChartCard({ metric, series, hovered, onHover, hasP
         <LineChart
           className="h-full w-full"
           series={series.filter((line) => line.points.length > 0)}
-          height={220}
           xLabelFormatter={xFormatter}
           yLabelFormatter={yFormatter}
           hoverStep={hovered?.step ?? null}

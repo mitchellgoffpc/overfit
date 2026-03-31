@@ -9,8 +9,10 @@ import type { Project, Run } from "types";
 
 const headerCellClass = "flex items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
 const bodyCellClass = "flex items-center whitespace-nowrap px-2.5 text-[0.75rem] text-brand-text";
-const leftGridTemplateColumns = "0.5rem 3.5rem 11.25rem";
-const leftPaneWidth = "15.25rem";
+const leftHeaderIndexCellClass = "flex items-center whitespace-nowrap pr-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
+const leftBodyIndexCellClass = "flex items-center whitespace-nowrap pr-2 font-mono text-[0.625rem] text-brand-textMuted";
+const leftGridTemplateColumns = "2.5rem minmax(0, 1fr)";
+const leftPaneWidth = "14.75rem";
 
 const formatRunConfigValue = (config: Run["config"], key: string): string => {
   if (!config || typeof config !== "object") { return "—"; }
@@ -62,11 +64,6 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
     }
     return [...keys].sort((a, b) => a.localeCompare(b));
   }, [runs]);
-  const statusCounts = useMemo(() => {
-    const counts: Record<Run["status"], number> = { queued: 0, running: 0, finished: 0, failed: 0, cancelled: 0 };
-    for (const run of runs) { counts[run.status] += 1; }
-    return counts;
-  }, [runs]);
   const rightGridTemplateColumns = useMemo(
     () => ["7.5rem", "6.25rem", "9.375rem", "5.625rem", ...configColumns.map(() => "7.5rem")].join(" "),
     [configColumns]
@@ -76,36 +73,19 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
 
   return (
     <section style={{ minHeight: `${sectionHeight.toString()}rem` }}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Section A</p>
-          <h2 className="text-[0.9375rem] font-semibold text-brand-text">Run Ledger</h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">
-          <span>{runs.length} entries</span>
-          <span>{statusCounts.running} running</span>
-          <span>{statusCounts.failed} failed</span>
-          <span>{project.visibility}</span>
-        </div>
-      </div>
-
-      {error ? <div className="absolute inset-x-0 top-[11.25rem] py-2 text-[0.8125rem] text-brand-textMuted">{error}</div> : null}
-      {!error && isLoading ? <div className="absolute inset-x-0 top-[11.25rem] py-2 text-[0.8125rem] text-brand-textMuted">Loading runs...</div> : null}
+      {error ? <div className="mt-4 py-2 text-[0.8125rem] text-brand-textMuted">{error}</div> : null}
+      {!error && isLoading ? <div className="mt-4 py-2 text-[0.8125rem] text-brand-textMuted">Loading runs...</div> : null}
 
       {!error && !isLoading ? (
         runs.length === 0 ? (
-          <div className="absolute inset-x-0 top-[11.25rem] bg-white/20 px-4 py-8 text-[0.8125rem] text-brand-textMuted">
+          <div className="mt-4 bg-white/20 px-4 py-8 text-[0.8125rem] text-brand-textMuted">
             No runs yet for {project.name}.
           </div>
         ) : (
-          <div
-            className="absolute -right-5 bottom-0 left-12 top-[11.25rem] grid min-w-0"
-            style={{ gridTemplateColumns: `${leftPaneWidth} minmax(0, 1fr)` }}
-          >
+          <div className="mt-4 -mr-5 grid min-w-0" style={{ gridTemplateColumns: `${leftPaneWidth} minmax(0, 1fr)` }}>
             <div>
               <div className="grid" style={{ gridTemplateColumns: leftGridTemplateColumns, height: RULED_LINE }}>
-                <span />
-                <span className={headerCellClass}>Ln</span>
+                <span className={leftHeaderIndexCellClass}>Ln</span>
                 <span className={headerCellClass}>Name</span>
               </div>
 
@@ -114,14 +94,13 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
                 const hovered = hoveredRunId === run.id;
                 return (
                   <div
-                    className={`grid items-center -ml-12 pl-12 ${hovered ? "bg-brand-accent/5" : ""}`}
+                    className={`grid items-center -ml-14 w-[calc(100%+3.5rem)] pl-14 ${hovered ? "bg-brand-accent/5" : ""}`}
                     key={run.id}
                     style={{ gridTemplateColumns: leftGridTemplateColumns, height: RULED_LINE }}
                     onMouseEnter={() => { setHoveredRunId(run.id); }}
                     onMouseLeave={() => { setHoveredRunId(null); }}
                   >
-                    <span />
-                    <span className={`${bodyCellClass} font-mono text-[0.625rem] text-brand-textMuted`}>{String(index + 1).padStart(3, "0")}</span>
+                    <span className={leftBodyIndexCellClass}>{String(index + 1).padStart(3, "0")}</span>
                     <Link className={`${bodyCellClass} min-w-0 gap-2 no-underline`} href={`/${ownerHandle}/${project.name}/runs/${run.name}`}>
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: runColor }} />
                       <span className="truncate font-semibold text-brand-text">{run.name}</span>
@@ -132,10 +111,8 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
             </div>
 
             <div className="min-w-0 self-stretch overflow-x-auto overflow-y-hidden">
-              <div
-                className="min-w-full w-max min-h-full pl-2"
-              >
-                <div className="grid" style={{ gridTemplateColumns: rightGridTemplateColumns, height: RULED_LINE }}>
+              <div className="min-h-full min-w-full w-max">
+                <div className="grid pl-2" style={{ gridTemplateColumns: rightGridTemplateColumns, height: RULED_LINE }}>
                   <span className={headerCellClass}>State</span>
                   <span className={headerCellClass}>User</span>
                   <span className={headerCellClass}>Created</span>
@@ -147,7 +124,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
 
                 {runs.map((run) => (
                   <div
-                    className={`grid items-center -ml-2 pl-2 ${hoveredRunId === run.id ? "bg-brand-accent/5" : ""}`}
+                    className={`grid items-center pl-2 ${hoveredRunId === run.id ? "bg-brand-accent/5" : ""}`}
                     key={run.id}
                     style={{ gridTemplateColumns: rightGridTemplateColumns, height: RULED_LINE }}
                     onMouseEnter={() => { setHoveredRunId(run.id); }}

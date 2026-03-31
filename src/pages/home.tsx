@@ -36,9 +36,9 @@ export default function IndexRoute(): ReactElement {
     <div className="min-h-screen bg-brand-bgStrong text-brand-text">
       <Navbar breadcrumbs={[{ label: "Home" }]} />
 
-      <NotebookShell columns="18.75rem 1fr" maxWidth="calc(100% - 5rem)">
+      <NotebookShell columns="18.75rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
 
-        <aside className="relative border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:pl-14 lg:pr-5 lg:py-6">
+        <aside className="relative border-b border-brand-borderMuted px-4 py-5 lg:border-b-0 lg:border-r lg:py-6 lg:pr-5">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
           <h1 className="mt-1 font-display text-[2.0625rem] leading-none text-brand-text">Home</h1>
           <p className="mt-1 font-mono text-[0.6875rem] text-brand-textMuted">@{userHandle} / dashboard</p>
@@ -86,7 +86,7 @@ export default function IndexRoute(): ReactElement {
           </div>
         </aside>
 
-        <main className="relative py-5 pl-5 pr-5 lg:py-6 lg:pl-5 lg:pr-5">
+        <main className="relative px-4 py-5 lg:px-5 lg:py-6">
           <WorkspaceRunsTable runs={runs} projects={projects} isLoading={isRunsLoading} error={runError} />
         </main>
       </NotebookShell>

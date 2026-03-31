@@ -11,9 +11,9 @@ interface ProjectHeaderProps {
 export default function ProjectHeader({ handle, projectName }: ProjectHeaderProps): ReactElement {
   return (
     <div>
-      <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Lab Notebook</p>
-      <h1 className="flex flex-wrap items-center gap-2.5 font-display text-[2.125rem] leading-none text-brand-text" style={{ height: RULED_LINE }}>
-        <Avatar handle={handle} name={handle} className="border border-brand-borderStrong text-xs" style={{ width: RULED_LINE, height: RULED_LINE }} />
+      <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Project Ledger</p>
+      <h1 className="flex flex-wrap items-center gap-2.5 font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>
+        <Avatar handle={handle} name={handle} className="text-xs" style={{ width: `calc(${RULED_LINE} * 0.8)`, height: `calc(${RULED_LINE} * 0.8)` }} />
         <span>{projectName}</span>
       </h1>
     </div>

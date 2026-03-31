@@ -58,7 +58,7 @@ export default function ProfileRoute(): ReactElement {
 
         <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
 
-        <main className="relative p-6">
+        <main className="relative pb-6 px-4 pt-6 lg:p-6">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>

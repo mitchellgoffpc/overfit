@@ -11,7 +11,7 @@ export default function RunArtifactsPage(): ReactElement {
   const isRunsLoading = useRunStore((state) => state.isLoading);
 
   return (
-    <main className="relative px-[1.5rem] pb-[1.5rem]">
+    <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
       <SectionHeader title="Artifacts" subtitle="stored outputs" />
       {!run && !isRunsLoading ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError ?? "Run not found."}</div> : null}
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}

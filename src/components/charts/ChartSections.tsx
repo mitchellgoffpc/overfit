@@ -41,7 +41,7 @@ export default function ChartSections({ sections, hasPoints, isLoading }: ChartS
           collapsed={collapsedSections[prefix] ?? false}
           onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [prefix]: !(prev[prefix] ?? false) })); }}
         >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" style={{ marginBottom: `${String(RULED_LINE_HEIGHT / 2)}rem` }}>
             {charts.map((item) => (
               <MetricChartCard
                 key={item.id}

@@ -20,7 +20,7 @@ export default function SettingsSidebar({ sectionLabel, stats }: SettingsSidebar
   );
 
   return (
-    <aside className="border-b border-brand-borderMuted px-5 py-5 lg:border-b-0 lg:border-r lg:border-brand-borderMuted lg:pl-14 lg:pr-5 lg:pt-8">
+    <aside className="border-b border-brand-borderMuted px-4 py-5 lg:border-b-0 lg:border-r lg:border-brand-borderMuted lg:pt-8 lg:pr-5">
       <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
       <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Settings</h2>
       <p className="mt-2 font-mono text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>{notebookDate}</p>

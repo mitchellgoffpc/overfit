@@ -46,10 +46,11 @@ const findClosestPoint = (series: LineSeries[], targetX: number, targetY?: numbe
   return best;
 };
 
-export default function LineChart({ series, height = 220, className, xLabelFormatter, yLabelFormatter, onHover, hoverStep }: LineChartProps): ReactElement {
+export default function LineChart({ series, height, className, xLabelFormatter, yLabelFormatter, onHover, hoverStep }: LineChartProps): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [width, setWidth] = useState(0);
+  const [measuredHeight, setMeasuredHeight] = useState(0);
   const [cursorDataY, setCursorDataY] = useState<number | null>(null);
 
   useEffect(() => {
@@ -60,7 +61,9 @@ export default function LineChart({ series, height = 220, className, xLabelForma
       const entry = entries[0];
       if (!entry) { return; }
       const nextWidth = Math.floor(entry.contentRect.width);
+      const nextHeight = Math.floor(entry.contentRect.height);
       setWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+      setMeasuredHeight((prev) => (prev === nextHeight ? prev : nextHeight));
     });
 
     observer.observe(node);
@@ -68,11 +71,12 @@ export default function LineChart({ series, height = 220, className, xLabelForma
       observer.disconnect();
     };
   }, []);
+  const chartHeight = height ?? measuredHeight;
 
   const options = useMemo<LineChartOptions>(() => {
     const base: LineChartOptions = {
       width,
-      height,
+      height: chartHeight,
       padding: { left: 36, right: 12, top: 10, bottom: 24 },
       xTicks: 6,
       yTicks: 5,
@@ -85,12 +89,12 @@ export default function LineChart({ series, height = 220, className, xLabelForma
     if (xLabelFormatter) { base.xLabelFormatter = xLabelFormatter; }
     if (yLabelFormatter) { base.yLabelFormatter = yLabelFormatter; }
     return base;
-  }, [height, width, xLabelFormatter, yLabelFormatter]);
+  }, [chartHeight, width, xLabelFormatter, yLabelFormatter]);
 
   const geometry = useMemo<LineChartGeometry | null>(() => {
-    if (width === 0) { return null; }
+    if (width === 0 || chartHeight === 0) { return null; }
     return getLineChartGeometry(series, options);
-  }, [options, series, width]);
+  }, [chartHeight, options, series, width]);
 
   const hoverOverlay = useMemo<LineChartHoverOverlay | null>(() => {
     if (hoverStep === null || hoverStep === undefined || series.length === 0) { return null; }
@@ -101,9 +105,9 @@ export default function LineChart({ series, height = 220, className, xLabelForma
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || width === 0) { return; }
+    if (!canvas || width === 0 || chartHeight === 0) { return; }
     drawLineChart(canvas, series, options, hoverOverlay);
-  }, [options, series, width, hoverOverlay]);
+  }, [chartHeight, options, series, width, hoverOverlay]);
 
   const handlePointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
     if (!geometry || !containerRef.current) { return; }

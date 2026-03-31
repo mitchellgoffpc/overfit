@@ -89,7 +89,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
         stats={[{ label: "handle", value: `@${user.handle}` }, { label: "role", value: "Researcher" }]}
       />
 
-      <div className="relative p-6">
+      <div className="relative pb-6 px-4 pt-6 lg:p-6">
         <header className="mb-3">
           <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Section A</p>
           <h2 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Profile</h2>
