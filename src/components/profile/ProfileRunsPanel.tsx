@@ -1,12 +1,14 @@
 import type { ReactElement } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 
+import { getRunColor } from "colors";
 import RunStatusBadge from "components/RunStatusBadge";
-import { buildProjectNameMap, formatRunTime } from "helpers";
+import SectionHeader from "components/SectionHeader";
+import { formatDuration, formatRunTime, RULED_LINE, RULED_LINE_HEIGHT, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
 import type { Project, Run } from "types";
 
-const runCardClass = "grid gap-3 rounded-[0.875rem] border border-brand-borderMuted bg-white/85 px-4 py-3 text-inherit"
-  + " no-underline transition hover:border-brand-accent/40 hover:bg-hover md:grid-cols-[2fr_1.2fr_1fr_0.6fr]";
+const tableGridTemplateColumns = "3.5rem 14rem 7.5rem 8.5rem 9.25rem 5.625rem";
 
 interface ProfileRunsPanelProps {
   readonly runs: Run[];
@@ -17,48 +19,61 @@ interface ProfileRunsPanelProps {
 }
 
 export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading, error }: ProfileRunsPanelProps): ReactElement {
-  const projectNames = buildProjectNameMap(projects);
+  const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
+  const projectNames = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
+  const colorByRunId = useMemo(() => new Map(runs.map((run, index) => [run.id, getRunColor(index)])), [runs]);
+  const tableHeight = (runs.length + 1) * RULED_LINE_HEIGHT;
+  const sectionHeight = Math.max(15, 6.875 + tableHeight);
 
   return (
-    <section className="rounded-[1.125rem] border border-brand-borderMuted bg-brand-surfaceTinted/90 p-5 shadow-soft">
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-brand-textMuted">Section B</p>
-          <h2 className="mt-1 text-xl">Runs</h2>
-          <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Latest runs across all projects.</p>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-[0.6875rem] text-brand-textMuted">
-          <span>showing {runs.length}</span>
-        </div>
-      </div>
+    <section style={{ minHeight: `${sectionHeight.toString()}rem` }}>
+      <SectionHeader title="Runs" subtitle={`${String(runs.length)} total`} sectionLabel="Section B" />
 
-      {error ? <div className="py-3 text-[0.8125rem] text-brand-textMuted">{error}</div> : null}
-      {!error && isLoading ? <div className="py-3 text-[0.8125rem] text-brand-textMuted">Loading runs...</div> : null}
+      {error ? <div className="py-2 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>{error}</div> : null}
+      {!error && isLoading ? <div className="py-2 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>Loading runs...</div> : null}
 
       {!error && !isLoading ? (
         runs.length === 0 ? (
-          <div className="rounded-[0.875rem] border border-dashed border-brand-borderMuted bg-white/75 px-4 py-6 text-[0.8125rem] text-brand-textMuted">
+          <div className="bg-white/20 px-4 py-8 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>
             No runs yet. Launch a run to populate your profile activity.
           </div>
         ) : (
-          <div className="grid gap-2">
-            {runs.map((run) => (
-              <Link
-                className={runCardClass}
-                href={`/${userHandle}/${projectNames.get(run.projectId) ?? "project"}/runs/${run.name}`}
-                key={run.id}
-              >
-                <div className="grid gap-1">
-                  <span className="font-semibold">{run.name}</span>
-                  <span className="text-xs text-brand-textMuted">{projectNames.get(run.projectId) ?? "Unknown project"}</span>
-                </div>
-                <span className="text-xs text-brand-textMuted">{formatRunTime(run.createdAt)}</span>
-                <span className="text-xs text-brand-textMuted">@{userHandle}</span>
-                <div className="flex justify-start md:justify-end">
-                  <RunStatusBadge status={run.status} />
-                </div>
-              </Link>
-            ))}
+          <div className="-mx-4 min-w-0 overflow-x-auto overflow-y-hidden lg:-mx-5" style={{ marginTop: RULED_LINE }}>
+            <div className="min-w-full w-max">
+              <div className="grid px-4 lg:px-5" style={{ gridTemplateColumns: tableGridTemplateColumns, height: RULED_LINE }}>
+                <span className={TABLE_HEADER_CELL_CLASS}>Ln</span>
+                <span className={TABLE_HEADER_CELL_CLASS}>Name</span>
+                <span className={TABLE_HEADER_CELL_CLASS}>State</span>
+                <span className={TABLE_HEADER_CELL_CLASS}>Project</span>
+                <span className={TABLE_HEADER_CELL_CLASS}>Started</span>
+                <span className={TABLE_HEADER_CELL_CLASS}>Runtime</span>
+              </div>
+
+              {runs.map((run, index) => {
+                const runColor = colorByRunId.get(run.id) ?? getRunColor(index);
+                const projectName = projectNames.get(run.projectId) ?? run.projectName;
+                const hovered = hoveredRunId === run.id;
+                return (
+                  <div
+                    className={`grid items-center px-4 lg:px-5 ${hovered ? "bg-brand-accent/5" : ""}`}
+                    key={run.id}
+                    style={{ gridTemplateColumns: tableGridTemplateColumns, height: RULED_LINE }}
+                    onMouseEnter={() => { setHoveredRunId(run.id); }}
+                    onMouseLeave={() => { setHoveredRunId(null); }}
+                  >
+                    <span className={`${TABLE_BODY_CELL_CLASS} font-mono text-[0.625rem] text-brand-textMuted`}>{String(index + 1).padStart(3, "0")}</span>
+                    <Link className={`${TABLE_BODY_CELL_CLASS} min-w-0 gap-2 no-underline`} href={`/${userHandle}/${projectName}/runs/${run.name}`}>
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: runColor }} />
+                      <span className="truncate font-semibold text-brand-text">{run.name}</span>
+                    </Link>
+                    <div className={TABLE_BODY_CELL_CLASS}><RunStatusBadge status={run.status} /></div>
+                    <span className={TABLE_BODY_CELL_CLASS}>{projectName}</span>
+                    <span className={TABLE_BODY_CELL_CLASS}>{formatRunTime(run.createdAt)}</span>
+                    <span className={TABLE_BODY_CELL_CLASS}>{formatDuration(run.createdAt, run.updatedAt)}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )
       ) : null}

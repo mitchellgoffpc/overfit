@@ -31,8 +31,8 @@ export default function ProfileRoute(): ReactElement {
   const currentHandle = useAuthStore((state) => state.currentHandle);
   const user = account?.type === "USER" ? account : null;
   const organization = account?.type === "ORGANIZATION" ? account : null;
-  const projects = Object.values(projectsByKey).filter((project) => project.owner === handle);
-  const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle);
+  const projects = Object.values(projectsByKey).filter((project) => project.owner === handle).sort((a, b) => a.name.localeCompare(b.name));
+  const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   useEffect(() => {
     if (!account && !notFound) { void fetchAccount(handle); }
@@ -57,16 +57,8 @@ export default function ProfileRoute(): ReactElement {
       <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
         <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
 
-        <main className="relative pb-6 px-4 pt-6 lg:p-6">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Lab Notebook</p>
-              <h1 className="mt-1 font-display text-[2.125rem] leading-none text-brand-text">Profile Record</h1>
-            </div>
-            <p className="font-mono text-[0.6875rem] text-brand-textMuted">@{handle} / experiments</p>
-          </div>
-
-          <div className="grid gap-5">
+        <main className="relative min-w-0 px-4 pb-5 lg:px-5 lg:pb-6">
+          <div className="grid gap-6">
             <ProfileProjectsPanel
               projects={projects}
               runs={runs}

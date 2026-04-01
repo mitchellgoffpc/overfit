@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { Link } from "wouter";
 
 import Avatar from "components/Avatar";
-import { formatDate } from "helpers";
+import { RULED_LINE, RULED_LINE_HEIGHT, formatDate } from "helpers";
 import type { Project, Run, User } from "types";
 
 interface ProfileSidebarProps {
@@ -15,14 +15,20 @@ interface ProfileSidebarProps {
 export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: ProfileSidebarProps): ReactElement {
   const editProfileClass = "rounded-xl border border-ink bg-ink px-4 py-2 text-center text-sm font-semibold"
     + " text-white no-underline transition hover:bg-ink-hover";
+  const asideClass = "relative flex h-full flex-col gap-4 border-b border-brand-borderMuted px-4 pb-5 lg:border-b-0 lg:border-r lg:pb-6 lg:pr-5";
+  const asideStyle = { paddingTop: `${String(RULED_LINE_HEIGHT)}rem` };
 
   if (!user) {
     return (
-      <aside className="relative flex h-full flex-col gap-5 border-b border-brand-borderMuted px-4 py-5 lg:border-b-0 lg:border-r lg:py-6 lg:pr-5">
+      <aside className={asideClass} style={asideStyle}>
         <div
           className="pointer-events-none absolute inset-0"
           aria-hidden
         />
+        <div>
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Profile Ledger</p>
+          <h2 className="font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>Profile</h2>
+        </div>
         <div className="relative px-1 py-1.5 text-xs text-brand-textMuted">Log in to view profile.</div>
       </aside>
     );
@@ -32,11 +38,16 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   const bio = user.bio ?? "Building transparent model reporting with Underfit.";
 
   return (
-    <aside className="relative flex h-full flex-col gap-5 border-b border-brand-borderMuted px-4 py-5 lg:border-b-0 lg:border-r lg:py-6 lg:pr-5">
+    <aside className={asideClass} style={asideStyle}>
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
       />
+
+      <div>
+        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Profile Ledger</p>
+        <h2 className="font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>Profile</h2>
+      </div>
 
       <div className="relative grid gap-4">
         <div className="rounded-[0.875rem] border border-brand-borderMuted bg-white/85 p-3">

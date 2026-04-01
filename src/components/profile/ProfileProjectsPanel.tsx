@@ -2,11 +2,13 @@ import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { Link } from "wouter";
 
-import { formatDate } from "helpers";
+import { getRunColor } from "colors";
+import SectionHeader from "components/SectionHeader";
+import { formatDate, RULED_LINE } from "helpers";
 import type { Project, Run } from "types";
 
-const projectCardClass = "grid gap-3 rounded-[0.875rem] border border-brand-borderMuted bg-white/85 p-4 text-inherit"
-  + " no-underline transition hover:border-brand-accent/40 hover:bg-hover";
+const projectCardClass = "grid gap-3 rounded-[0.875rem] border border-brand-borderMuted bg-white/90 p-4 text-inherit"
+  + " no-underline transition hover:border-brand-accent/40 hover:bg-white";
 
 interface ProfileProjectsPanelProps {
   readonly projects: Project[];
@@ -27,49 +29,37 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
 
     return projects.map((project) => {
       const projectRuns = runsByProject.get(project.id) ?? [];
-      const latestRun = projectRuns.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const latestRun = projectRuns.reduce<Run | null>((latest, run) => (latest && latest.createdAt > run.createdAt ? latest : run), null);
       return { project, runCount: projectRuns.length, latestRun };
     });
   }, [projects, runs]);
 
   return (
-    <section className="rounded-[1.125rem] border border-brand-borderMuted bg-brand-surfaceTinted/90 p-5 shadow-soft">
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-brand-textMuted">Section A</p>
-          <h2 className="mt-1 text-xl">Projects</h2>
-          <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Experiment workspaces and latest activity.</p>
-        </div>
-        <div className="flex items-center gap-3 font-mono text-[0.6875rem] text-brand-textMuted">
-          <span>showing {projects.length}</span>
-        </div>
-      </div>
+    <section>
+      <SectionHeader title="Projects" subtitle={`${String(projects.length)} total`} sectionLabel="Section A" />
 
-      {error ? <div className="py-3 text-[0.8125rem] text-brand-textMuted">{error}</div> : null}
-      {!error && isLoading ? <div className="py-3 text-[0.8125rem] text-brand-textMuted">Loading projects...</div> : null}
+      {error ? <div className="py-2 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>{error}</div> : null}
+      {!error && isLoading ? <div className="py-2 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>Loading projects...</div> : null}
 
       {!error && !isLoading ? (
         projects.length === 0 ? (
-          <div className="rounded-[0.875rem] border border-dashed border-brand-borderMuted bg-white/75 px-4 py-6 text-[0.8125rem] text-brand-textMuted">
+          <div className="bg-white/20 px-4 py-8 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>
             No projects yet. Start your first run to create a project.
           </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {projectStats.map(({ project, runCount, latestRun }) => (
-                <Link
-                  className={projectCardClass}
-                  href={`/${userHandle}/${project.name}`}
-                  key={project.id}
-                >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">{project.name}</p>
-                    <p className="mt-1 text-xs text-brand-textMuted">{project.description ?? "No description yet."}</p>
+          <div className="grid gap-3 md:grid-cols-2" style={{ marginTop: "1.25rem" }}>
+            {projectStats.map(({ project, runCount, latestRun }, index) => (
+              <Link className={projectCardClass} href={`/${userHandle}/${project.name}`} key={project.id}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: getRunColor(index) }} />
+                    <span className="truncate text-sm font-semibold text-brand-text">{project.name}</span>
                   </div>
-                  <span className="rounded-full border border-pill-border bg-pill-bg px-3 py-1 text-xs text-brand-accentStrong">Active</span>
+                  <span className="rounded-full border border-pill-border bg-pill-bg px-2 py-0.5 text-[0.6875rem] text-brand-accentStrong">Public</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-brand-textMuted">
-                  <span>{runCount} runs</span>
+                <p className="line-clamp-2 text-[0.75rem] text-brand-textMuted">{project.description ?? "No description yet."}</p>
+                <div className="flex items-center justify-between gap-2 pt-1 text-[0.75rem] text-brand-textMuted">
+                  <span>{String(runCount)} runs</span>
                   <span>{latestRun ? `Last run ${formatDate(latestRun.createdAt)}` : "No runs yet"}</span>
                 </div>
               </Link>
