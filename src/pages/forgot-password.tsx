@@ -1,21 +1,21 @@
-import type { SubmitEvent, ReactElement } from "react";
+import type { ReactElement, SubmitEvent } from "react";
 import { useEffect, useState } from "react";
-import { Link, Redirect, useLocation } from "wouter";
+import { Link, Redirect } from "wouter";
 
-import { useAuthStore } from "stores/auth";
+import { testEmail } from "helpers";
+import { requestPasswordReset, useAuthStore } from "stores/auth";
 
 const inputClass = "rounded-[0.625rem] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
+const successMessage = "If an account exists for that email, you'll receive a reset link shortly.";
 
-export default function LoginRoute(): ReactElement {
-  const [, navigate] = useLocation();
+export default function ForgotPasswordRoute(): ReactElement {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const status = useAuthStore((state) => state.status);
   const loadAuth = useAuthStore((state) => state.loadAuth);
-  const login = useAuthStore((state) => state.login);
 
   useEffect(() => {
     if (status === "idle") { void loadAuth(); }
@@ -27,16 +27,23 @@ export default function LoginRoute(): ReactElement {
 
   const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const trimmedEmail = email.trim();
+    const emailError = testEmail(trimmedEmail);
+    if (emailError) {
+      setError(emailError);
+      setSent(false);
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
-
-    const result = await login(email, password);
+    const result = await requestPasswordReset(trimmedEmail);
+    setIsLoading(false);
     if (result.ok) {
-      setIsLoading(false);
-      navigate("/");
+      setSent(true);
     } else {
       setError(result.error);
-      setIsLoading(false);
+      setSent(false);
     }
   };
 
@@ -48,8 +55,8 @@ export default function LoginRoute(): ReactElement {
             <span className="font-display">U</span>
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Sign in to Underfit</h1>
-            <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Use your workspace credentials to continue.</p>
+            <h1 className="text-xl font-semibold">Reset your password</h1>
+            <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Enter your email and we&apos;ll send a secure reset link.</p>
           </div>
         </div>
 
@@ -60,6 +67,7 @@ export default function LoginRoute(): ReactElement {
           }}
         >
           {error ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-2.5 py-2 text-xs text-danger-text">{error}</div> : null}
+          {sent ? <div className="rounded-[0.625rem] border border-brand-border bg-white px-2.5 py-2 text-xs text-brand-text">{successMessage}</div> : null}
 
           <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Email address
@@ -76,35 +84,17 @@ export default function LoginRoute(): ReactElement {
             />
           </label>
 
-          <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
-            Password
-            <input
-              className={inputClass}
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-              }}
-            />
-          </label>
-          <div className="-mt-1 text-right text-[0.75rem]">
-            <Link className="font-semibold text-brand-accentStrong no-underline" href="/forgot-password">Forgot password?</Link>
-          </div>
-
           <button
             className="rounded-[0.625rem] bg-brand-accent px-3 py-2.5 font-semibold text-white shadow-soft disabled:cursor-wait disabled:opacity-70"
             type="submit"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? "Sending link..." : "Send reset link"}
           </button>
         </form>
 
         <div className="text-center text-[0.8125rem] text-brand-textMuted">
-          New to Underfit? <Link className="font-semibold text-brand-accentStrong no-underline" href="/signup">Create an account</Link>
+          Back to sign in: <Link className="font-semibold text-brand-accentStrong no-underline" href="/login">Sign in</Link>
         </div>
       </div>
     </div>

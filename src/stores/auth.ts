@@ -42,6 +42,16 @@ export const deleteApiKey = async (id: string): Promise<ActionResult> => {
   return ok ? { ok: true } : { ok: false, error };
 };
 
+export const requestPasswordReset = async (email: string): Promise<ActionResult> => {
+  const { ok, error } = await send<{ status: "ok" }>("auth/forgot-password", "POST", { email });
+  return ok ? { ok: true } : { ok: false, error };
+};
+
+export const completePasswordReset = async (token: string, password: string): Promise<ActionResult> => {
+  const { ok, error } = await send<{ status: "ok" }>("auth/reset-password", "POST", { token, password });
+  return ok ? { ok: true } : { ok: false, error };
+};
+
 interface AuthState {
   status: AuthStatus;
   currentHandle: string | null;

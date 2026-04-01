@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR } from "helpers";
 import { useAccountsStore } from "stores/accounts";
-import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
+import { checkEmailValid, checkHandleValid, completePasswordReset, requestPasswordReset, useAuthStore } from "stores/auth";
 import { API_BASE } from "types";
 import type { User } from "types";
 
@@ -74,6 +74,34 @@ describe("auth store", () => {
     expect(useAuthStore.getState().status).toBe("authenticated");
     expect(useAuthStore.getState().currentHandle).toBe(user.handle);
     expect(useAccountsStore.getState().accounts[user.handle]).toEqual(user);
+  });
+
+  it("requests a password reset email", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
+
+    const result = await requestPasswordReset("ada@underfit.local");
+
+    expect(result).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/auth/forgot-password`, {
+      credentials: "include",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "ada@underfit.local" })
+    });
+  });
+
+  it("resets password with token", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
+
+    const result = await completePasswordReset("reset-token", "password1");
+
+    expect(result).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/auth/reset-password`, {
+      credentials: "include",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: "reset-token", password: "password1" })
+    });
   });
 
   it("returns a conflict error when email is already in use", async () => {
