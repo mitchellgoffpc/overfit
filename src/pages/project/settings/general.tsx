@@ -2,10 +2,11 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
+import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE } from "helpers";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
-import { updateProject } from "stores/projects";
+import { deleteProject, updateProject } from "stores/projects";
 import type { Project, ProjectVisibility } from "types";
 
 interface GeneralSettingsProps {
@@ -19,8 +20,16 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"warning" | "confirm">("warning");
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const hasChanges = description !== (project.description ?? "") || visibility !== project.visibility;
+  const deleteTarget = `${project.owner}/${project.name}`;
+  const deleteConfirmed = deleteInput === deleteTarget;
+  const projectNameInputLineHeight = RULED_LINE_HEIGHT * 1.25;
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -41,6 +50,26 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
     { value: "public", label: "Public", description: "Anyone can see this project. Only you and collaborators can log runs." },
   ];
 
+  const openDeleteModal = () => {
+    setDeleteStep("warning");
+    setDeleteInput("");
+    setDeleteError(null);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteConfirmed) { setDeleteError(`Type "${deleteTarget}" to confirm.`); return; }
+    setIsDeleting(true);
+    setDeleteError(null);
+    const result = await deleteProject(project.owner, project.name);
+    if (result.ok) {
+      navigate(`/${project.owner}`);
+      return;
+    }
+    setDeleteError(result.error);
+    setIsDeleting(false);
+  };
+
   return (
     <div>
       <SectionHeader title="General" subtitle={`${project.owner}/${project.name}`} sectionLabel="Section A" />
@@ -54,34 +83,50 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
         ) : null}
       </div>
 
-      <div className="grid gap-5" style={{ marginTop: RULED_LINE }}>
-        <label className="grid gap-1 text-sm text-brand-text">
-          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Project name</span>
-          <input className={lineInputClass + " bg-brand-bgStrong/30 text-brand-textMuted"} type="text" value={project.name} disabled />
-          <span className="text-[0.6875rem] text-brand-textMuted">Project renaming is not yet supported.</span>
+      <div className="grid" style={{ gap: RULED_LINE }}>
+        <label className="grid text-sm text-brand-text">
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Project name</span>
+          <input
+            className={lineInputClass + " text-brand-textMuted"}
+            type="text"
+            value={project.name}
+            style={{
+              backgroundColor: "white",
+              height: `${String(projectNameInputLineHeight)}rem`,
+              marginTop: `-${String((projectNameInputLineHeight - RULED_LINE_HEIGHT) / 2)}rem`,
+              marginBottom: `-${String((projectNameInputLineHeight - RULED_LINE_HEIGHT) / 2)}rem`,
+            }}
+            disabled
+          />
+          <span className="text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Project renaming is not yet supported.</span>
         </label>
 
-        <label className="grid gap-1 text-sm text-brand-text">
-          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Description</span>
+        <label className="grid text-sm text-brand-text">
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Description</span>
           <textarea
-            className={"min-h-20 w-full rounded-[0.625rem] border border-brand-borderMuted bg-white/70 px-3 py-2.5"
+            className={"w-full rounded-[0.625rem] border border-brand-borderMuted bg-white px-3 py-2.5"
               + " text-sm outline-none transition focus:border-brand-accent"}
+            style={{
+              marginTop: `-${String((RULED_LINE_HEIGHT / 8))}rem`,
+              marginBottom: `-${String((RULED_LINE_HEIGHT / 8))}rem`,
+              minHeight: `${String(RULED_LINE_HEIGHT * 2.25)}rem`
+            }}
             value={description}
             placeholder="What is this project about?"
             onChange={(e) => { setDescription(e.target.value); }}
           />
         </label>
 
-        <div className="grid gap-2">
-          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Visibility</span>
-          <div className="grid gap-2">
+        <div className="grid">
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Visibility</span>
+          <div className="grid gap-2" style={{ marginTop: `-${String(RULED_LINE_HEIGHT / 8)}rem` }}>
             {visibilityOptions.map((opt) => (
               <label
                 key={opt.value}
                 className={"flex cursor-pointer items-start gap-3 rounded-[0.625rem] border px-4 py-3 transition"
                   + (visibility === opt.value
-                    ? " border-brand-accent bg-brand-accentMuted/30"
-                    : " border-brand-borderMuted bg-white/50 hover:border-brand-borderStrong")}
+                    ? " border-brand-accent bg-brand-accentMuted"
+                    : " border-brand-borderMuted bg-white hover:border-brand-borderStrong")}
               >
                 <input
                   type="radio"
@@ -101,7 +146,12 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
         </div>
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <button className={inkButtonClass} type="button" disabled={isSaving || !hasChanges} onClick={() => { void handleSave(); }}>
+          <button
+            className={inkButtonClass + " disabled:cursor-not-allowed"}
+            type="button"
+            disabled={isSaving || !hasChanges}
+            onClick={() => { void handleSave(); }}
+          >
             {isSaving ? "Saving..." : "Save changes"}
           </button>
           {hasChanges ? (
@@ -116,11 +166,83 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
         </div>
       </div>
 
-      <div className="mt-10 rounded-[0.625rem] border border-danger-border/50 p-5">
+      <div className="mt-10 rounded-[0.625rem] border border-danger-border/50 bg-white p-5">
         <h3 className="text-sm font-semibold text-danger-text">Danger zone</h3>
         <p className="mt-1 text-[0.6875rem] text-brand-textMuted">Deleting a project is permanent and cannot be undone.</p>
-        <button className={dangerButtonClass + " mt-3"} type="button" disabled>Delete project</button>
+        <button className={dangerButtonClass + " mt-3"} type="button" onClick={openDeleteModal}>Delete project</button>
       </div>
+
+      <Modal open={showDeleteModal} onClose={() => { if (!isDeleting) { setShowDeleteModal(false); } }}>
+        {deleteStep === "warning" ? (
+          <div className="grid gap-4">
+            <div className="grid place-items-center gap-2 text-center">
+              <div className="grid h-11 w-11 place-items-center rounded-[0.875rem] border border-danger-border/60 bg-danger-bg text-lg text-danger-text">
+                !
+              </div>
+              <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Delete project</p>
+              <p className="text-xl font-semibold text-brand-text">{deleteTarget}</p>
+              <p className="mt-1 text-xs text-brand-textMuted">Review the effects before continuing.</p>
+            </div>
+
+            <div className="rounded-[0.625rem] border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+              Unexpected bad things will happen if you don&apos;t read this.
+            </div>
+
+            <div className="grid gap-2 border-l border-brand-border pl-3 text-xs text-brand-textMuted">
+              <p>
+                This will permanently delete <span className="font-semibold text-brand-text">{deleteTarget}</span>, including runs, metrics, and artifacts.
+              </p>
+              <p>Collaborator access and project settings will be removed.</p>
+              <p className="font-semibold text-danger-text">This action cannot be undone.</p>
+            </div>
+
+            <button
+              className={paperButtonClass + " w-full"}
+              type="button"
+              onClick={() => { setDeleteStep("confirm"); setDeleteError(null); }}
+            >
+              I have read and understand these effects
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            <div className="grid place-items-center gap-2 text-center">
+              <div className="grid h-11 w-11 place-items-center rounded-[0.875rem] border border-danger-border/60 bg-danger-bg text-lg text-danger-text">
+                !
+              </div>
+              <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Confirm deletion</p>
+              <p className="text-xl font-semibold text-brand-text">{deleteTarget}</p>
+              <p className="mt-1 text-xs text-brand-textMuted">
+                To confirm, type <span className="font-mono text-brand-text">{deleteTarget}</span> in the box below.
+              </p>
+            </div>
+
+            {deleteError ? (
+              <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-2.5 py-2 text-xs text-danger-text">{deleteError}</div>
+            ) : null}
+
+            <input
+              className={lineInputClass + " bg-white"}
+              type="text"
+              value={deleteInput}
+              placeholder={deleteTarget}
+              onChange={(e) => { setDeleteInput(e.target.value); }}
+            />
+
+            <div className="grid gap-2">
+              <button
+                className={dangerButtonClass + " w-full py-2.5 text-sm"}
+                type="button"
+                style={{ cursor: isDeleting || !deleteConfirmed ? "not-allowed" : "pointer" }}
+                disabled={isDeleting || !deleteConfirmed}
+                onClick={() => { void handleDelete(); }}
+              >
+                {isDeleting ? "Deleting..." : "Delete project"}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

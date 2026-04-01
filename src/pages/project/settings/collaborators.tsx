@@ -24,9 +24,11 @@ interface CollaboratorsSettingsProps {
   readonly project: Project;
 }
 
+const EMPTY_COLLABORATORS: User[] = [];
+
 export default function CollaboratorsSettings({ project }: CollaboratorsSettingsProps): ReactElement {
   const projectKey = buildProjectKey(project.owner, project.name);
-  const collaborators = useProjectStore((s) => s.collaboratorsByKey[projectKey] ?? []);
+  const collaborators = useProjectStore((s) => s.collaboratorsByKey[projectKey] ?? EMPTY_COLLABORATORS);
   const fetchCollaborators = useProjectStore((s) => s.fetchCollaborators);
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -79,7 +81,7 @@ export default function CollaboratorsSettings({ project }: CollaboratorsSettings
       </div>
 
       {collaborators.length === 0 ? (
-        <div className="mt-4 grid place-items-center gap-3 rounded-[0.625rem] border border-brand-borderMuted bg-white/50 py-10 text-center">
+        <div className="mt-4 grid place-items-center gap-3 rounded-[0.625rem] border border-brand-borderMuted bg-white/90 py-10 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-full bg-brand-accentMuted text-xl text-brand-accentStrong">
             <UserPlusIcon className="h-7 w-7" />
           </div>

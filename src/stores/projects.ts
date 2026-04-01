@@ -71,6 +71,20 @@ export const updateProject = async (
   return { ok: false, error: result.error };
 };
 
+export const deleteProject = async (handle: string, projectName: string): Promise<ActionResult> => {
+  const result = await request<{ status: "ok" }>(`accounts/${handle}/projects/${projectName}`, { method: "DELETE" });
+  if (result.ok) {
+    const key = buildProjectKey(handle, projectName);
+    useProjectStore.setState(({ projectsByKey, collaboratorsByKey }) => {
+      const nextProjectsByKey = Object.fromEntries(Object.entries(projectsByKey).filter(([projectKey]) => projectKey !== key));
+      const nextCollaboratorsByKey = Object.fromEntries(Object.entries(collaboratorsByKey).filter(([projectKey]) => projectKey !== key));
+      return { projectsByKey: nextProjectsByKey, collaboratorsByKey: nextCollaboratorsByKey };
+    });
+    return { ok: true };
+  }
+  return { ok: false, error: result.error };
+};
+
 export const addCollaborator = async (
   handle: string, projectName: string, userHandle: string
 ): Promise<ActionResult> => {
