@@ -1,13 +1,14 @@
 import type { ChangeEvent, ReactElement } from "react";
 import { useCallback } from "react";
 
-interface StepSliderProps {
+interface SliderProps {
+  readonly label?: string;
   readonly steps: number[];
   readonly value: number;
   readonly onChange: (step: number) => void;
 }
 
-export default function StepSlider({ steps, value, onChange }: StepSliderProps): ReactElement {
+export default function Slider({ label = "Step", steps, value, onChange }: SliderProps): ReactElement {
   const index = steps.indexOf(value);
   const currentIndex = index >= 0 ? index : 0;
 
@@ -28,7 +29,7 @@ export default function StepSlider({ steps, value, onChange }: StepSliderProps):
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[0.75rem] font-medium text-brand-textMuted">Step</span>
+      <span className="text-[0.75rem] font-medium text-brand-textMuted">{label}</span>
       <input
         type="range"
         min={0}

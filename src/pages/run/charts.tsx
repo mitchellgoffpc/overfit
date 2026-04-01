@@ -8,7 +8,7 @@ import ChartSections from "components/charts/ChartSections";
 import CollapsibleSection from "components/CollapsibleSection";
 import MediaPreview from "components/MediaPreview";
 import SectionHeader from "components/SectionHeader";
-import StepSlider from "components/StepSlider";
+import Slider from "components/Slider";
 import { RULED_LINE } from "helpers";
 import { getMediaFileUrl, useMediaStore } from "stores/media";
 import { useRunStore } from "stores/runs";
@@ -87,7 +87,7 @@ export default function RunChartsPage(): ReactElement {
           </div>
           {steps.length > 1 ? (
             <div className="mt-3 flex shrink-0 justify-center border-t border-brand-border pt-3">
-              <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
+              <Slider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
             </div>
           ) : null}
         </div>
@@ -102,7 +102,7 @@ export default function RunChartsPage(): ReactElement {
         collapsed={collapsedSections[`media:${key}`] ?? false}
         onToggle={() => { setCollapsedSections((prev) => ({ ...prev, [`media:${key}`]: !(prev[`media:${key}`] ?? false) })); }}
         trailing={steps.length > 1
-          ? <StepSlider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
+          ? <Slider steps={steps} value={selectedStep} onChange={(step) => { setMediaSteps((prev) => ({ ...prev, [key]: step })); }} />
           : undefined}
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

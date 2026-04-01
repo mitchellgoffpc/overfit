@@ -55,7 +55,6 @@ export default function ProfileRoute(): ReactElement {
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Profile" }]} />
 
       <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
-
         <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
 
         <main className="relative pb-6 px-4 pt-6 lg:p-6">

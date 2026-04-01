@@ -1,15 +1,15 @@
 import type { ChangeEvent, ReactElement } from "react";
 import { useMemo, useState } from "react";
 
+import TextAreaField from "components/fields/TextAreaField";
+import TextInputField from "components/fields/TextInputField";
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE, getInitials } from "helpers";
-import { inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
+import { inkButtonClass, paperButtonClass } from "pages/settings/styles";
 import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
 import { API_BASE } from "types";
 import type { User } from "types";
 
-const notesTextareaClass = "min-h-24 w-full rounded-[0.625rem] border border-brand-borderMuted bg-white/70 px-3 py-2.5"
-  + " text-sm outline-none transition focus:border-brand-accent";
 const avatarFrameClass = "relative grid h-40 w-40 place-items-center overflow-hidden rounded-full border border-brand-borderStrong"
   + " bg-brand-accentMuted text-4xl font-semibold text-brand-accentStrong";
 
@@ -29,6 +29,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [isAvatarMissing, setIsAvatarMissing] = useState(false);
   const initials = useMemo(() => getInitials(user.name), [user.name]);
+  const hasStatusMessage = [saveError, saveStatus, avatarError, avatarStatus].some((message) => message !== null);
   const avatarVersion = useAccountsStore((state) => state.avatarVersion);
   const invalidateAvatar = useAccountsStore((state) => state.invalidateAvatar);
   const avatarSrc = `${API_BASE}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`;
@@ -87,48 +88,40 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
     <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
       <SectionHeader title="Profile" subtitle={`@${user.handle}`} sectionLabel="Section A" />
 
-      <div className="flex flex-wrap gap-2" style={{ marginTop: RULED_LINE }}>
-        {saveError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
-          {saveError}
-        </div> : null}
-        {saveStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
-          {saveStatus}
-        </div> : null}
-        {avatarError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
-          {avatarError}
-        </div> : null}
-        {avatarStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
-          {avatarStatus}
-        </div> : null}
-      </div>
+      {hasStatusMessage ? (
+        <div className="flex flex-wrap gap-2" style={{ marginTop: RULED_LINE }}>
+          {saveError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
+            {saveError}
+          </div> : null}
+          {saveStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
+            {saveStatus}
+          </div> : null}
+          {avatarError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
+            {avatarError}
+          </div> : null}
+          {avatarStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
+            {avatarStatus}
+          </div> : null}
+        </div>
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_15rem]" style={{ marginTop: RULED_LINE }}>
-        <div className="grid gap-4">
-          <label className="grid gap-1 text-sm text-brand-text">
-            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Name</span>
-            <input
-              className={lineInputClass}
-              type="text"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-              }}
-            />
-          </label>
+      <div className="grid lg:grid-cols-[1fr_15rem] lg:gap-x-6" style={{ marginTop: RULED_LINE }}>
+        <div>
+          <TextInputField
+            label="Name"
+            type="text"
+            value={name}
+            onChange={(event) => { setName(event.target.value); }}
+          />
 
-          <label className="grid gap-1 text-sm text-brand-text">
-            <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Bio</span>
-            <textarea
-              className={notesTextareaClass}
-              value={bio}
-              placeholder="What are you currently building or exploring?"
-              onChange={(event) => {
-                setBio(event.target.value);
-              }}
-            />
-          </label>
+          <TextAreaField
+            label="Bio"
+            value={bio}
+            placeholder="What are you currently building or exploring?"
+            onChange={(event) => { setBio(event.target.value); }}
+          />
 
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="mt-8 flex flex-wrap items-center gap-2 pt-1">
             <button
               className={inkButtonClass}
               type="button"

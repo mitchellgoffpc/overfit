@@ -2,6 +2,8 @@ import type { ReactElement } from "react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 
+import TextAreaField from "components/fields/TextAreaField";
+import TextInputField from "components/fields/TextInputField";
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
@@ -29,8 +31,6 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
   const hasChanges = description !== (project.description ?? "") || visibility !== project.visibility;
   const deleteTarget = `${project.owner}/${project.name}`;
   const deleteConfirmed = deleteInput === deleteTarget;
-  const projectNameInputLineHeight = RULED_LINE_HEIGHT * 1.25;
-
   const handleSave = async () => {
     setIsSaving(true);
     setError(null);
@@ -84,38 +84,20 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
       </div>
 
       <div className="grid" style={{ gap: RULED_LINE }}>
-        <label className="grid text-sm text-brand-text">
-          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Project name</span>
-          <input
-            className={lineInputClass + " text-brand-textMuted"}
-            type="text"
-            value={project.name}
-            style={{
-              backgroundColor: "white",
-              height: `${String(projectNameInputLineHeight)}rem`,
-              marginTop: `-${String((projectNameInputLineHeight - RULED_LINE_HEIGHT) / 2)}rem`,
-              marginBottom: `-${String((projectNameInputLineHeight - RULED_LINE_HEIGHT) / 2)}rem`,
-            }}
-            disabled
-          />
-          <span className="text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Project renaming is not yet supported.</span>
-        </label>
+        <TextInputField
+          label="Project name"
+          type="text"
+          value={project.name}
+          hint="Project renaming is not yet supported."
+          disabled
+        />
 
-        <label className="grid text-sm text-brand-text">
-          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Description</span>
-          <textarea
-            className={"w-full rounded-[0.625rem] border border-brand-borderMuted bg-white px-3 py-2.5"
-              + " text-sm outline-none transition focus:border-brand-accent"}
-            style={{
-              marginTop: `-${String((RULED_LINE_HEIGHT / 8))}rem`,
-              marginBottom: `-${String((RULED_LINE_HEIGHT / 8))}rem`,
-              minHeight: `${String(RULED_LINE_HEIGHT * 2.25)}rem`
-            }}
-            value={description}
-            placeholder="What is this project about?"
-            onChange={(e) => { setDescription(e.target.value); }}
-          />
-        </label>
+        <TextAreaField
+          label="Description"
+          value={description}
+          placeholder="What is this project about?"
+          onChange={(e) => { setDescription(e.target.value); }}
+        />
 
         <div className="grid">
           <span className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Visibility</span>

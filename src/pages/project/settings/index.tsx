@@ -1,10 +1,11 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faGear, faUsers } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
-import { Link, Redirect, Route, Switch, useLocation, useParams } from "wouter";
+import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
 
 import NotebookShell from "components/NotebookShell";
+import SidebarTabs from "components/SidebarTabs";
+import type { SidebarTab } from "components/SidebarTabs";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import CollaboratorsSettings from "pages/project/settings/collaborators";
 import GeneralSettings from "pages/project/settings/general";
@@ -27,7 +28,8 @@ export default function ProjectSettingsRoute(): ReactElement {
   const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
 
   const basePath = `/${handle}/${projectName}/settings`;
-  const activeTabId = location.endsWith("/collaborators") ? "collaborators" : "general";
+  const tabs: SidebarTab[] = sidebarTabs.map((tab) => ({ id: tab.id, label: tab.label, href: `${basePath}/${tab.path}`, icon: tab.icon }));
+  const activeTabId = tabs.find((tab) => location === tab.href || location.startsWith(`${tab.href}/`))?.id ?? "general";
 
   return (
     <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
@@ -36,24 +38,7 @@ export default function ProjectSettingsRoute(): ReactElement {
         <h1 className="font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>Project Settings</h1>
         <p className="mt-2 font-mono text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>{handle}/{projectName}</p>
 
-        <nav className="mt-7 grid gap-2">
-          {sidebarTabs.map((tab) => {
-            const isActive = tab.id === activeTabId;
-            return (
-              <Link
-                key={tab.id}
-                href={`${basePath}/${tab.path}`}
-                className={"flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[0.8125rem] no-underline transition"
-                  + (isActive
-                    ? " border-brand-accent bg-brand-accentMuted font-semibold text-brand-accent"
-                    : " border-brand-borderMuted bg-white text-brand-textMuted hover:border-brand-borderStrong hover:text-brand-text")}
-              >
-                <FontAwesomeIcon icon={tab.icon} className="h-3.5 w-3.5" />
-                {tab.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <SidebarTabs tabs={tabs} activeTabId={activeTabId} />
       </aside>
 
       <main className="relative min-w-0 pb-6 px-4 lg:px-6 lg:pb-6">
