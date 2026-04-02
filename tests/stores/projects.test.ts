@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildProjectKey, deleteProject, renameProject, useProjectStore } from "stores/projects";
+import { buildProjectKey, deleteProject, renameProject, searchUsers, useProjectStore } from "stores/projects";
 import { API_BASE } from "types";
 import type { Project, User } from "types";
 
@@ -144,5 +144,21 @@ describe("project store", () => {
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo`, { credentials: "include", method: "DELETE" });
     expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "baseline")]: sibling });
     expect(useProjectStore.getState().collaboratorsByKey).toEqual({});
+  });
+
+  it("searches users by query", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse([collaborator]));
+
+    const result = await searchUsers("grace");
+
+    expect(result).toEqual({ ok: true, body: [collaborator] });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/users/search?query=grace`, { credentials: "include" });
+  });
+
+  it("returns an empty list when user search query is blank", async () => {
+    const result = await searchUsers("   ");
+
+    expect(result).toEqual({ ok: true, body: [] });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

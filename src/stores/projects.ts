@@ -56,6 +56,13 @@ export const useProjectStore = create<ProjectState>((set) => ({
   },
 }));
 
+export const searchUsers = async (query: string): Promise<ActionResult<User[]>> => {
+  const normalized = query.trim();
+  if (!normalized) { return { ok: true, body: [] }; }
+  const result = await request<User[]>(`users/search?query=${encodeURIComponent(normalized)}`);
+  return result.ok ? { ok: true, body: result.body } : { ok: false, error: result.error };
+};
+
 export const updateProject = async (
   handle: string, projectName: string, data: { description?: string | null; visibility?: string }
 ): Promise<ActionResult<Project>> => {
