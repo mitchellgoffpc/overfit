@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildProjectKey, useProjectStore } from "stores/projects";
+import { buildProjectKey, deleteProject, renameProject, useProjectStore } from "stores/projects";
 import { API_BASE } from "types";
-import type { Project } from "types";
+import type { Project, User } from "types";
 
 const project: Project = {
   id: "project-1",
@@ -20,13 +20,24 @@ const createResponse = (body: unknown, init?: { ok?: boolean; status?: number })
   json: vi.fn(async () => await Promise.resolve(body))
 });
 
+const collaborator: User = {
+  id: "user-1",
+  type: "USER",
+  handle: "grace",
+  email: "grace@example.com",
+  name: "Grace",
+  bio: null,
+  createdAt: "2025-01-01T00:00:00.000Z",
+  updatedAt: "2025-01-01T00:00:00.000Z"
+};
+
 describe("project store", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useProjectStore.setState({ projectsByKey: {}, isLoading: false, error: null });
+    useProjectStore.setState({ projectsByKey: {}, collaboratorsByKey: {}, isLoading: false, error: null });
     vi.restoreAllMocks();
   });
 
@@ -96,5 +107,42 @@ describe("project store", () => {
       [buildProjectKey("ada", "demo")]: project
     });
     expect(useProjectStore.getState().error).toBeNull();
+  });
+
+  it("renames a project and rewrites project and collaborator keys", async () => {
+    const renamed = { ...project, name: "renamed" };
+    useProjectStore.setState({
+      projectsByKey: { [buildProjectKey("ada", "demo")]: project },
+      collaboratorsByKey: { [buildProjectKey("ada", "demo")]: [collaborator] }
+    });
+    fetchMock.mockResolvedValueOnce(createResponse(renamed));
+
+    const result = await renameProject("ada", "demo", "renamed");
+
+    expect(result).toEqual({ ok: true, body: renamed });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo/rename`, {
+      credentials: "include",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "renamed" })
+    });
+    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "renamed")]: renamed });
+    expect(useProjectStore.getState().collaboratorsByKey).toEqual({ [buildProjectKey("ada", "renamed")]: [collaborator] });
+  });
+
+  it("deletes a project and removes its collaborators from state", async () => {
+    const sibling = { ...project, id: "project-2", name: "baseline" };
+    useProjectStore.setState({
+      projectsByKey: { [buildProjectKey("ada", "demo")]: project, [buildProjectKey("ada", "baseline")]: sibling },
+      collaboratorsByKey: { [buildProjectKey("ada", "demo")]: [collaborator] }
+    });
+    fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
+
+    const result = await deleteProject("ada", "demo");
+
+    expect(result).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo`, { credentials: "include", method: "DELETE" });
+    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "baseline")]: sibling });
+    expect(useProjectStore.getState().collaboratorsByKey).toEqual({});
   });
 });

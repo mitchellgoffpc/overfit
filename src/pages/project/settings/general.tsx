@@ -6,9 +6,9 @@ import TextAreaField from "components/fields/TextAreaField";
 import TextInputField from "components/fields/TextInputField";
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
-import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
-import { deleteProject, updateProject } from "stores/projects";
+import { RULED_LINE, RULED_LINE_HEIGHT, SLUG_HINT, testSlug } from "helpers";
+import { accentButtonClass, dangerButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
+import { deleteProject, renameProject, updateProject } from "stores/projects";
 import type { Project, ProjectVisibility } from "types";
 
 interface GeneralSettingsProps {
@@ -17,8 +17,10 @@ interface GeneralSettingsProps {
 
 export default function GeneralSettings({ project }: GeneralSettingsProps): ReactElement {
   const [, navigate] = useLocation();
+  const [name, setName] = useState(() => project.name);
   const [description, setDescription] = useState(() => project.description ?? "");
   const [visibility, setVisibility] = useState<ProjectVisibility>(() => project.visibility);
+  const [isRenaming, setIsRenaming] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -28,9 +30,33 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const hasChanges = description !== (project.description ?? "") || visibility !== project.visibility;
+  const normalizedName = name.trim().toLowerCase();
+  const hasNameChange = normalizedName !== project.name;
+  const trimmedName = name.trim();
+  const nameValidationError = trimmedName ? testSlug(trimmedName) : "Project name is required.";
+  const canRename = hasNameChange && !nameValidationError;
+  const hasMetadataChanges = description !== (project.description ?? "") || visibility !== project.visibility;
   const deleteTarget = `${project.owner}/${project.name}`;
   const deleteConfirmed = deleteInput === deleteTarget;
+  const handleRename = async () => {
+    if (!trimmedName) { setError("Project name is required."); return; }
+    if (nameValidationError) { setError(nameValidationError); return; }
+    if (!hasNameChange) { return; }
+
+    setIsRenaming(true);
+    setError(null);
+    setStatus(null);
+    const result = await renameProject(project.owner, project.name, normalizedName);
+    if (result.ok) {
+      setName(result.body.name);
+      setStatus("Project renamed");
+      navigate(`/${result.body.owner}/${result.body.name}/settings/general`);
+    } else {
+      setError(result.error);
+    }
+    setIsRenaming(false);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     setError(null);
@@ -38,7 +64,8 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
     const result = await updateProject(project.owner, project.name, { description: description || null, visibility });
     if (result.ok) {
       setStatus("Settings saved");
-      if (result.body.name !== project.name) { navigate(`/${result.body.owner}/${result.body.name}/settings/general`); }
+      setDescription(result.body.description ?? "");
+      setVisibility(result.body.visibility);
     } else {
       setError(result.error);
     }
@@ -87,9 +114,14 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
         <TextInputField
           label="Project name"
           type="text"
-          value={project.name}
-          hint="Project renaming is not yet supported."
-          disabled
+          value={name}
+          hint={SLUG_HINT}
+          onChange={(e) => { setName(e.target.value); }}
+          submitLabel="Rename"
+          submittingLabel="Renaming..."
+          onSubmit={() => { void handleRename(); }}
+          isSubmitting={isRenaming}
+          submitDisabled={isSaving || !canRename}
         />
 
         <TextAreaField
@@ -129,18 +161,24 @@ export default function GeneralSettings({ project }: GeneralSettingsProps): Reac
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <button
-            className={inkButtonClass + " disabled:cursor-not-allowed"}
+            className={accentButtonClass}
             type="button"
-            disabled={isSaving || !hasChanges}
+            disabled={isSaving || isRenaming || !hasMetadataChanges}
             onClick={() => { void handleSave(); }}
           >
             {isSaving ? "Saving..." : "Save changes"}
           </button>
-          {hasChanges ? (
+          {hasMetadataChanges ? (
             <button
               className={paperButtonClass}
               type="button"
-              onClick={() => { setDescription(project.description ?? ""); setVisibility(project.visibility); setError(null); setStatus(null); }}
+              disabled={isSaving || isRenaming}
+              onClick={() => {
+                setDescription(project.description ?? "");
+                setVisibility(project.visibility);
+                setError(null);
+                setStatus(null);
+              }}
             >
               Reset
             </button>

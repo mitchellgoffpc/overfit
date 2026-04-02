@@ -71,6 +71,31 @@ export const updateProject = async (
   return { ok: false, error: result.error };
 };
 
+export const renameProject = async (
+  handle: string, projectName: string, name: string
+): Promise<ActionResult<Project>> => {
+  const result = await send<Project>(`accounts/${handle}/projects/${projectName}/rename`, "POST", { name });
+  if (result.ok) {
+    const oldKey = buildProjectKey(handle, projectName);
+    const newKey = buildProjectKey(result.body.owner, result.body.name);
+    useProjectStore.setState(({ projectsByKey, collaboratorsByKey }) => {
+      if (oldKey === newKey) { return { projectsByKey: { ...projectsByKey, [newKey]: result.body }, collaboratorsByKey }; }
+      const nextProjectsByKey = {
+        ...Object.fromEntries(Object.entries(projectsByKey).filter(([projectKey]) => projectKey !== oldKey)),
+        [newKey]: result.body
+      };
+      const oldCollaborators = collaboratorsByKey[oldKey];
+      const filteredCollaboratorsByKey = Object.fromEntries(
+        Object.entries(collaboratorsByKey).filter(([projectKey]) => projectKey !== oldKey),
+      );
+      const nextCollaboratorsByKey = oldCollaborators ? { ...filteredCollaboratorsByKey, [newKey]: oldCollaborators } : filteredCollaboratorsByKey;
+      return { projectsByKey: nextProjectsByKey, collaboratorsByKey: nextCollaboratorsByKey };
+    });
+    return { ok: true, body: result.body };
+  }
+  return { ok: false, error: result.error };
+};
+
 export const deleteProject = async (handle: string, projectName: string): Promise<ActionResult> => {
   const result = await request<{ status: "ok" }>(`accounts/${handle}/projects/${projectName}`, { method: "DELETE" });
   if (result.ok) {
