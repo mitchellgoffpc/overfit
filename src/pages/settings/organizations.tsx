@@ -1,20 +1,20 @@
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE } from "helpers";
 import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
+import type { OrganizationMembership } from "stores/accounts";
+import { createOrganization, fetchUserMemberships, getUserMemberships, leaveOrganization, useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { createOrganization, fetchMyMemberships, leaveOrganization } from "stores/organizations";
-import type { Organization, OrganizationRole } from "types";
-
-type Membership = Organization & { role: OrganizationRole };
 
 export default function SettingsOrganizationsContent(): ReactElement {
   const status = useAuthStore((state) => state.status);
-  const [memberships, setMemberships] = useState<Membership[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const currentHandle = useAuthStore((state) => state.currentHandle);
+  const memberships = useAccountsStore((state) => currentHandle ? state.membershipsByUser[currentHandle] : undefined);
+  const membershipList = useAccountsStore(useShallow(getUserMemberships(currentHandle ?? "")));
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -23,24 +23,18 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isLeaving, setIsLeaving] = useState<string | null>(null);
-  const [leaveTarget, setLeaveTarget] = useState<Membership | null>(null);
+  const [leaveTarget, setLeaveTarget] = useState<OrganizationMembership | null>(null);
 
   useEffect(() => {
-    if (loaded || status !== "authenticated") { return; }
+    if (memberships !== undefined || status !== "authenticated") { return; }
     const load = async () => {
       setIsLoading(true);
-      setError(null);
-      const result = await fetchMyMemberships();
-      if (result.ok) {
-        setMemberships(result.body);
-        setLoaded(true);
-      } else {
-        setError(result.error);
-      }
+      const result = await fetchUserMemberships();
+      if (!result.ok) { setError(result.error); }
       setIsLoading(false);
     };
     void load();
-  }, [loaded, status]);
+  }, [memberships, status]);
 
   const handleCreate = async () => {
     if (!newHandle.trim() || !newName.trim()) {
@@ -51,7 +45,6 @@ export default function SettingsOrganizationsContent(): ReactElement {
     setCreateError(null);
     const result = await createOrganization(newHandle, newName);
     if (result.ok) {
-      setMemberships((current) => [...current, { ...result.body, role: "ADMIN" }]);
       setNewHandle("");
       setNewName("");
       setShowCreate(false);
@@ -72,17 +65,13 @@ export default function SettingsOrganizationsContent(): ReactElement {
     setIsLeaving(orgHandle);
     setError(null);
     const result = await leaveOrganization(orgHandle);
-    if (result.ok) {
-      setMemberships((current) => current.filter((m) => m.handle !== orgHandle));
-    } else {
-      setError(result.error);
-    }
+    if (!result.ok) { setError(result.error); }
     setIsLeaving(null);
   };
 
   return (
     <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
-      <SectionHeader title="Organizations" subtitle={`${String(memberships.length)} memberships`} sectionLabel="Section B" />
+      <SectionHeader title="Organizations" subtitle={`${String(membershipList.length)} memberships`} sectionLabel="Section B" />
 
       {error ? (
         <div className="flex flex-wrap gap-2" style={{ marginTop: RULED_LINE }}>
@@ -96,11 +85,14 @@ export default function SettingsOrganizationsContent(): ReactElement {
       </div>
 
       {isLoading ? <div className="mt-3 text-xs text-brand-textMuted">Loading organizations...</div> : null}
-      {!isLoading && memberships.length === 0 ? <div className="mt-3 text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
+      {!isLoading && membershipList.length === 0 ? <div className="mt-3 text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
 
-      <div className={memberships.length > 0 ? "mt-3 border-t border-brand-borderMuted" : ""}>
-        {memberships.map((membership) => (
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0" key={membership.id}>
+      <div className={membershipList.length > 0 ? "mt-3 border-t border-brand-borderMuted" : ""}>
+        {membershipList.map((membership) => (
+          <div
+            className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0"
+            key={membership.handle}
+          >
             <div className="grid gap-1">
               <p className="text-sm font-semibold">{membership.name}</p>
               <p className="text-[0.6875rem] text-brand-textMuted">

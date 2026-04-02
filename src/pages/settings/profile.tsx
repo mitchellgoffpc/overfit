@@ -1,51 +1,29 @@
 import type { ChangeEvent, ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
+import Avatar from "components/Avatar";
 import TextAreaField from "components/fields/TextAreaField";
 import TextInputField from "components/fields/TextInputField";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE, getInitials } from "helpers";
+import { RULED_LINE } from "helpers";
 import { inkButtonClass, paperButtonClass } from "pages/settings/styles";
-import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
-import { API_BASE } from "types";
-import type { User } from "types";
+import { deleteAvatar, getMe, updateMe, updateAvatar, useAccountsStore } from "stores/accounts";
 
-const avatarFrameClass = "relative grid h-40 w-40 place-items-center overflow-hidden rounded-full border border-brand-borderStrong"
-  + " bg-brand-accentMuted text-4xl font-semibold text-brand-accentStrong";
-
-interface ProfileSettingsCardProps {
-  readonly user: User;
-  readonly updateProfile: (name: string, bio: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-}
-
-function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps): ReactElement {
-  const [name, setName] = useState(() => user.name);
-  const [bio, setBio] = useState(() => user.bio ?? "");
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+export default function SettingsProfileContent(): ReactElement {
+  const user = useAccountsStore(getMe);
+  const [name, setName] = useState(() => user?.name ?? "");
+  const [bio, setBio] = useState(() => user?.bio ?? "");
   const [isSaving, setIsSaving] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
+  const [saveResult, setSaveResult] = useState<{ ok: boolean, message: string } | null>(null);
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
-  const [isAvatarMissing, setIsAvatarMissing] = useState(false);
-  const initials = useMemo(() => getInitials(user.name), [user.name]);
-  const hasStatusMessage = [saveError, saveStatus, avatarError, avatarStatus].some((message) => message !== null);
-  const avatarVersion = useAccountsStore((state) => state.avatarVersion);
-  const invalidateAvatar = useAccountsStore((state) => state.invalidateAvatar);
-  const avatarSrc = `${API_BASE}/accounts/${encodeURIComponent(user.handle)}/avatar?v=${avatarVersion.toString()}`;
+  const [avatarResult, setAvatarResult] = useState<{ ok: boolean, message: string } | null>(null);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
-    setSaveError(null);
-    setSaveStatus(null);
-    const result = await updateProfile(name, bio);
-    if (result.ok) {
-      setSaveStatus("Saved");
-      setIsSaving(false);
-    } else {
-      setSaveError(result.error);
-      setIsSaving(false);
-    }
+    setSaveResult(null);
+    const result = await updateMe(name, bio);
+    setSaveResult(result.ok ? { ok: true, message: "Saved" } : { ok: false, message: result.error });
+    setIsSaving(false);
   };
 
   const handleAvatarUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -54,53 +32,35 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
     if (!file) { return; }
 
     setIsAvatarSaving(true);
-    setAvatarError(null);
-    setAvatarStatus(null);
-    const result = await uploadCurrentAccountAvatar(file);
-    if (result.ok) {
-      setAvatarStatus("Profile picture updated");
-      setIsAvatarMissing(false);
-      invalidateAvatar();
-      setIsAvatarSaving(false);
-    } else {
-      setAvatarError(result.error);
-      setIsAvatarSaving(false);
-    }
+    setAvatarResult(null);
+    const result = await updateAvatar(file);
+    setAvatarResult(result.ok ? { ok: true, message: "Profile picture updated" } : { ok: false, message: result.error });
+    setIsAvatarSaving(false);
   };
 
   const handleAvatarDelete = async () => {
     setIsAvatarSaving(true);
-    setAvatarError(null);
-    setAvatarStatus(null);
-    const result = await deleteCurrentAccountAvatar();
-    if (result.ok) {
-      setAvatarStatus("Profile picture removed");
-      setIsAvatarMissing(true);
-      invalidateAvatar();
-      setIsAvatarSaving(false);
-    } else {
-      setAvatarError(result.error);
-      setIsAvatarSaving(false);
-    }
+    setAvatarResult(null);
+    const result = await deleteAvatar();
+    setAvatarResult(result.ok ? { ok: true, message: "Profile picture removed" } : { ok: false, message: result.error });
+    setIsAvatarSaving(false);
   };
+
+  if (!user) { return <div />; }
 
   return (
     <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
       <SectionHeader title="Profile" subtitle={`@${user.handle}`} sectionLabel="Section A" />
 
-      {hasStatusMessage ? (
+      {saveResult || avatarResult ? (
         <div className="flex flex-wrap gap-2" style={{ marginTop: RULED_LINE }}>
-          {saveError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
-            {saveError}
+          {saveResult ? <div className={`rounded-[0.625rem] border px-3 py-1.5 text-xs ${saveResult.ok
+            ? "border-success-border bg-success-bg text-success-text" : "border-danger-border bg-danger-bg text-danger-text"}`}>
+            {saveResult.message}
           </div> : null}
-          {saveStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
-            {saveStatus}
-          </div> : null}
-          {avatarError ? <div className="rounded-[0.625rem] border border-danger-border bg-danger-bg px-3 py-1.5 text-xs text-danger-text">
-            {avatarError}
-          </div> : null}
-          {avatarStatus ? <div className="rounded-[0.625rem] border border-success-border bg-success-bg px-3 py-1.5 text-xs text-success-text">
-            {avatarStatus}
+          {avatarResult ? <div className={`rounded-[0.625rem] border px-3 py-1.5 text-xs ${avatarResult.ok
+            ? "border-success-border bg-success-bg text-success-text" : "border-danger-border bg-danger-bg text-danger-text"}`}>
+            {avatarResult.message}
           </div> : null}
         </div>
       ) : null}
@@ -125,9 +85,7 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
             <button
               className={inkButtonClass}
               type="button"
-              onClick={() => {
-                void handleSaveProfile();
-              }}
+              onClick={() => { void handleSaveProfile(); }}
               disabled={isSaving}
             >
               {isSaving ? "Saving..." : "Update profile"}
@@ -139,21 +97,11 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
         <div className="grid content-start justify-items-center gap-3">
           <div className="w-full max-w-[13.125rem] rounded-xl border border-brand-borderMuted bg-white p-3">
             <p className="mb-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Portrait</p>
-            <div className={avatarFrameClass}>
-              {!isAvatarMissing ? (
-                <img
-                  className="h-full w-full object-cover"
-                  src={avatarSrc}
-                  alt={`${user.name} avatar`}
-                  onLoad={() => {
-                    setIsAvatarMissing(false);
-                  }}
-                  onError={() => {
-                    setIsAvatarMissing(true);
-                  }}
-                />
-              ) : initials}
-            </div>
+            <Avatar
+              handle={user.handle}
+              name={user.name}
+              className="h-40 w-40 border border-brand-borderStrong text-4xl"
+            />
             <p className="mt-2 text-center font-mono text-[0.6875rem] text-brand-textMuted">@{user.handle}</p>
           </div>
 
@@ -165,17 +113,13 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
                 type="file"
                 accept="image/*"
                 disabled={isAvatarSaving}
-                onChange={(event) => {
-                  void handleAvatarUpload(event);
-                }}
+                onChange={(event) => { void handleAvatarUpload(event); }}
               />
             </label>
             <button
               className={paperButtonClass}
               type="button"
-              onClick={() => {
-                void handleAvatarDelete();
-              }}
+              onClick={() => { void handleAvatarDelete(); }}
               disabled={isAvatarSaving}
             >
               Remove
@@ -185,11 +129,4 @@ function ProfileSettingsCard({ user, updateProfile }: ProfileSettingsCardProps):
       </div>
     </main>
   );
-}
-
-export default function SettingsProfileContent(): ReactElement {
-  const user = useAccountsStore((state) => state.me());
-  const updateProfile = useAccountsStore((state) => state.updateProfile);
-
-  return user ? <ProfileSettingsCard user={user} updateProfile={updateProfile} /> : <div />;
 }

@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 
-import { getClosestPoint, xFormatter, yFormatter } from "charts/helpers";
 import type { LineSeries } from "charts/lineChart";
 import type { LineChartHover } from "components/charts/LineChart";
 import LineChart from "components/charts/LineChart";
@@ -20,6 +19,21 @@ interface MetricChartCardProps {
   readonly hasPoints: boolean;
   readonly isLoading: boolean;
 }
+
+const xFormatter = (value: number): string => value.toFixed(0);
+const yFormatter = (value: number): string => value.toFixed(2);
+const getClosestPoint = (line: LineSeries, targetX: number): { x: number; y: number } | null => {
+  let closest: { x: number; y: number } | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const point of line.points) {
+    const distance = Math.abs(point.x - targetX);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      closest = point;
+    }
+  }
+  return closest;
+};
 
 const tooltipClass = "pointer-events-none absolute z-10 max-w-[17.5rem] rounded-[0.625rem] border border-brand-border"
   + " bg-brand-surface/96 px-3 py-2 shadow-soft backdrop-blur";

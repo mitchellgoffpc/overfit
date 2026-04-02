@@ -16,9 +16,12 @@ interface LogScope {
 }
 
 interface LogState {
-  logsByScope: Record<string, LogScope>;
-  fetchLogs: (handle: string, projectName: string, runName: string, workerId: string) => Promise<void>;
+  logs: Record<string, LogScope>;
 }
+
+export const useLogStore = create<LogState>(() => ({
+  logs: {}
+}));
 
 const splitLines = (content: string): string[] => {
   if (!content.length) { return []; }
@@ -33,27 +36,23 @@ const splitTimestampPrefix = (line: string): ParsedLogLine => {
   return { content: line, timestamp: match[1] ?? null, message: match[2] ?? line };
 };
 
-export const useLogStore = create<LogState>((set, get) => ({
-  logsByScope: {},
+export const fetchLogs = async (handle: string, projectName: string, runName: string, workerId: string): Promise<void> => {
+  const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
+  const requestedCursor = useLogStore.getState().logs[scopeKey]?.cursor ?? 0;
 
-  fetchLogs: async (handle: string, projectName: string, runName: string, workerId: string) => {
-    const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
-    const requestedCursor = get().logsByScope[scopeKey]?.cursor ?? 0;
-
-    const query = new URLSearchParams({ workerId, cursor: String(requestedCursor) });
-    const { ok, body, error } = await request<LogPage>(`accounts/${handle}/projects/${projectName}/runs/${runName}/logs?${query.toString()}`);
-    const scope = get().logsByScope[scopeKey] ?? { lines: [], cursor: 0, error: null };
-    if (ok) {
-      if (scope.cursor === requestedCursor) {
-        const incomingLines = body.entries.flatMap((entry) => splitLines(entry.content).map(splitTimestampPrefix));
-        const newScope = { lines: [...scope.lines, ...incomingLines], cursor: body.nextCursor, error: null };
-        set((state) => ({ logsByScope: { ...state.logsByScope, [scopeKey]: newScope } }));
-        if (body.hasMore && body.nextCursor > requestedCursor) {
-          await get().fetchLogs(handle, projectName, runName, workerId);
-        }
+  const query = new URLSearchParams({ workerId, cursor: String(requestedCursor) });
+  const { ok, body, error } = await request<LogPage>(`accounts/${handle}/projects/${projectName}/runs/${runName}/logs?${query.toString()}`);
+  const scope = useLogStore.getState().logs[scopeKey] ?? { lines: [], cursor: 0, error: null };
+  if (ok) {
+    if (scope.cursor === requestedCursor) {
+      const incomingLines = body.entries.flatMap((entry) => splitLines(entry.content).map(splitTimestampPrefix));
+      const newScope = { lines: [...scope.lines, ...incomingLines], cursor: body.nextCursor, error: null };
+      useLogStore.setState((state) => ({ logs: { ...state.logs, [scopeKey]: newScope } }));
+      if (body.hasMore && body.nextCursor > requestedCursor) {
+        await fetchLogs(handle, projectName, runName, workerId);
       }
-    } else if (scope.cursor === requestedCursor) {
-      set((state) => ({ logsByScope: { ...state.logsByScope, [scopeKey]: { ...scope, error } } }));
     }
+  } else if (scope.cursor === requestedCursor) {
+    useLogStore.setState((state) => ({ logs: { ...state.logs, [scopeKey]: { ...scope, error } } }));
   }
-}));
+};

@@ -2,13 +2,14 @@ import type { ReactElement } from "react";
 import { useParams } from "wouter";
 
 import SectionHeader from "components/SectionHeader";
-import { useRunStore } from "stores/runs";
+import { buildRunKey, useRunStore } from "stores/runs";
 
 export default function RunArtifactsPage(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
-  const run = useRunStore((state) => state.runsByKey[`${handle}/${projectName}/${runName}`]);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
+  const runKey = buildRunKey(handle, projectName, runName);
+  const run = useRunStore((state) => state.runs[runKey]);
+  const runError = useRunStore((state) => state.errors[runKey] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
 
   return (
     <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteCurrentAccountAvatar, uploadCurrentAccountAvatar, useAccountsStore } from "stores/accounts";
+import { deleteAvatar, fetchAccount, getMe, searchUsers, updateMe, updateAvatar, useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
 import { API_BASE } from "types";
 import type { Organization, User } from "types";
@@ -43,8 +43,8 @@ describe("accounts store", () => {
   });
 
   it("stores and retrieves accounts by handle", () => {
-    useAccountsStore.getState().setAccount(user);
-    useAccountsStore.getState().setAccount(organization);
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [user.handle]: user } }));
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [organization.handle]: organization } }));
 
     expect(useAccountsStore.getState().accounts["ada"]).toEqual(user);
     expect(useAccountsStore.getState().accounts["acme"]).toEqual(organization);
@@ -54,10 +54,10 @@ describe("accounts store", () => {
   it("updates the user", async () => {
     const updated = { ...user, name: "Ada", bio: "Math pioneer" };
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useAccountsStore.getState().setAccount(user);
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [user.handle]: user } }));
     fetchMock.mockResolvedValueOnce(createResponse(updated));
 
-    const result = await useAccountsStore.getState().updateProfile("Ada", "Math pioneer");
+    const result = await updateMe("Ada", "Math pioneer");
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/me`, {
@@ -72,7 +72,7 @@ describe("accounts store", () => {
   it("loads a user account by handle", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(user));
 
-    const result = await useAccountsStore.getState().fetchAccount(user.handle);
+    const result = await fetchAccount(user.handle);
 
     expect(result).toEqual(user);
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/${user.handle}`, { credentials: "include" });
@@ -82,7 +82,7 @@ describe("accounts store", () => {
   it("loads an organization account by handle", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(organization));
 
-    const result = await useAccountsStore.getState().fetchAccount(organization.handle);
+    const result = await fetchAccount(organization.handle);
 
     expect(result).toEqual(organization);
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/${organization.handle}`, { credentials: "include" });
@@ -92,7 +92,7 @@ describe("accounts store", () => {
   it("returns null when loading an account by handle fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Account not found" }, { ok: false, status: 404 }));
 
-    const result = await useAccountsStore.getState().fetchAccount("missing");
+    const result = await fetchAccount("missing");
 
     expect(result).toBeNull();
     expect(useAccountsStore.getState().accounts["missing"]).toBeUndefined();
@@ -100,10 +100,10 @@ describe("accounts store", () => {
 
   it("returns an error when updating the user fails", async () => {
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useAccountsStore.getState().setAccount(user);
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [user.handle]: user } }));
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Invalid profile" }, { ok: false, status: 400 }));
 
-    const result = await useAccountsStore.getState().updateProfile("", "Math pioneer");
+    const result = await updateMe("", "Math pioneer");
 
     expect(result).toEqual({ ok: false, error: "Invalid profile" });
     expect(useAccountsStore.getState().accounts[user.handle]).toEqual(user);
@@ -111,16 +111,16 @@ describe("accounts store", () => {
 
   it("returns the current user through me()", () => {
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useAccountsStore.getState().setAccount(user);
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [user.handle]: user } }));
 
-    expect(useAccountsStore.getState().me()).toEqual(user);
+    expect(getMe(useAccountsStore.getState())).toEqual(user);
   });
 
   it("uploads the current account avatar", async () => {
     const file = new File(["avatar"], "avatar.png", { type: "image/png" });
     fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
 
-    const result = await uploadCurrentAccountAvatar(file);
+    const result = await updateAvatar(file);
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/me/avatar`, {
@@ -134,9 +134,25 @@ describe("accounts store", () => {
   it("deletes the current account avatar", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
 
-    const result = await deleteCurrentAccountAvatar();
+    const result = await deleteAvatar();
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/me/avatar`, { credentials: "include", method: "DELETE" });
+  });
+
+  it("searches users by query", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse([user]));
+
+    const result = await searchUsers("ada");
+
+    expect(result).toEqual({ ok: true, body: [user] });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/users/search?query=ada`, { credentials: "include" });
+  });
+
+  it("returns an empty list when user search query is blank", async () => {
+    const result = await searchUsers("   ");
+
+    expect(result).toEqual({ ok: true, body: [] });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

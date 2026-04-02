@@ -10,28 +10,30 @@ import MediaPreview from "components/MediaPreview";
 import SectionHeader from "components/SectionHeader";
 import Slider from "components/Slider";
 import { RULED_LINE } from "helpers";
-import { getMediaFileUrl, useMediaStore } from "stores/media";
-import { useRunStore } from "stores/runs";
-import { useScalarStore } from "stores/scalars";
-import type { Media } from "types";
+import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
+import { buildRunKey, useRunStore } from "stores/runs";
+import { fetchScalars, useScalarStore } from "stores/scalars";
+import type { Media, Scalar } from "types";
+
+const EMPTY_SCALARS: Scalar[] = [];
+const EMPTY_MEDIA: Media[] = [];
 
 export default function RunChartsPage(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
-  const run = useRunStore((state) => state.runsByKey[`${handle}/${projectName}/${runName}`]);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
-  const scalars = useScalarStore((state) => state.scalars);
-  const scalarError = useScalarStore((state) => state.error);
-  const isScalarsLoading = useScalarStore((state) => state.isLoading);
-  const fetchScalars = useScalarStore((state) => state.fetchScalars);
-  const media = useMediaStore((state) => state.media);
-  const mediaError = useMediaStore((state) => state.error);
-  const fetchMedia = useMediaStore((state) => state.fetchMedia);
+  const runKey = buildRunKey(handle, projectName, runName);
+  const run = useRunStore((state) => state.runs[runKey]);
+  const runError = useRunStore((state) => state.errors[runKey] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
+  const scalars = useScalarStore((state) => state.scalars[runKey] ?? EMPTY_SCALARS);
+  const scalarError = useScalarStore((state) => state.errors[runKey] ?? null);
+  const isScalarsLoading = useScalarStore((state) => state.isLoading[runKey] ?? false);
+  const media = useMediaStore((state) => state.media[runKey] ?? EMPTY_MEDIA);
+  const mediaError = useMediaStore((state) => state.errors[runKey] ?? null);
 
   useEffect(() => {
     void fetchScalars(handle, projectName, runName);
     void fetchMedia(handle, projectName, runName);
-  }, [fetchScalars, fetchMedia, handle, projectName, runName]);
+  }, [handle, projectName, runName]);
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});

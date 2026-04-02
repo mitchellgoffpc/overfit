@@ -18,14 +18,14 @@ const sidebarTabs: { id: string; label: string; path: string; icon: IconDefiniti
 
 export default function ProjectSettingsRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
+  const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const [location] = useLocation();
 
-  const projectList = Object.values(projectsByKey);
+  const projectList = Object.values(projects);
   const projectKey = buildProjectKey(handle, projectName);
-  const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
+  const project = projects[projectKey] ?? projectList.find((item) => item.name === projectName);
 
   const basePath = `/${handle}/${projectName}/settings`;
   const tabs: SidebarTab[] = sidebarTabs.map((tab) => ({ id: tab.id, label: tab.label, href: `${basePath}/${tab.path}`, icon: tab.icon }));

@@ -2,7 +2,7 @@ import type { SubmitEvent, ReactElement } from "react";
 import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
-import { useAuthStore } from "stores/auth";
+import { loadAuth, login, useAuthStore } from "stores/auth";
 
 const inputClass = "rounded-[0.625rem] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
@@ -14,12 +14,10 @@ export default function LoginRoute(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const status = useAuthStore((state) => state.status);
-  const loadAuth = useAuthStore((state) => state.loadAuth);
-  const login = useAuthStore((state) => state.login);
 
   useEffect(() => {
     if (status === "idle") { void loadAuth(); }
-  }, [loadAuth, status]);
+  }, [status]);
 
   if (status === "authenticated") {
     return <Redirect to="/" />;

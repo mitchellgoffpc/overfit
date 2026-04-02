@@ -1,42 +1,35 @@
 import { create } from "zustand";
 
-import type { APIResponse } from "helpers";
 import { request } from "helpers";
+import { buildRunKey } from "stores/runs";
 import { API_BASE } from "types";
 import type { Media } from "types";
 
-const fetchRunMedia = async (handle: string, projectName: string, runName: string): Promise<APIResponse<Media[]>> =>
-  await request<Media[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/media`);
+interface MediaState {
+  media: Record<string, Media[]>;
+  isLoading: Record<string, boolean>;
+  errors: Record<string, string | null>;
+}
+
+export const useMediaStore = create<MediaState>(() => ({
+  media: {},
+  isLoading: {},
+  errors: {}
+}));
 
 export const getMediaFileUrl = (handle: string, projectName: string, runName: string, id: string, index = 0): string =>
   `${API_BASE}/accounts/${handle}/projects/${projectName}/runs/${runName}/media/${id}/file?index=${String(index)}`;
 
-export const fetchMultiRunMedia = async (handle: string, projectName: string, runNames: string[]): Promise<Record<string, Media[]>> => {
-  const responses = await Promise.all(runNames.map(async (runName) => ({ runName, response: await fetchRunMedia(handle, projectName, runName) })));
-  const mediaByRun: Record<string, Media[]> = {};
-  for (const { runName, response } of responses) { mediaByRun[runName] = response.ok ? response.body : []; }
-  return mediaByRun;
+export const fetchMedia = async (handle: string, projectName: string, runName: string): Promise<void> => {
+  const runKey = buildRunKey(handle, projectName, runName);
+  useMediaStore.setState(({ isLoading, errors }) => ({
+    isLoading: { ...isLoading, [runKey]: true },
+    errors: { ...errors, [runKey]: null }
+  }));
+  const response = await request<Media[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/media`);
+  useMediaStore.setState(({ media, isLoading, errors }) => ({
+    media: response.ok ? { ...media, [runKey]: response.body } : media,
+    isLoading: { ...isLoading, [runKey]: false },
+    errors: { ...errors, [runKey]: response.ok ? null : response.error }
+  }));
 };
-
-interface MediaState {
-  media: Media[];
-  isLoading: boolean;
-  error: string | null;
-  fetchMedia: (handle: string, projectName: string, runName: string) => Promise<void>;
-}
-
-export const useMediaStore = create<MediaState>((set) => ({
-  media: [],
-  isLoading: false,
-  error: null,
-
-  fetchMedia: async (handle: string, projectName: string, runName: string) => {
-    set({ isLoading: true, error: null });
-    const response = await fetchRunMedia(handle, projectName, runName);
-    if (response.ok) {
-      set({ media: response.body, isLoading: false, error: null });
-    } else {
-      set({ error: response.error, isLoading: false });
-    }
-  }
-}));

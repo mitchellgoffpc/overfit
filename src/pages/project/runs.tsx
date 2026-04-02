@@ -7,26 +7,25 @@ import ProjectHeader from "components/project/ProjectHeader";
 import ProjectRunsTable from "components/project/RunsTable";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { useRunStore } from "stores/runs";
+import { fetchRuns, useRunStore } from "stores/runs";
 
 export default function ProjectRunsPage(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
+  const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const runsByKey = useRunStore((state) => state.runsByKey);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
-  const fetchProjectRuns = useRunStore((state) => state.fetchProjectRuns);
+  const runs = useRunStore((state) => state.runs);
+  const projectKey = buildProjectKey(handle, projectName);
+  const runError = useRunStore((state) => state.errors[projectKey] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[projectKey] ?? false);
 
   useEffect(() => {
-    if (!isProjectsLoading) { void fetchProjectRuns(handle, projectName); }
-  }, [fetchProjectRuns, handle, isProjectsLoading, projectName]);
+    if (!isProjectsLoading) { void fetchRuns(handle, projectName); }
+  }, [handle, isProjectsLoading, projectName]);
 
-  const projectList = Object.values(projectsByKey);
-  const runList = Object.values(runsByKey);
-  const projectKey = buildProjectKey(handle, projectName);
-  const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
+  const projectList = Object.values(projects);
+  const runList = Object.values(runs);
+  const project = projects[projectKey] ?? projectList.find((item) => item.name === projectName);
   const projectRuns = project ? runList.filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [];
   const showProjectNotFound = !project && !isProjectsLoading;
 

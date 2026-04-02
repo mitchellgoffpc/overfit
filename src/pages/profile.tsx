@@ -10,41 +10,38 @@ import ProfileRunsPanel from "components/profile/ProfileRunsPanel";
 import ProfileSidebar from "components/profile/ProfileSidebar";
 import NotFoundPage from "pages/not-found";
 import OrganizationPage from "pages/organization";
-import { useAccountsStore } from "stores/accounts";
+import { fetchAccount, useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { useProjectStore } from "stores/projects";
-import { useRunStore } from "stores/runs";
+import { fetchProjects, useProjectStore } from "stores/projects";
+import { fetchRuns, useRunStore } from "stores/runs";
 
 export default function ProfileRoute(): ReactElement {
   const { handle } = useParams<{ handle: string }>();
   const account = useAccountsStore((state) => state.accounts[handle]);
   const notFound = useAccountsStore((state) => state.notFoundHandles.has(handle));
-  const fetchAccount = useAccountsStore((state) => state.fetchAccount);
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
+  const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const runsByKey = useRunStore((state) => state.runsByKey);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
-  const fetchRuns = useRunStore((state) => state.fetchRuns);
+  const runs = useRunStore((state) => state.runs);
+  const runError = useRunStore((state) => state.errors[handle] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[handle] ?? false);
   const currentHandle = useAuthStore((state) => state.currentHandle);
   const user = account?.type === "USER" ? account : null;
   const organization = account?.type === "ORGANIZATION" ? account : null;
-  const projects = Object.values(projectsByKey).filter((project) => project.owner === handle).sort((a, b) => a.name.localeCompare(b.name));
-  const runs = Object.values(runsByKey).filter((run) => run.projectOwner === handle).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const projectsList = Object.values(projects).filter((project) => project.owner === handle).sort((a, b) => a.name.localeCompare(b.name));
+  const runsList = Object.values(runs).filter((run) => run.projectOwner === handle).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   useEffect(() => {
     if (!account && !notFound) { void fetchAccount(handle); }
-  }, [account, fetchAccount, handle, notFound]);
+  }, [account, handle, notFound]);
 
   useEffect(() => {
     if (handle) { void fetchProjects(handle); }
-  }, [fetchProjects, handle]);
+  }, [handle]);
 
   useEffect(() => {
     if (handle && !isProjectsLoading) { void fetchRuns(handle); }
-  }, [fetchRuns, handle, isProjectsLoading]);
+  }, [handle, isProjectsLoading]);
 
   if (notFound) { return <NotFoundPage />; }
   if (!account) { return <div />; }
@@ -55,25 +52,25 @@ export default function ProfileRoute(): ReactElement {
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Profile" }]} />
 
       <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
-        <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
+        <ProfileSidebar user={user} projects={projectsList} runs={runsList} isOwnProfile={handle === currentHandle} />
 
         <main className="relative min-w-0 px-4 pb-5 lg:px-5 lg:pb-6">
           <div className="grid gap-6">
             <ProfileProjectsPanel
-              projects={projects}
-              runs={runs}
+              projects={projectsList}
+              runs={runsList}
               userHandle={handle}
               isLoading={isProjectsLoading}
               error={projectError}
             />
             <ProfileRunsPanel
-              runs={runs}
-              projects={projects}
+              runs={runsList}
+              projects={projectsList}
               userHandle={handle}
               isLoading={isRunsLoading}
               error={runError}
             />
-            <ProfileActivityHeatmap runs={runs} />
+            <ProfileActivityHeatmap runs={runsList} />
           </div>
         </main>
       </NotebookShell>

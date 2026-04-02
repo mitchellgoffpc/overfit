@@ -2,65 +2,68 @@ import { create } from "zustand";
 
 import type { ActionResult } from "helpers";
 import { request, send } from "helpers";
-import type { Project, User } from "types";
+import { useAccountsStore } from "stores/accounts";
+import type { Project, Timestamp, User } from "types";
 
-export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
-const getProjectsByKey = (projects: Project[]) => Object.fromEntries(projects.map((project) => [buildProjectKey(project.owner, project.name), project]));
-
-interface ProjectState {
-  projectsByKey: Record<string, Project>;
-  collaboratorsByKey: Record<string, User[]>;
-  isLoading: boolean;
-  error: string | null;
-  fetchProjects: (handle: string) => Promise<void>;
-  fetchProject: (handle: string, projectName: string) => Promise<Project | null>;
-  fetchCollaborators: (handle: string, projectName: string) => Promise<void>;
+export interface CollaboratorDetails {
+  handle: string;
+  collaboratorCreatedAt: Timestamp;
+  collaboratorUpdatedAt: Timestamp;
 }
 
-export const useProjectStore = create<ProjectState>((set) => ({
-  projectsByKey: {},
-  collaboratorsByKey: {},
+export type ProjectCollaborator = User & CollaboratorDetails;
+
+interface ProjectState {
+  projects: Record<string, Project>;
+  collaborators: Record<string, Record<string, CollaboratorDetails>>;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const useProjectStore = create<ProjectState>(() => ({
+  projects: {},
+  collaborators: {},
   isLoading: false,
-  error: null,
-
-  fetchProjects: async (handle: string) => {
-    set({ isLoading: true, error: null });
-    const { ok, body, error } = await request<Project[]>(`accounts/${handle}/projects`);
-    if (ok) {
-      set(({ projectsByKey }) => ({ isLoading: false, error: null, projectsByKey: { ...projectsByKey, ...getProjectsByKey(body) } }));
-    } else {
-      set({ error, isLoading: false });
-    }
-  },
-
-  fetchProject: async (handle: string, projectName: string) => {
-    set({ isLoading: true, error: null });
-    const { ok, body, error } = await request<Project>(`accounts/${handle}/projects/${projectName}`);
-    if (ok) {
-      set(({ projectsByKey }) => ({
-        error: null, isLoading: false, projectsByKey: { ...projectsByKey, ...getProjectsByKey([body]) },
-      }));
-      return body;
-    } else {
-      set({ error, isLoading: false });
-      return null;
-    }
-  },
-
-  fetchCollaborators: async (handle: string, projectName: string) => {
-    const key = buildProjectKey(handle, projectName);
-    const result = await request<User[]>(`accounts/${handle}/projects/${projectName}/collaborators`);
-    if (result.ok) {
-      set(({ collaboratorsByKey }) => ({ collaboratorsByKey: { ...collaboratorsByKey, [key]: result.body } }));
-    }
-  },
+  error: null
 }));
 
-export const searchUsers = async (query: string): Promise<ActionResult<User[]>> => {
-  const normalized = query.trim();
-  if (!normalized) { return { ok: true, body: [] }; }
-  const result = await request<User[]>(`users/search?query=${encodeURIComponent(normalized)}`);
-  return result.ok ? { ok: true, body: result.body } : { ok: false, error: result.error };
+export const buildProjectKey = (handle: string, projectName: string): string => `${handle}/${projectName}`;
+const indexByKey = (projects: Project[]) => Object.fromEntries(projects.map((project) => [buildProjectKey(project.owner, project.name), project]));
+const indexByHandle = <T extends { handle: string }>(items: T[]): Record<string, T> => Object.fromEntries(items.map((item) => [item.handle, item]));
+
+const pickCollaboratorFields = (c: CollaboratorDetails): CollaboratorDetails => (
+  { handle: c.handle, collaboratorCreatedAt: c.collaboratorCreatedAt, collaboratorUpdatedAt: c.collaboratorUpdatedAt }
+);
+
+const omitCollaboratorFields = <T extends CollaboratorDetails>(c: T): Omit<T, "collaboratorCreatedAt" | "collaboratorUpdatedAt"> => {
+  const { collaboratorCreatedAt: _c, collaboratorUpdatedAt: _u, ...rest } = c;
+  return rest;
+};
+
+// Projects
+
+export const fetchProjects = async (handle: string): Promise<void> => {
+  useProjectStore.setState({ isLoading: true, error: null });
+  const { ok, body, error } = await request<Project[]>(`accounts/${handle}/projects`);
+  if (ok) {
+    useProjectStore.setState(({ projects }) => ({ isLoading: false, error: null, projects: { ...projects, ...indexByKey(body) } }));
+  } else {
+    useProjectStore.setState({ error, isLoading: false });
+  }
+};
+
+export const fetchProject = async (handle: string, projectName: string): Promise<Project | null> => {
+  useProjectStore.setState({ isLoading: true, error: null });
+  const { ok, body, error } = await request<Project>(`accounts/${handle}/projects/${projectName}`);
+  if (ok) {
+    useProjectStore.setState(({ projects }) => ({
+      error: null, isLoading: false, projects: { ...projects, ...indexByKey([body]) },
+    }));
+    return body;
+  } else {
+    useProjectStore.setState({ error, isLoading: false });
+    return null;
+  }
 };
 
 export const updateProject = async (
@@ -70,8 +73,8 @@ export const updateProject = async (
     `accounts/${handle}/projects/${projectName}`, "PUT", data as Record<string, unknown>,
   );
   if (result.ok) {
-    useProjectStore.setState(({ projectsByKey }) => ({
-      projectsByKey: { ...projectsByKey, ...getProjectsByKey([result.body]) },
+    useProjectStore.setState(({ projects }) => ({
+      projects: { ...projects, ...indexByKey([result.body]) },
     }));
     return { ok: true, body: result.body };
   }
@@ -85,18 +88,18 @@ export const renameProject = async (
   if (result.ok) {
     const oldKey = buildProjectKey(handle, projectName);
     const newKey = buildProjectKey(result.body.owner, result.body.name);
-    useProjectStore.setState(({ projectsByKey, collaboratorsByKey }) => {
-      if (oldKey === newKey) { return { projectsByKey: { ...projectsByKey, [newKey]: result.body }, collaboratorsByKey }; }
-      const nextProjectsByKey = {
-        ...Object.fromEntries(Object.entries(projectsByKey).filter(([projectKey]) => projectKey !== oldKey)),
+    useProjectStore.setState(({ projects, collaborators }) => {
+      if (oldKey === newKey) { return { projects: { ...projects, [newKey]: result.body }, collaborators }; }
+      const nextprojects = {
+        ...Object.fromEntries(Object.entries(projects).filter(([projectKey]) => projectKey !== oldKey)),
         [newKey]: result.body
       };
-      const oldCollaborators = collaboratorsByKey[oldKey];
-      const filteredCollaboratorsByKey = Object.fromEntries(
-        Object.entries(collaboratorsByKey).filter(([projectKey]) => projectKey !== oldKey),
+      const oldCollaborators = collaborators[oldKey];
+      const filteredcollaborators = Object.fromEntries(
+        Object.entries(collaborators).filter(([projectKey]) => projectKey !== oldKey),
       );
-      const nextCollaboratorsByKey = oldCollaborators ? { ...filteredCollaboratorsByKey, [newKey]: oldCollaborators } : filteredCollaboratorsByKey;
-      return { projectsByKey: nextProjectsByKey, collaboratorsByKey: nextCollaboratorsByKey };
+      const nextcollaborators = oldCollaborators ? { ...filteredcollaborators, [newKey]: oldCollaborators } : filteredcollaborators;
+      return { projects: nextprojects, collaborators: nextcollaborators };
     });
     return { ok: true, body: result.body };
   }
@@ -107,14 +110,32 @@ export const deleteProject = async (handle: string, projectName: string): Promis
   const result = await request<{ status: "ok" }>(`accounts/${handle}/projects/${projectName}`, { method: "DELETE" });
   if (result.ok) {
     const key = buildProjectKey(handle, projectName);
-    useProjectStore.setState(({ projectsByKey, collaboratorsByKey }) => {
-      const nextProjectsByKey = Object.fromEntries(Object.entries(projectsByKey).filter(([projectKey]) => projectKey !== key));
-      const nextCollaboratorsByKey = Object.fromEntries(Object.entries(collaboratorsByKey).filter(([projectKey]) => projectKey !== key));
-      return { projectsByKey: nextProjectsByKey, collaboratorsByKey: nextCollaboratorsByKey };
+    useProjectStore.setState(({ projects, collaborators }) => {
+      const nextprojects = Object.fromEntries(Object.entries(projects).filter(([projectKey]) => projectKey !== key));
+      const nextcollaborators = Object.fromEntries(Object.entries(collaborators).filter(([projectKey]) => projectKey !== key));
+      return { projects: nextprojects, collaborators: nextcollaborators };
     });
     return { ok: true };
   }
   return { ok: false, error: result.error };
+};
+
+// Collaborators
+
+export const getProjectCollaborators = (projectKey: string) => (state: ProjectState): ProjectCollaborator[] => (
+  Object.values(state.collaborators[projectKey] ?? {})
+    .map((c) => { const a = useAccountsStore.getState().accounts[c.handle]; return a?.type === "USER" ? { ...a, ...c } : null; })
+    .filter((c): c is ProjectCollaborator => c !== null)
+    .sort((a, b) => a.handle.localeCompare(b.handle))
+);
+
+export const fetchCollaborators = async (handle: string, projectName: string): Promise<void> => {
+  const key = buildProjectKey(handle, projectName);
+  const result = await request<ProjectCollaborator[]>(`accounts/${handle}/projects/${projectName}/collaborators`);
+  if (result.ok) {
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, ...indexByHandle(result.body.map(omitCollaboratorFields)) } }));
+    useProjectStore.setState((state) => ({ collaborators: { ...state.collaborators, [key]: indexByHandle(result.body.map(pickCollaboratorFields)) } }));
+  }
 };
 
 export const addCollaborator = async (
@@ -124,7 +145,7 @@ export const addCollaborator = async (
     `accounts/${handle}/projects/${projectName}/collaborators/${userHandle}`, { method: "PUT" },
   );
   if (result.ok) {
-    void useProjectStore.getState().fetchCollaborators(handle, projectName);
+    void fetchCollaborators(handle, projectName);
     return { ok: true };
   }
   return { ok: false, error: result.error };
@@ -138,12 +159,12 @@ export const removeCollaborator = async (
   );
   if (result.ok) {
     const key = buildProjectKey(handle, projectName);
-    useProjectStore.setState(({ collaboratorsByKey }) => ({
-      collaboratorsByKey: {
-        ...collaboratorsByKey,
-        [key]: (collaboratorsByKey[key] ?? []).filter((u) => u.handle !== userHandle),
-      },
-    }));
+    useProjectStore.setState((state) => {
+      const details = state.collaborators[key];
+      if (!details) { return state; }
+      const { [userHandle]: _, ...rest } = details;
+      return { collaborators: { ...state.collaborators, [key]: rest } };
+    });
     return { ok: true };
   }
   return { ok: false, error: result.error };

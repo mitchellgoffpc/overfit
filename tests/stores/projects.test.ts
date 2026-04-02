@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildProjectKey, deleteProject, renameProject, searchUsers, useProjectStore } from "stores/projects";
+import type { CollaboratorDetails } from "stores/projects";
+import { buildProjectKey, deleteProject, fetchProject, fetchProjects, renameProject, useProjectStore } from "stores/projects";
 import { API_BASE } from "types";
-import type { Project, User } from "types";
+import type { Project } from "types";
 
 const project: Project = {
   id: "project-1",
@@ -20,15 +21,10 @@ const createResponse = (body: unknown, init?: { ok?: boolean; status?: number })
   json: vi.fn(async () => await Promise.resolve(body))
 });
 
-const collaborator: User = {
-  id: "user-1",
-  type: "USER",
+const collaborator: CollaboratorDetails = {
   handle: "grace",
-  email: "grace@example.com",
-  name: "Grace",
-  bio: null,
-  createdAt: "2025-01-01T00:00:00.000Z",
-  updatedAt: "2025-01-01T00:00:00.000Z"
+  collaboratorCreatedAt: "2025-01-01T00:00:00.000Z",
+  collaboratorUpdatedAt: "2025-01-01T00:00:00.000Z"
 };
 
 describe("project store", () => {
@@ -37,7 +33,7 @@ describe("project store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useProjectStore.setState({ projectsByKey: {}, collaboratorsByKey: {}, isLoading: false, error: null });
+    useProjectStore.setState({ projects: {}, collaborators: {}, isLoading: false, error: null });
     vi.restoreAllMocks();
   });
 
@@ -48,10 +44,10 @@ describe("project store", () => {
   it("fetches projects for a handle with cookie credentials", async () => {
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
-    await useProjectStore.getState().fetchProjects("ada");
+    await fetchProjects("ada");
 
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects`, { credentials: "include" });
-    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
+    expect(useProjectStore.getState().projects).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
     expect(useProjectStore.getState().error).toBeNull();
   });
@@ -59,7 +55,7 @@ describe("project store", () => {
   it("stores the error when the project list request fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 500 }));
 
-    await useProjectStore.getState().fetchProjects("ada");
+    await fetchProjects("ada");
 
     expect(useProjectStore.getState().error).toBe("Request failed with status 500");
     expect(useProjectStore.getState().isLoading).toBe(false);
@@ -68,7 +64,7 @@ describe("project store", () => {
   it("stores the error when the project list request throws", async () => {
     fetchMock.mockRejectedValueOnce(new Error("network error"));
 
-    await useProjectStore.getState().fetchProjects("ada");
+    await fetchProjects("ada");
 
     expect(useProjectStore.getState().error).toBe("network error");
     expect(useProjectStore.getState().isLoading).toBe(false);
@@ -77,7 +73,7 @@ describe("project store", () => {
   it("stores backend errors when fetching a project fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Project not found" }, { ok: false, status: 404 }));
 
-    const result = await useProjectStore.getState().fetchProject("ada", "demo");
+    const result = await fetchProject("ada", "demo");
 
     expect(result).toBeNull();
     expect(useProjectStore.getState().error).toBe("Project not found");
@@ -87,22 +83,22 @@ describe("project store", () => {
   it("stores projects by handle and name when fetching succeeds", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(project));
 
-    const result = await useProjectStore.getState().fetchProject("ada", "demo");
+    const result = await fetchProject("ada", "demo");
 
     expect(result).toEqual(project);
-    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "demo")]: project });
+    expect(useProjectStore.getState().projects).toEqual({ [buildProjectKey("ada", "demo")]: project });
     expect(useProjectStore.getState().isLoading).toBe(false);
     expect(useProjectStore.getState().error).toBeNull();
   });
 
   it("merges fetched project lists with existing entries", async () => {
     const existing: Project = { ...project, id: "project-2", name: "baseline" };
-    useProjectStore.setState({ projectsByKey: { [buildProjectKey("ada", "baseline")]: existing }, isLoading: false, error: "stale error" });
+    useProjectStore.setState({ projects: { [buildProjectKey("ada", "baseline")]: existing }, isLoading: false, error: "stale error" });
     fetchMock.mockResolvedValueOnce(createResponse([project]));
 
-    await useProjectStore.getState().fetchProjects("ada");
+    await fetchProjects("ada");
 
-    expect(useProjectStore.getState().projectsByKey).toEqual({
+    expect(useProjectStore.getState().projects).toEqual({
       [buildProjectKey("ada", "baseline")]: existing,
       [buildProjectKey("ada", "demo")]: project
     });
@@ -112,8 +108,8 @@ describe("project store", () => {
   it("renames a project and rewrites project and collaborator keys", async () => {
     const renamed = { ...project, name: "renamed" };
     useProjectStore.setState({
-      projectsByKey: { [buildProjectKey("ada", "demo")]: project },
-      collaboratorsByKey: { [buildProjectKey("ada", "demo")]: [collaborator] }
+      projects: { [buildProjectKey("ada", "demo")]: project },
+      collaborators: { [buildProjectKey("ada", "demo")]: { [collaborator.handle]: collaborator } }
     });
     fetchMock.mockResolvedValueOnce(createResponse(renamed));
 
@@ -126,15 +122,15 @@ describe("project store", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "renamed" })
     });
-    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "renamed")]: renamed });
-    expect(useProjectStore.getState().collaboratorsByKey).toEqual({ [buildProjectKey("ada", "renamed")]: [collaborator] });
+    expect(useProjectStore.getState().projects).toEqual({ [buildProjectKey("ada", "renamed")]: renamed });
+    expect(useProjectStore.getState().collaborators).toEqual({ [buildProjectKey("ada", "renamed")]: { [collaborator.handle]: collaborator } });
   });
 
   it("deletes a project and removes its collaborators from state", async () => {
     const sibling = { ...project, id: "project-2", name: "baseline" };
     useProjectStore.setState({
-      projectsByKey: { [buildProjectKey("ada", "demo")]: project, [buildProjectKey("ada", "baseline")]: sibling },
-      collaboratorsByKey: { [buildProjectKey("ada", "demo")]: [collaborator] }
+      projects: { [buildProjectKey("ada", "demo")]: project, [buildProjectKey("ada", "baseline")]: sibling },
+      collaborators: { [buildProjectKey("ada", "demo")]: { [collaborator.handle]: collaborator } }
     });
     fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
 
@@ -142,23 +138,7 @@ describe("project store", () => {
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo`, { credentials: "include", method: "DELETE" });
-    expect(useProjectStore.getState().projectsByKey).toEqual({ [buildProjectKey("ada", "baseline")]: sibling });
-    expect(useProjectStore.getState().collaboratorsByKey).toEqual({});
-  });
-
-  it("searches users by query", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse([collaborator]));
-
-    const result = await searchUsers("grace");
-
-    expect(result).toEqual({ ok: true, body: [collaborator] });
-    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/users/search?query=grace`, { credentials: "include" });
-  });
-
-  it("returns an empty list when user search query is blank", async () => {
-    const result = await searchUsers("   ");
-
-    expect(result).toEqual({ ok: true, body: [] });
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(useProjectStore.getState().projects).toEqual({ [buildProjectKey("ada", "baseline")]: sibling });
+    expect(useProjectStore.getState().collaborators).toEqual({});
   });
 });

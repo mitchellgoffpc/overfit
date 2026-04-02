@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EMAIL_IN_USE_ERROR, USERNAME_IN_USE_ERROR } from "helpers";
 import { useAccountsStore } from "stores/accounts";
-import { checkEmailValid, checkHandleValid, completePasswordReset, requestPasswordReset, useAuthStore } from "stores/auth";
+import { checkEmailValid, checkHandleValid, completePasswordReset, login, logout, requestPasswordReset, signup, useAuthStore } from "stores/auth";
 import { API_BASE } from "types";
 import type { User } from "types";
 
@@ -37,7 +37,7 @@ describe("auth store", () => {
   it("logs in and stores the user", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-123" }, user }));
 
-    const result = await useAuthStore.getState().login("ada@underfit.local", "password");
+    const result = await login("ada@underfit.local", "password");
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/auth/login`, {
@@ -54,7 +54,7 @@ describe("auth store", () => {
   it("returns an error when login fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Invalid credentials" }, { ok: false, status: 401 }));
 
-    const result = await useAuthStore.getState().login("ada@underfit.local", "password");
+    const result = await login("ada@underfit.local", "password");
 
     expect(result).toEqual({ ok: false, error: "Invalid credentials" });
   });
@@ -62,7 +62,7 @@ describe("auth store", () => {
   it("registers a new user and stores the user", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ session: { token: "token-456" }, user }));
 
-    const result = await useAuthStore.getState().signup("ada@underfit.local", "ada", "password");
+    const result = await signup("ada@underfit.local", "ada", "password");
 
     expect(result).toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/auth/register`, {
@@ -146,10 +146,10 @@ describe("auth store", () => {
 
   it("logs out and clears user state", async () => {
     useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
-    useAccountsStore.getState().setAccount(user);
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [user.handle]: user } }));
     fetchMock.mockResolvedValueOnce(createResponse({}));
 
-    await useAuthStore.getState().logout();
+    await logout();
 
     expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/auth/logout`, { credentials: "include", method: "POST" });
     expect(useAuthStore.getState().status).toBe("unauthenticated");
@@ -160,7 +160,7 @@ describe("auth store", () => {
   it("skips logout request when not authenticated", async () => {
     useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
 
-    await useAuthStore.getState().logout();
+    await logout();
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().status).toBe("unauthenticated");

@@ -8,8 +8,8 @@ import { Link, useLocation, useParams } from "wouter";
 import SectionHeader from "components/SectionHeader";
 import { formatRunTime, RULED_LINE } from "helpers";
 import type { FileEntry } from "stores/files";
-import { useFilesStore } from "stores/files";
-import { useRunStore } from "stores/runs";
+import { fetchFiles, useFilesStore } from "stores/files";
+import { buildRunKey, useRunStore } from "stores/runs";
 import { API_BASE } from "types";
 
 const statusClass = "flex items-center px-[1.5rem] pl-[calc(1.5rem+1.75rem)] text-[0.8125rem] text-brand-textMuted";
@@ -31,19 +31,21 @@ const fileIcon = (entry: FileEntry): IconDefinition => {
   return faFile;
 };
 
+const EMPTY_ENTRIES: FileEntry[] = [];
+
 export default function RunFilesPage(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
-  const run = useRunStore((state) => state.runsByKey[`${handle}/${projectName}/${runName}`]);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
-  const entries = useFilesStore((state) => state.entries);
-  const isLoading = useFilesStore((state) => state.isLoading);
-  const error = useFilesStore((state) => state.error);
-  const fetchFiles = useFilesStore((state) => state.fetchFiles);
-
+  const runKey = buildRunKey(handle, projectName, runName);
+  const run = useRunStore((state) => state.runs[runKey]);
+  const runError = useRunStore((state) => state.errors[runKey] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
   const [location] = useLocation();
   const filesBase = `/${handle}/${projectName}/runs/${runName}/files`;
   const subPath = location.startsWith(filesBase) ? decodeURIComponent(location.slice(filesBase.length + 1)) : "";
+  const scopeKey = `${runKey}/${subPath}`;
+  const entries = useFilesStore((state) => state.entries[scopeKey] ?? EMPTY_ENTRIES);
+  const isLoading = useFilesStore((state) => state.isLoading[scopeKey] ?? false);
+  const fileError = useFilesStore((state) => state.errors[scopeKey] ?? null);
   const pathSegments = subPath.split("/").filter((segment) => segment.length > 0);
   const breadcrumbs = [{ label: "root", href: filesBase }, ...pathSegments.map((segment, index) => ({
     label: segment,
@@ -52,7 +54,7 @@ export default function RunFilesPage(): ReactElement {
 
   useEffect(() => {
     void fetchFiles(handle, projectName, runName, subPath || undefined);
-  }, [fetchFiles, handle, projectName, runName, subPath]);
+  }, [handle, projectName, runName, subPath]);
 
   const entryHref = (entry: FileEntry): string => {
     if (!entry.isDirectory) { return location; }
@@ -108,8 +110,8 @@ export default function RunFilesPage(): ReactElement {
         <div className="-mx-[1.5rem]">
           {isLoading && entries.length === 0 ? (
             <div className={statusClass} style={{ height: RULED_LINE }}>Loading files...</div>
-          ) : error ? (
-            <div className={statusClass} style={{ height: RULED_LINE }}>{error}</div>
+          ) : fileError ? (
+            <div className={statusClass} style={{ height: RULED_LINE }}>{fileError}</div>
           ) : entries.length === 0 ? (
             <div className={statusClass} style={{ height: RULED_LINE }}>No files found.</div>
           ) : (

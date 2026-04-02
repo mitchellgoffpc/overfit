@@ -5,8 +5,8 @@ import { useParams } from "wouter";
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import type { ParsedLogLine } from "stores/logs";
-import { useLogStore } from "stores/logs";
-import { useRunStore } from "stores/runs";
+import { fetchLogs, useLogStore } from "stores/logs";
+import { buildRunKey, useRunStore } from "stores/runs";
 
 type LogLine = ParsedLogLine & { lineNumber: number };
 
@@ -18,13 +18,13 @@ export default function RunLogsPage(): ReactElement {
   const [workerId, setWorkerId] = useState<string>(workerIds[0] ?? "");
   const [search, setSearch] = useState("");
   const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
-  const scope = useLogStore((state) => state.logsByScope[scopeKey]);
-  const fetchLogs = useLogStore((state) => state.fetchLogs);
-  const lines = useLogStore((state) => state.logsByScope[scopeKey]?.lines ?? emptyLines);
+  const scope = useLogStore((state) => state.logs[scopeKey]);
+  const lines = useLogStore((state) => state.logs[scopeKey]?.lines ?? emptyLines);
   const logError = scope?.error ?? null;
-  const run = useRunStore((state) => state.runsByKey[`${handle}/${projectName}/${runName}`]);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
+  const runKey = buildRunKey(handle, projectName, runName);
+  const run = useRunStore((state) => state.runs[runKey]);
+  const runError = useRunStore((state) => state.errors[runKey] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +34,7 @@ export default function RunLogsPage(): ReactElement {
     };
     void poll();
     return () => { cancelled = true; };
-  }, [fetchLogs, handle, projectName, runName, workerId]);
+  }, [handle, projectName, runName, workerId]);
 
   const visibleLines = useMemo(() => {
     const base = lines.map((line, index): LogLine => ({ lineNumber: index, ...line }));

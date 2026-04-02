@@ -1,5 +1,4 @@
 import { API_BASE } from "types";
-import type { Project } from "types";
 
 export const RULED_LINE_HEIGHT = 1.875;
 export const RULED_LINE = `${String(RULED_LINE_HEIGHT)}rem`;
@@ -65,10 +64,6 @@ export const formatDuration = (start: string, end: string): string => {
   return `${seconds.toString()}s`;
 };
 
-export const buildProjectNameMap = (projects: Project[]): Map<string, string> => {
-  return new Map(projects.map((project) => [project.id, project.name]));
-};
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HANDLE_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;
 const SLUG_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -79,8 +74,6 @@ export const PASSWORD_HINT = "Password should be at least 8 characters and inclu
 export const EMAIL_INVALID_ERROR = "Invalid email address";
 export const EMAIL_IN_USE_ERROR = "Email address is already associated with an account";
 export const USERNAME_IN_USE_ERROR = "Username is already associated with an account";
-export const SESSION_TOKEN_REQUIRED_ERROR = "Session token is required";
-export const SESSION_INVALID_ERROR = "Session is invalid or expired";
 export const CREDENTIALS_INVALID_ERROR = "Invalid credentials";
 
 export const testEmail = (value: string): string | null => (

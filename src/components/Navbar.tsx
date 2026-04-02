@@ -5,8 +5,8 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 
 import Avatar from "components/Avatar";
-import { useAccountsStore } from "stores/accounts";
-import { useAuthStore } from "stores/auth";
+import { getMe, useAccountsStore } from "stores/accounts";
+import { logout } from "stores/auth";
 
 const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition"
   + " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
@@ -38,8 +38,7 @@ export default function Navbar({
   pageWidth
 }: NavbarProps): ReactElement {
   const [, navigate] = useLocation();
-  const user = useAccountsStore((state) => state.me());
-  const logout = useAuthStore((state) => state.logout);
+  const user = useAccountsStore(getMe);
   const profileHref = user ? `/${user.handle}` : "/";
   const name = user?.name ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -79,7 +78,7 @@ export default function Navbar({
   const accountMinWidth = pageWidth ? { minWidth: `calc((100vw - ${pageWidth}) / 2)` } : undefined;
 
   const renderTabs = () => (
-    <>
+    <div className={tabsClass} aria-label="Project tabs">
       {tabs.map((tab) => {
         const isActive = tab.id === activeTabId;
         const baseClass = "relative inline-flex items-start gap-1.5 rounded-t-[0.625rem] border border-b-0 px-3 py-2.5 text-[0.6875rem]"
@@ -105,7 +104,7 @@ export default function Navbar({
           </Link>
         );
       })}
-    </>
+    </div>
   );
 
   return (
@@ -126,23 +125,20 @@ export default function Navbar({
             <>
               <div className="hidden h-7 w-px bg-brand-border sm:block" />
               <div className="min-w-0 flex-1 truncate text-sm">
-                {breadcrumbs.map((crumb, i) => {
-                  const isLast = i === breadcrumbs.length - 1;
-                  return (
-                    <Fragment key={crumb.label}>
-                      {i > 0 ? <span className="mx-1 text-brand-textMuted">/</span> : null}
-                      {isLast ? (
-                        <span className="font-semibold">{crumb.label}</span>
-                      ) : crumb.href ? (
-                        <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={crumb.href}>
-                          {crumb.label}
-                        </Link>
-                      ) : (
-                        <span className="text-brand-textMuted">{crumb.label}</span>
-                      )}
-                    </Fragment>
-                  );
-                })}
+                {breadcrumbs.map((crumb, i) => (
+                  <Fragment key={crumb.label}>
+                    {i > 0 ? <span className="mx-1 text-brand-textMuted">/</span> : null}
+                    {i === breadcrumbs.length - 1 ? (
+                      <span className="font-semibold">{crumb.label}</span>
+                    ) : crumb.href ? (
+                      <Link className="text-brand-textMuted no-underline transition hover:text-brand-text" href={crumb.href}>
+                        {crumb.label}
+                      </Link>
+                    ) : (
+                      <span className="text-brand-textMuted">{crumb.label}</span>
+                    )}
+                  </Fragment>
+                ))}
               </div>
             </>
           ) : null}
@@ -150,9 +146,7 @@ export default function Navbar({
 
         <div className="ml-auto flex shrink-0 self-stretch items-end gap-3">
           {tabs.length > 0 ? (
-            <div className="hidden sm:block">
-              <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
-            </div>
+            <div className="hidden sm:block">{renderTabs()}</div>
           ) : null}
 
           {user ? (
@@ -206,9 +200,7 @@ export default function Navbar({
 
       {tabs.length > 0 ? (
         <div className="px-6 sm:hidden">
-          <div className="mx-auto w-full">
-            <div className={tabsClass} aria-label="Project tabs">{renderTabs()}</div>
-          </div>
+          <div className="mx-auto w-full">{renderTabs()}</div>
         </div>
       ) : null}
     </nav>

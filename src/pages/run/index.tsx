@@ -9,18 +9,17 @@ import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import RunChartsPage from "pages/run/charts";
 import RunFilesPage from "pages/run/files";
 import RunLogsPage from "pages/run/logs";
-import { buildRunKey, useRunStore } from "stores/runs";
+import { buildRunKey, fetchRun, useRunStore } from "stores/runs";
 
 export default function RunDetailRoute(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
   const runKey = buildRunKey(handle, projectName, runName);
-  const run = useRunStore((state) => state.runsByKey[runKey]);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
-  const fetchRun = useRunStore((state) => state.fetchRun);
+  const run = useRunStore((state) => state.runs[runKey]);
+  const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
 
   useEffect(() => {
     if (!run) { void fetchRun(handle, projectName, runName); }
-  }, [fetchRun, handle, projectName, run, runName]);
+  }, [handle, projectName, run, runName]);
 
   const [location] = useLocation();
   const basePath = `/${handle}/${projectName}/runs/${runName}`;

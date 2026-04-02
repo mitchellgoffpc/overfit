@@ -1,20 +1,21 @@
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
+import { useShallow } from "zustand/react/shallow";
 
 import Avatar from "components/Avatar";
 import Navbar from "components/Navbar";
 import { formatDate } from "helpers";
-import type { OrganizationMemberWithRole } from "stores/organizations";
-import { fetchOrganizationMembers } from "stores/organizations";
-import { useProjectStore } from "stores/projects";
+import type { OrganizationMember } from "stores/accounts";
+import { fetchOrganizationMembers, getOrganizationMembers, useAccountsStore } from "stores/accounts";
+import { fetchProjects, useProjectStore } from "stores/projects";
 import type { Organization, Project } from "types";
 
 interface OrganizationPageProps {
   readonly organization: Organization;
 }
 
-function MemberAvatar({ member }: { readonly member: OrganizationMemberWithRole }): ReactElement {
+function MemberAvatar({ member }: { readonly member: OrganizationMember }): ReactElement {
   return (
     <Link href={`/${member.handle}`} title={member.name} className="no-underline">
       <Avatar handle={member.handle} name={member.name} className="h-9 w-9 text-xs" />
@@ -39,33 +40,30 @@ function ProjectCard({ project, handle }: { readonly project: Project; readonly 
 }
 
 export default function OrganizationPage({ organization }: OrganizationPageProps): ReactElement {
-  const [members, setMembers] = useState<OrganizationMemberWithRole[]>([]);
   const [search, setSearch] = useState("");
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
+  const handle = organization.handle;
+  const members = useAccountsStore(useShallow(getOrganizationMembers(handle)));
+  const projects = useProjectStore((state) => state.projects);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const projectError = useProjectStore((state) => state.error);
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const handle = organization.handle;
 
-  const projects = useMemo(
-    () => Object.values(projectsByKey).filter((project) => project.owner === handle),
-    [projectsByKey, handle]
+  const projectsList = useMemo(
+    () => Object.values(projects).filter((project) => project.owner === handle),
+    [projects, handle]
   );
 
   const filteredProjects = useMemo(() => {
-    if (!search.trim()) { return projects; }
+    if (!search.trim()) { return projectsList; }
     const query = search.toLowerCase();
-    return projects.filter((p) => p.name.toLowerCase().includes(query) || p.description?.toLowerCase().includes(query));
-  }, [projects, search]);
+    return projectsList.filter((p) => p.name.toLowerCase().includes(query) || p.description?.toLowerCase().includes(query));
+  }, [projectsList, search]);
 
   useEffect(() => {
     void fetchProjects(handle);
-  }, [fetchProjects, handle]);
+  }, [handle]);
 
   useEffect(() => {
-    void fetchOrganizationMembers(handle).then((result) => {
-      if (result.ok) { setMembers(result.body); }
-    });
+    void fetchOrganizationMembers(handle);
   }, [handle]);
 
   return (
@@ -82,7 +80,7 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
             <p className="text-sm text-brand-textMuted">@{handle}</p>
             <div className="mt-1 flex items-center gap-4 text-xs text-brand-textMuted">
               <span>{members.length} {members.length === 1 ? "member" : "members"}</span>
-              <span>{projects.length} {projects.length === 1 ? "project" : "projects"}</span>
+              <span>{projectsList.length} {projectsList.length === 1 ? "project" : "projects"}</span>
               <span>Created {formatDate(organization.createdAt, { month: "short", year: "numeric" })}</span>
             </div>
           </div>

@@ -13,15 +13,14 @@ import ResetPasswordPage from "pages/reset-password";
 import RunPage from "pages/run";
 import SettingsPage from "pages/settings";
 import SignupPage from "pages/signup";
-import { useAuthStore } from "stores/auth";
+import { loadAuth, useAuthStore } from "stores/auth";
 
 function AuthLayout({ children }: { readonly children: ReactNode }): ReactElement {
   const status = useAuthStore((state) => state.status);
-  const loadAuth = useAuthStore((state) => state.loadAuth);
 
   useEffect(() => {
     if (status === "idle") { void loadAuth(); }
-  }, [loadAuth, status]);
+  }, [status]);
 
   if (status === "loading" || status === "idle") { return <div />; }
   if (status === "unauthenticated") { return <Redirect to="/login" />; }

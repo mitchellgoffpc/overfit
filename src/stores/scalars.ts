@@ -1,48 +1,31 @@
 import { create } from "zustand";
 
-import type { APIResponse } from "helpers";
 import { request } from "helpers";
+import { buildRunKey } from "stores/runs";
 import type { Scalar } from "types";
 
-const fetchRunScalars = async (handle: string, projectName: string, runName: string): Promise<APIResponse<Scalar[]>> =>
-  await request<Scalar[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
-
-interface MultiRunScalarsResult { scalarsByRun: Record<string, Scalar[]>; error: string | null }
-
-export const fetchMultiRunScalars = async (handle: string, projectName: string, runNames: string[]): Promise<MultiRunScalarsResult> => {
-  const responses = await Promise.all(runNames.map(async (runName) => ({ runName, response: await fetchRunScalars(handle, projectName, runName) })));
-  const scalarsByRun: Record<string, Scalar[]> = {};
-  const failedRuns: string[] = [];
-  for (const { runName, response } of responses) {
-    if (response.ok) {
-      scalarsByRun[runName] = response.body;
-    } else {
-      scalarsByRun[runName] = [];
-      failedRuns.push(runName);
-    }
-  }
-  return { scalarsByRun, error: failedRuns.length === 0 ? null : `Unable to load scalars for ${failedRuns.join(", ")}.` };
-};
-
 interface ScalarState {
-  scalars: Scalar[];
-  isLoading: boolean;
-  error: string | null;
-  fetchScalars: (handle: string, projectName: string, runName: string) => Promise<void>;
+  scalars: Record<string, Scalar[]>;
+  isLoading: Record<string, boolean>;
+  errors: Record<string, string | null>;
 }
 
-export const useScalarStore = create<ScalarState>((set) => ({
-  scalars: [],
-  isLoading: false,
-  error: null,
-
-  fetchScalars: async (handle: string, projectName: string, runName: string) => {
-    set({ isLoading: true, error: null });
-    const response = await fetchRunScalars(handle, projectName, runName);
-    if (response.ok) {
-      set({ scalars: response.body, isLoading: false, error: null });
-    } else {
-      set({ error: response.error, isLoading: false });
-    }
-  }
+export const useScalarStore = create<ScalarState>(() => ({
+  scalars: {},
+  isLoading: {},
+  errors: {}
 }));
+
+export const fetchScalars = async (handle: string, projectName: string, runName: string): Promise<void> => {
+  const runKey = buildRunKey(handle, projectName, runName);
+  useScalarStore.setState(({ isLoading, errors }) => ({
+    isLoading: { ...isLoading, [runKey]: true },
+    errors: { ...errors, [runKey]: null }
+  }));
+  const response = await request<Scalar[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
+  useScalarStore.setState(({ scalars, isLoading, errors }) => ({
+    scalars: response.ok ? { ...scalars, [runKey]: response.body } : scalars,
+    isLoading: { ...isLoading, [runKey]: false },
+    errors: { ...errors, [runKey]: response.ok ? null : response.error }
+  }));
+};

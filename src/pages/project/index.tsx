@@ -7,24 +7,22 @@ import Navbar from "components/Navbar";
 import ProjectComparePage from "pages/project/compare";
 import ProjectRunsPage from "pages/project/runs";
 import ProjectSettingsPage from "pages/project/settings/index";
-import { buildProjectKey, useProjectStore } from "stores/projects";
+import { buildProjectKey, fetchProject, fetchProjects, useProjectStore } from "stores/projects";
 
 export default function ProjectPage(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const fetchProjects = useProjectStore((state) => state.fetchProjects);
-  const fetchProject = useProjectStore((state) => state.fetchProject);
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
+  const projects = useProjectStore((state) => state.projects);
 
   useEffect(() => {
     if (handle) { void fetchProjects(handle); }
-  }, [fetchProjects, handle]);
+  }, [handle]);
 
   const projectKey = buildProjectKey(handle, projectName);
-  const project = projectsByKey[projectKey] ?? Object.values(projectsByKey).find((item) => item.name === projectName);
+  const project = projects[projectKey] ?? Object.values(projects).find((item) => item.name === projectName);
 
   useEffect(() => {
     if (!project) { void fetchProject(handle, projectName); }
-  }, [fetchProject, handle, project, projectName]);
+  }, [handle, project, projectName]);
 
   const [location] = useLocation();
   const activeTab = location.endsWith("/compare") ? "compare" : location.includes("/settings") ? "settings" : "runs";

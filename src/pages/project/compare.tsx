@@ -11,71 +11,47 @@ import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import Slider from "components/Slider";
 import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
-import { fetchMultiRunMedia, getMediaFileUrl } from "stores/media";
+import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { useRunStore } from "stores/runs";
-import { fetchMultiRunScalars } from "stores/scalars";
-import type { Media, Run, Scalar } from "types";
+import { buildRunKey, fetchRuns, useRunStore } from "stores/runs";
+import { fetchScalars, useScalarStore } from "stores/scalars";
+import type { Run } from "types";
 
 export default function ProjectCompareRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const projectsByKey = useProjectStore((state) => state.projectsByKey);
+  const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const runsByKey = useRunStore((state) => state.runsByKey);
-  const runError = useRunStore((state) => state.error);
-  const isRunsLoading = useRunStore((state) => state.isLoading);
-  const fetchProjectRuns = useRunStore((state) => state.fetchProjectRuns);
-  const [scalarsByRun, setScalarsByRun] = useState<Record<string, Scalar[]>>({});
-  const [isScalarsLoading, setIsScalarsLoading] = useState(false);
-  const [scalarError, setScalarError] = useState<string | null>(null);
-  const [mediaByRun, setMediaByRun] = useState<Record<string, Media[]>>({});
+  const runs = useRunStore((state) => state.runs);
+  const projectKey = buildProjectKey(handle, projectName);
+  const runError = useRunStore((state) => state.errors[projectKey] ?? null);
+  const isRunsLoading = useRunStore((state) => state.isLoading[projectKey] ?? false);
+  const scalars = useScalarStore((state) => state.scalars);
+  const isScalarsLoading = useScalarStore((state) => Object.values(state.isLoading).some(Boolean));
+  const scalarError = useScalarStore((state) => Object.values(state.errors).find(Boolean) ?? null);
+  const media = useMediaStore((state) => state.media);
   const [hiddenRunNames, setHiddenRunNames] = useState<Record<string, boolean>>({});
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
   const [mediaIndexes, setMediaIndexes] = useState<Record<string, number>>({});
 
-  const projectList = Object.values(projectsByKey);
-  const projectKey = buildProjectKey(handle, projectName);
-  const project = projectsByKey[projectKey] ?? projectList.find((item) => item.name === projectName);
+  const projectList = Object.values(projects);
+  const project = projects[projectKey] ?? projectList.find((item) => item.name === projectName);
 
   useEffect(() => {
-    void fetchProjectRuns(handle, projectName);
-  }, [fetchProjectRuns, handle, projectName]);
+    void fetchRuns(handle, projectName);
+  }, [handle, projectName]);
 
   const projectRuns = useMemo(
-    () => (!project ? [] : Object.values(runsByKey).filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
-    [project, runsByKey]
+    () => (!project ? [] : Object.values(runs).filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
+    [project, runs]
   );
   const showProjectNotFound = !project && !isProjectsLoading;
 
   useEffect(() => {
-    let cancelled = false;
-    const runNames = projectRuns.map((r) => r.name);
-    const load = async () => {
-      if (runNames.length === 0) { setScalarsByRun({}); setIsScalarsLoading(false); setScalarError(null); return; }
-      setIsScalarsLoading(true);
-      setScalarError(null);
-      const result = await fetchMultiRunScalars(handle, projectName, runNames);
-      if (cancelled) { return; }
-      setScalarsByRun(result.scalarsByRun);
-      setScalarError(result.error);
-      setIsScalarsLoading(false);
-    };
-    void load();
-    return () => { cancelled = true; };
-  }, [handle, projectName, projectRuns]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const runNames = projectRuns.map((r) => r.name);
-    const load = async () => {
-      if (runNames.length === 0) { setMediaByRun({}); return; }
-      const result = await fetchMultiRunMedia(handle, projectName, runNames);
-      if (cancelled) { return; }
-      setMediaByRun(result);
-    };
-    void load();
-    return () => { cancelled = true; };
+    for (const run of projectRuns) {
+      void fetchScalars(handle, projectName, run.name);
+      void fetchMedia(handle, projectName, run.name);
+    }
   }, [handle, projectName, projectRuns]);
 
   const colorByRunName = useMemo(
@@ -89,8 +65,8 @@ export default function ProjectCompareRoute(): ReactElement {
   const chartSeries = useMemo(() => {
     const metricKeys = new Set<string>();
     for (const run of visibleRuns) {
-      const scalars = scalarsByRun[run.name] ?? [];
-      for (const scalar of scalars) {
+      const runScalars = scalars[buildRunKey(handle, projectName, run.name)] ?? [];
+      for (const scalar of runScalars) {
         for (const metric of Object.keys(scalar.values)) { metricKeys.add(metric); }
       }
     }
@@ -100,19 +76,19 @@ export default function ProjectCompareRoute(): ReactElement {
       series: visibleRuns.map((run, index) => ({
         id: `${metric}:${run.name}`,
         label: run.name,
-        points: getSeriesPoints(scalarsByRun[run.name] ?? [], metric),
+        points: getSeriesPoints(scalars[buildRunKey(handle, projectName, run.name)] ?? [], metric),
         color: colorByRunName.get(run.name) ?? getRunColor(index),
         lineWidth: 2
       }))
     }));
-  }, [colorByRunName, scalarsByRun, visibleRuns]);
+  }, [colorByRunName, handle, projectName, scalars, visibleRuns]);
 
   const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);
 
   const mediaKeys = useMemo(() => {
     const keySet = new Map<string, { steps: Set<number>; maxCount: number }>();
     for (const run of visibleRuns) {
-      for (const item of mediaByRun[run.name] ?? []) {
+      for (const item of media[buildRunKey(handle, projectName, run.name)] ?? []) {
         const entry = keySet.get(item.key) ?? { steps: new Set<number>(), maxCount: 0 };
         if (item.step !== null) { entry.steps.add(item.step); }
         entry.maxCount = Math.max(entry.maxCount, item.count);
@@ -122,7 +98,7 @@ export default function ProjectCompareRoute(): ReactElement {
     return Array.from(keySet.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([key, { steps, maxCount }]) => ({
       key, steps: [...steps].sort((a, b) => a - b), maxCount
     }));
-  }, [mediaByRun, visibleRuns]);
+  }, [handle, projectName, media, visibleRuns]);
 
   const hasPoints = useMemo(() => chartSeries.some((item) => item.series.some((s) => s.points.length > 0)), [chartSeries]);
 
@@ -140,7 +116,7 @@ export default function ProjectCompareRoute(): ReactElement {
         <h3 className="mb-2 shrink-0 text-center text-[0.8125rem] font-semibold text-brand-text">{key}</h3>
         <div className="grid min-h-0 flex-1 gap-3" style={{ gridTemplateColumns: `repeat(${String(visibleRuns.length)}, minmax(0, 1fr))` }}>
           {visibleRuns.map((run) => {
-            const items = (mediaByRun[run.name] ?? []).filter((m) => m.key === key && m.step === selectedStep);
+            const items = (media[buildRunKey(handle, projectName, run.name)] ?? []).filter((m) => m.key === key && m.step === selectedStep);
             const item = items[0];
             const color = colorByRunName.get(run.name) ?? colors.brand.accent;
             return (

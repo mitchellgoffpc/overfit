@@ -8,6 +8,16 @@ import type { ApiKey, ApiKeyWithToken, User } from "types";
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 interface AuthResponse { user: User };
 
+interface AuthState {
+  status: AuthStatus;
+  currentHandle: string | null;
+}
+
+export const useAuthStore = create<AuthState>(() => ({
+  status: "idle",
+  currentHandle: null
+}));
+
 export const checkEmailValid = async (email: string): Promise<string | null> => {
   const trimmed = email.trim();
   if (!trimmed) { return null; }
@@ -52,54 +62,40 @@ export const completePasswordReset = async (token: string, password: string): Pr
   return ok ? { ok: true } : { ok: false, error };
 };
 
-interface AuthState {
-  status: AuthStatus;
-  currentHandle: string | null;
-  loadAuth: () => Promise<void>;
-  login: (email: string, password: string) => Promise<ActionResult>;
-  signup: (email: string, handle: string, password: string) => Promise<ActionResult>;
-  logout: () => Promise<void>;
-}
+export const loadAuth = async (): Promise<void> => {
+  useAuthStore.setState({ status: "loading" });
+  const { ok, body } = await request<User>("me");
+  if (ok) {
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
+    useAuthStore.setState({ status: "authenticated", currentHandle: body.handle });
+  } else {
+    useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
+  }
+};
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  status: "idle",
-  currentHandle: null,
+export const login = async (email: string, password: string): Promise<ActionResult> => {
+  const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
+  if (ok) {
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.user.handle]: body.user } }));
+    useAuthStore.setState({ status: "authenticated", currentHandle: body.user.handle });
+    return { ok: true };
+  } else {
+    return { ok: false, error };
+  }
+};
 
-  loadAuth: async () => {
-    set({ status: "loading" });
-    const { ok, body } = await request<User>("me");
-    if (ok) {
-      useAccountsStore.getState().setAccount(body);
-      set({ status: "authenticated", currentHandle: body.handle });
-    } else {
-      set({ status: "unauthenticated", currentHandle: null });
-    }
-  },
+export const signup = async (email: string, handle: string, password: string): Promise<ActionResult> => {
+  const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
+  if (ok) {
+    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.user.handle]: body.user } }));
+    useAuthStore.setState({ status: "authenticated", currentHandle: body.user.handle });
+    return { ok: true };
+  } else {
+    return { ok: false, error };
+  }
+};
 
-  login: async (email: string, password: string) => {
-    const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
-    if (ok) {
-      useAccountsStore.getState().setAccount(body.user);
-      set({ status: "authenticated", currentHandle: body.user.handle });
-      return { ok: true };
-    } else {
-      return { ok: false, error };
-    }
-  },
-
-  signup: async (email: string, handle: string, password: string) => {
-    const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
-    if (ok) {
-      useAccountsStore.getState().setAccount(body.user);
-      set({ status: "authenticated", currentHandle: body.user.handle });
-      return { ok: true };
-    } else {
-      return { ok: false, error };
-    }
-  },
-
-  logout: async () => {
-    if (get().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
-    set({ status: "unauthenticated", currentHandle: null });
-  },
-}));
+export const logout = async (): Promise<void> => {
+  if (useAuthStore.getState().status === "authenticated") { await request("auth/logout", { method: "POST" }); }
+  useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
+};

@@ -18,10 +18,9 @@ Underfit is an open-source model reporting dashboard for tracking experiments, m
 ## Directory structure
 
 - Minimize defensive bloat. Assume successful API responses include all the expected fields unless there is a clear reason not to.
-- API logic must live in `src/stores/`. Never call `fetch`/`request`/`post` directly from pages or components. Choose placement by behavior:
-  - If a function reads/writes Zustand state (`set`, `get`, store fields), implement it as a store method.
-  - If a function only performs HTTP requests and returns data/errors (no `set`/`get`/store field access), implement it as a top-level exported helper in the same store file.
-  - When unsure, default to a top-level helper and only promote to a store method when state mutation is needed.
+- API logic must live in `src/stores/`. Never call `fetch`/`request`/`post` directly from pages or components.
+- Stores are pure state declarations — only data, no methods. All action functions (fetches, mutations, helpers) are top-level exports in the same store file, using `useStore.setState()` / `useStore.getState()` to access state.
+- Store files are ordered: interface, store definition, helper functions, action functions.
 
 ## Committing changes
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, Redirect, useLocation } from "wouter";
 
 import { PASSWORD_HINT, USERNAME_HINT, testEmail, testPassword, testHandle } from "helpers";
-import { checkEmailValid, checkHandleValid, useAuthStore } from "stores/auth";
+import { checkEmailValid, checkHandleValid, loadAuth, signup, useAuthStore } from "stores/auth";
 
 const inputErrorClass = "rounded-[0.625rem] border border-danger-text bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-danger-text focus:ring-2 focus:ring-danger-text/20";
@@ -21,12 +21,10 @@ export default function SignupRoute(): ReactElement {
   const [passwordHintError, setPasswordHintError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const status = useAuthStore((state) => state.status);
-  const loadAuth = useAuthStore((state) => state.loadAuth);
-  const signup = useAuthStore((state) => state.signup);
 
   useEffect(() => {
     if (status === "idle") { void loadAuth(); }
-  }, [loadAuth, status]);
+  }, [status]);
 
   if (status === "authenticated") {
     return <Redirect to="/" />;

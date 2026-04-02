@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, Redirect } from "wouter";
 
 import { testEmail } from "helpers";
-import { requestPasswordReset, useAuthStore } from "stores/auth";
+import { loadAuth, requestPasswordReset, useAuthStore } from "stores/auth";
 
 const inputClass = "rounded-[0.625rem] border border-brand-border bg-white px-3 py-2.5 text-sm outline-none"
   + " focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20";
@@ -15,11 +15,10 @@ export default function ForgotPasswordRoute(): ReactElement {
   const [sent, setSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const status = useAuthStore((state) => state.status);
-  const loadAuth = useAuthStore((state) => state.loadAuth);
 
   useEffect(() => {
     if (status === "idle") { void loadAuth(); }
-  }, [loadAuth, status]);
+  }, [status]);
 
   if (status === "authenticated") {
     return <Redirect to="/" />;

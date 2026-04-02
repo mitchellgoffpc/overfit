@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useLogStore } from "stores/logs";
+import { fetchLogs, useLogStore } from "stores/logs";
 import { API_BASE } from "types";
 
 const createResponse = (body: unknown, init?: { ok?: boolean; status?: number }) => ({
@@ -15,7 +15,7 @@ describe("log store", () => {
   beforeEach(() => {
     fetchMock = vi.fn();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    useLogStore.setState({ logsByScope: {} });
+    useLogStore.setState({ logs: {} });
     vi.restoreAllMocks();
   });
 
@@ -26,13 +26,13 @@ describe("log store", () => {
       hasMore: false
     }));
 
-    await useLogStore.getState().fetchLogs("ada", "demo", "run-1", "worker-1");
+    await fetchLogs("ada", "demo", "run-1", "worker-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerId=worker-1&cursor=0`,
       { credentials: "include" }
     );
-    expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toMatchObject({
+    expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toMatchObject({
       cursor: 2,
       error: null,
       lines: [
@@ -55,7 +55,7 @@ describe("log store", () => {
         hasMore: false
       }));
 
-    await useLogStore.getState().fetchLogs("ada", "demo", "run-1", "worker-1");
+    await fetchLogs("ada", "demo", "run-1", "worker-1");
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -68,7 +68,7 @@ describe("log store", () => {
       `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerId=worker-1&cursor=1`,
       { credentials: "include" }
     );
-    expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toMatchObject({
+    expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toMatchObject({
       cursor: 2,
       error: null,
       lines: [
@@ -81,9 +81,9 @@ describe("log store", () => {
   it("stores request errors on the scope", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({}, { ok: false, status: 500 }));
 
-    await useLogStore.getState().fetchLogs("ada", "demo", "run-1", "worker-1");
+    await fetchLogs("ada", "demo", "run-1", "worker-1");
 
-    expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toEqual({
+    expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toEqual({
       lines: [],
       cursor: 0,
       error: "Request failed with status 500"
@@ -92,7 +92,7 @@ describe("log store", () => {
 
   it("appends new lines to existing logs for the same scope", async () => {
     useLogStore.setState({
-      logsByScope: {
+      logs: {
         "ada/demo/run-1/worker-1": {
           lines: [{ content: "existing", timestamp: null, message: "existing" }],
           cursor: 1,
@@ -106,9 +106,9 @@ describe("log store", () => {
       hasMore: false
     }));
 
-    await useLogStore.getState().fetchLogs("ada", "demo", "run-1", "worker-1");
+    await fetchLogs("ada", "demo", "run-1", "worker-1");
 
-    expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toMatchObject({
+    expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toMatchObject({
       cursor: 2,
       error: null,
       lines: [
@@ -124,16 +124,16 @@ describe("log store", () => {
       resolveFetch = resolve;
     }));
 
-    const fetchPromise = useLogStore.getState().fetchLogs("ada", "demo", "run-1", "worker-1");
+    const fetchPromise = fetchLogs("ada", "demo", "run-1", "worker-1");
     useLogStore.setState({
-      logsByScope: {
+      logs: {
         "ada/demo/run-1/worker-1": { lines: [{ content: "stale", timestamp: null, message: "stale" }], cursor: 9, error: null }
       }
     });
     resolveFetch(createResponse({ entries: [{ content: "2025-01-01T00:00:00Z ignored\n" }], nextCursor: 1, hasMore: false }));
     await fetchPromise;
 
-    expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toEqual({
+    expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toEqual({
       lines: [{ content: "stale", timestamp: null, message: "stale" }],
       cursor: 9,
       error: null
@@ -146,15 +146,15 @@ describe("log store", () => {
       resolveFetch = resolve;
     }));
 
-    const fetchPromise = useLogStore.getState().fetchLogs("ada", "demo", "run-1", "worker-1");
+    const fetchPromise = fetchLogs("ada", "demo", "run-1", "worker-1");
     useLogStore.setState({
-      logsByScope: {
+      logs: {
         "ada/demo/run-1/worker-1": { lines: [], cursor: 3, error: null }
       }
     });
     resolveFetch(createResponse({ error: "late failure" }, { ok: false, status: 500 }));
     await fetchPromise;
 
-    expect(useLogStore.getState().logsByScope["ada/demo/run-1/worker-1"]).toEqual({ lines: [], cursor: 3, error: null });
+    expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toEqual({ lines: [], cursor: 3, error: null });
   });
 });

@@ -1,12 +1,14 @@
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 import Avatar from "components/Avatar";
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE } from "helpers";
 import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
-import { addCollaborator, buildProjectKey, removeCollaborator, searchUsers, useProjectStore } from "stores/projects";
+import { searchUsers } from "stores/accounts";
+import { addCollaborator, buildProjectKey, fetchCollaborators, getProjectCollaborators, removeCollaborator, useProjectStore } from "stores/projects";
 import type { Project, User } from "types";
 
 function UserPlusIcon({ className }: { readonly className?: string }): ReactElement {
@@ -24,12 +26,9 @@ interface CollaboratorsSettingsProps {
   readonly project: Project;
 }
 
-const EMPTY_COLLABORATORS: User[] = [];
-
 export default function CollaboratorsSettings({ project }: CollaboratorsSettingsProps): ReactElement {
   const projectKey = buildProjectKey(project.owner, project.name);
-  const collaborators = useProjectStore((s) => s.collaboratorsByKey[projectKey] ?? EMPTY_COLLABORATORS);
-  const fetchCollaborators = useProjectStore((s) => s.fetchCollaborators);
+  const collaborators = useProjectStore(useShallow(getProjectCollaborators(projectKey)));
   const [error, setError] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,7 +42,7 @@ export default function CollaboratorsSettings({ project }: CollaboratorsSettings
 
   useEffect(() => {
     void fetchCollaborators(project.owner, project.name);
-  }, [fetchCollaborators, project.owner, project.name]);
+  }, [project.owner, project.name]);
 
   useEffect(() => {
     if (!showAdd || !searchQuery.trim()) { return; }
