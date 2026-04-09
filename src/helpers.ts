@@ -1,5 +1,14 @@
 import { API_BASE } from "types";
 
+const mergeCache = new WeakMap<object, WeakMap<object, object>>();
+export const cachedMerge = <A extends object, B extends object>(a: A, b: B): A & B => {
+  let inner = mergeCache.get(a);
+  if (!inner) { inner = new WeakMap(); mergeCache.set(a, inner); }
+  let result = inner.get(b);
+  if (!result) { result = { ...a, ...b }; inner.set(b, result); }
+  return result as A & B;
+};
+
 export const RULED_LINE_HEIGHT = 1.875;
 export const RULED_LINE = `${String(RULED_LINE_HEIGHT)}rem`;
 export const TABLE_HEADER_CELL_CLASS = "flex items-center whitespace-nowrap px-2.5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";

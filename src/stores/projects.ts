@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import type { ActionResult } from "helpers";
-import { request, send } from "helpers";
+import { cachedMerge, request, send } from "helpers";
 import { useAccountsStore } from "stores/accounts";
 import type { Project, Timestamp, User } from "types";
 
@@ -41,6 +41,10 @@ const omitCollaboratorFields = <T extends CollaboratorDetails>(c: T): Omit<T, "c
 };
 
 // Projects
+
+export const getUserProjects = (handle: string) => (state: ProjectState): Project[] => (
+  Object.values(state.projects).filter((p) => p.owner === handle).sort((a, b) => a.name.localeCompare(b.name))
+);
 
 export const fetchProjects = async (handle: string): Promise<void> => {
   useProjectStore.setState({ isLoading: true, error: null });
@@ -124,7 +128,7 @@ export const deleteProject = async (handle: string, projectName: string): Promis
 
 export const getProjectCollaborators = (projectKey: string) => (state: ProjectState): ProjectCollaborator[] => (
   Object.values(state.collaborators[projectKey] ?? {})
-    .map((c) => { const a = useAccountsStore.getState().accounts[c.handle]; return a?.type === "USER" ? { ...a, ...c } : null; })
+    .map((c) => { const a = useAccountsStore.getState().accounts[c.handle]; return a?.type === "USER" ? cachedMerge(a, c) : null; })
     .filter((c): c is ProjectCollaborator => c !== null)
     .sort((a, b) => a.handle.localeCompare(b.handle))
 );

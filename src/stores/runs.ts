@@ -15,6 +15,14 @@ export const useRunStore = create<RunState>(() => ({
   errors: {}
 }));
 
+export const getUserRuns = (handle: string) => (state: RunState): Run[] => (
+  Object.values(state.runs).filter((r) => r.projectOwner === handle).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+);
+
+export const getProjectRuns = (projectId: string) => (state: RunState): Run[] => (
+  Object.values(state.runs).filter((r) => r.projectId === projectId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+);
+
 export const buildRunKey = (handle: string, projectName: string, runName: string): string => `${handle}/${projectName}/${runName}`;
 const indexByKey = (runs: Run[]) => Object.fromEntries(runs.map((run) => [buildRunKey(run.projectOwner, run.projectName, run.name), run]));
 

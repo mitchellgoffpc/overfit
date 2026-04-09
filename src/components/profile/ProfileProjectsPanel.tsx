@@ -51,7 +51,14 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
             No projects yet. Start your first run to create a project.
           </div>
         ) : (
-          <div className="grid md:grid-cols-2" style={{ marginTop: `${String(.75 * RULED_LINE_HEIGHT)}rem`, marginBottom: `${String(0.25 * RULED_LINE_HEIGHT + PROJECT_CARD_GRID_GAP_REM)}rem`, gap: PROJECT_CARD_GRID_GAP }}>
+          <div
+            className="grid md:grid-cols-2"
+            style={{
+              marginTop: `${String(.75 * RULED_LINE_HEIGHT)}rem`,
+              marginBottom: `${String(0.25 * RULED_LINE_HEIGHT + PROJECT_CARD_GRID_GAP_REM)}rem`,
+              gap: PROJECT_CARD_GRID_GAP,
+            }}
+          >
             {projectStats.map(({ project, runCount, latestRun }, index) => (
               <Link className={projectCardClass} href={`/${userHandle}/${project.name}`} key={project.id} style={{ height: PROJECT_CARD_HEIGHT }}>
                 <div className="flex items-center justify-between gap-2">

@@ -8,7 +8,7 @@ import Navbar from "components/Navbar";
 import { formatDate } from "helpers";
 import type { OrganizationMember } from "stores/accounts";
 import { fetchOrganizationMembers, getOrganizationMembers, useAccountsStore } from "stores/accounts";
-import { fetchProjects, useProjectStore } from "stores/projects";
+import { fetchProjects, getUserProjects, useProjectStore } from "stores/projects";
 import type { Organization, Project } from "types";
 
 interface OrganizationPageProps {
@@ -43,14 +43,9 @@ export default function OrganizationPage({ organization }: OrganizationPageProps
   const [search, setSearch] = useState("");
   const handle = organization.handle;
   const members = useAccountsStore(useShallow(getOrganizationMembers(handle)));
-  const projects = useProjectStore((state) => state.projects);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
   const projectError = useProjectStore((state) => state.error);
-
-  const projectsList = useMemo(
-    () => Object.values(projects).filter((project) => project.owner === handle),
-    [projects, handle]
-  );
+  const projectsList = useProjectStore(useShallow(getUserProjects(handle)));
 
   const filteredProjects = useMemo(() => {
     if (!search.trim()) { return projectsList; }

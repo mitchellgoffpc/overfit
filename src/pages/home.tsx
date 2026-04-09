@@ -1,24 +1,25 @@
 import type { ReactElement } from "react";
 import { useEffect, useMemo } from "react";
 import { Link } from "wouter";
+import { useShallow } from "zustand/react/shallow";
 
 import WorkspaceRunsTable from "components/home/WorkspaceRunsTable";
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
 import SectionHeader from "components/SectionHeader";
 import { getMe, useAccountsStore } from "stores/accounts";
-import { fetchProjects, useProjectStore } from "stores/projects";
-import { fetchRuns, useRunStore } from "stores/runs";
+import { fetchProjects, getUserProjects, useProjectStore } from "stores/projects";
+import { fetchRuns, getUserRuns, useRunStore } from "stores/runs";
 
 export default function IndexRoute(): ReactElement {
   const user = useAccountsStore(getMe);
-  const projects = useProjectStore((state) => state.projects);
+  const userHandle = user?.handle ?? "";
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const runs = useRunStore((state) => state.runs);
-  const userHandle = user?.handle ?? "";
+  const projects = useProjectStore(useShallow(getUserProjects(userHandle)));
   const runError = useRunStore((state) => state.errors[userHandle] ?? null);
   const isRunsLoading = useRunStore((state) => state.isLoading[userHandle] ?? false);
+  const runs = useRunStore(useShallow(getUserRuns(userHandle)));
 
   useEffect(() => {
     if (user?.handle) { void fetchProjects(user.handle); }
@@ -27,10 +28,8 @@ export default function IndexRoute(): ReactElement {
   useEffect(() => {
     if (user && !isProjectsLoading) { void fetchRuns(user.handle); }
   }, [isProjectsLoading, user]);
-  const projectsList = useMemo(() => Object.values(projects).sort((a, b) => a.name.localeCompare(b.name)), [projects]);
-  const runsList = useMemo(() => Object.values(runs).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [runs]);
-  const runningCount = useMemo(() => runsList.filter((run) => run.status === "running").length, [runsList]);
-  const failedCount = useMemo(() => runsList.filter((run) => run.status === "failed").length, [runsList]);
+  const runningCount = useMemo(() => runs.filter((run) => run.status === "running").length, [runs]);
+  const failedCount = useMemo(() => runs.filter((run) => run.status === "failed").length, [runs]);
   const displayHandle = user?.handle ?? "workspace";
   return (
     <div className="min-h-screen bg-brand-bgStrong text-brand-text">
@@ -45,7 +44,7 @@ export default function IndexRoute(): ReactElement {
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
             <div className="mt-2 flex items-center justify-between text-[0.75rem]">
               <span className="text-brand-textMuted">total</span>
-              <span className="font-semibold">{runsList.length}</span>
+              <span className="font-semibold">{runs.length}</span>
             </div>
             <div className="mt-1 flex items-center justify-between text-[0.75rem]">
               <span className="text-brand-textMuted">running</span>
@@ -61,14 +60,14 @@ export default function IndexRoute(): ReactElement {
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Projects</p>
               <span className="rounded-full border border-brand-borderMuted bg-white px-2 py-0.5 text-[0.625rem] font-semibold text-brand-textMuted">
-                {projectsList.length}
+                {projects.length}
               </span>
             </div>
             {projectError ? <div className="py-1 text-[0.75rem] text-brand-textMuted">{projectError}</div> : null}
             {!projectError && isProjectsLoading ? <div className="py-1 text-[0.75rem] text-brand-textMuted">Loading projects...</div> : null}
             {!projectError && !isProjectsLoading ? (
               <div className="grid gap-1.5">
-                {projectsList.map((project) => (
+                {projects.map((project) => (
                   <Link
                     className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[0.75rem] hover:bg-hover"
                     href={`/${userHandle}/${project.name}`}
@@ -78,15 +77,15 @@ export default function IndexRoute(): ReactElement {
                     <span className="truncate font-semibold">{project.name}</span>
                   </Link>
                 ))}
-                {projectsList.length === 0 ? <div className="py-1 text-[0.75rem] text-brand-textMuted">No projects yet.</div> : null}
+                {projects.length === 0 ? <div className="py-1 text-[0.75rem] text-brand-textMuted">No projects yet.</div> : null}
               </div>
             ) : null}
           </div>
         </aside>
 
         <main className="relative min-w-0 px-4 pb-5 lg:px-5 lg:pb-6">
-          <SectionHeader title="Runs" subtitle={`${String(runsList.length)} total`} />
-          <WorkspaceRunsTable runs={runsList} isLoading={isRunsLoading} error={runError} />
+          <SectionHeader title="Runs" subtitle={`${String(runs.length)} total`} />
+          <WorkspaceRunsTable runs={runs} isLoading={isRunsLoading} error={runError} />
         </main>
       </NotebookShell>
     </div>

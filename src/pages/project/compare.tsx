@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
+import { useShallow } from "zustand/react/shallow";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
 import { colors, getRunColor } from "colors";
@@ -13,19 +14,19 @@ import Slider from "components/Slider";
 import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { buildRunKey, fetchRuns, useRunStore } from "stores/runs";
+import { buildRunKey, fetchRuns, getProjectRuns, useRunStore } from "stores/runs";
 import { fetchScalars, useScalarStore } from "stores/scalars";
 import type { Run } from "types";
 
 export default function ProjectCompareRoute(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const projects = useProjectStore((state) => state.projects);
+  const projectKey = buildProjectKey(handle, projectName);
+  const project = useProjectStore((state) => state.projects[projectKey]);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const runs = useRunStore((state) => state.runs);
-  const projectKey = buildProjectKey(handle, projectName);
   const runError = useRunStore((state) => state.errors[projectKey] ?? null);
   const isRunsLoading = useRunStore((state) => state.isLoading[projectKey] ?? false);
+  const projectRuns = useRunStore(useShallow(getProjectRuns(project?.id ?? "")));
   const scalars = useScalarStore((state) => state.scalars);
   const isScalarsLoading = useScalarStore((state) => Object.values(state.isLoading).some(Boolean));
   const scalarError = useScalarStore((state) => Object.values(state.errors).find(Boolean) ?? null);
@@ -34,17 +35,9 @@ export default function ProjectCompareRoute(): ReactElement {
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
   const [mediaIndexes, setMediaIndexes] = useState<Record<string, number>>({});
 
-  const projectList = Object.values(projects);
-  const project = projects[projectKey] ?? projectList.find((item) => item.name === projectName);
-
   useEffect(() => {
     void fetchRuns(handle, projectName);
   }, [handle, projectName]);
-
-  const projectRuns = useMemo(
-    () => (!project ? [] : Object.values(runs).filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
-    [project, runs]
-  );
   const showProjectNotFound = !project && !isProjectsLoading;
 
   useEffect(() => {

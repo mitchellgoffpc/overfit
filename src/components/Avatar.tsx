@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties, type ReactElement } from "react";
+import { useEffect, useState } from "react";
+import type { CSSProperties, ReactElement } from "react";
 
 import { getInitials } from "helpers";
 import { useAccountsStore } from "stores/accounts";
@@ -15,15 +16,18 @@ export default function Avatar({ handle, name, className = "", style }: AvatarPr
   const initials = getInitials(name);
   const avatarVersion = useAccountsStore((state) => state.avatarVersion);
   const src = `${API_BASE}/accounts/${encodeURIComponent(handle)}/avatar?v=${avatarVersion.toString()}`;
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setIsLoaded(false);
     const image = new Image();
     image.src = src;
-    image.onload = () => { if (!cancelled) setIsLoaded(true); };
-    image.onerror = () => { if (!cancelled) setIsLoaded(false); };
+    image.onload = () => {
+      if (!cancelled) { setLoadedSrc(src); }
+    };
+    image.onerror = () => {
+      if (!cancelled) { setLoadedSrc(null); }
+    };
     return () => {
       cancelled = true;
       image.onload = null;
@@ -39,7 +43,7 @@ export default function Avatar({ handle, name, className = "", style }: AvatarPr
       aria-label={`${name} avatar`}
     >
       {initials}
-      {isLoaded ? <img className="absolute inset-0 h-full w-full object-cover" src={src} alt="" aria-hidden="true" /> : null}
+      {loadedSrc === src ? <img className="absolute inset-0 h-full w-full object-cover" src={src} alt="" aria-hidden="true" /> : null}
     </div>
   );
 }

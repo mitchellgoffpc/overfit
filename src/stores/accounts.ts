@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import type { ActionResult } from "helpers";
-import { request, send } from "helpers";
+import { cachedMerge, request, send } from "helpers";
 import { useAuthStore } from "stores/auth";
 import type { Organization, OrganizationRole, Timestamp, User } from "types";
 
@@ -103,14 +103,14 @@ export const deleteAvatar = async (): Promise<ActionResult> => {
 
 export const getUserMemberships = (userHandle: string) => (state: AccountsState): OrganizationMembership[] => (
   Object.values(userHandle ? state.membershipsByUser[userHandle] ?? {} : {})
-    .map((m) => { const a = state.accounts[m.handle]; return a?.type === "ORGANIZATION" ? { ...a, ...m } : null; })
+    .map((m) => { const a = state.accounts[m.handle]; return a?.type === "ORGANIZATION" ? cachedMerge(a, m) : null; })
     .filter((m): m is OrganizationMembership => m !== null)
     .sort((a, b) => a.handle.localeCompare(b.handle))
 );
 
 export const getOrganizationMembers = (orgHandle: string) => (state: AccountsState): OrganizationMember[] => (
   Object.values(state.membersByOrganization[orgHandle] ?? {})
-    .map((m) => { const a = state.accounts[m.handle]; return a?.type === "USER" ? { ...a, ...m } : null; })
+    .map((m) => { const a = state.accounts[m.handle]; return a?.type === "USER" ? cachedMerge(a, m) : null; })
     .filter((m): m is OrganizationMember => m !== null)
     .sort((a, b) => a.handle.localeCompare(b.handle))
 );

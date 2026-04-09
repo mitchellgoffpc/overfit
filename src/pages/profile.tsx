@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { useParams } from "wouter";
+import { useShallow } from "zustand/react/shallow";
 
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
@@ -12,24 +13,22 @@ import NotFoundPage from "pages/not-found";
 import OrganizationPage from "pages/organization";
 import { fetchAccount, useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
-import { fetchProjects, useProjectStore } from "stores/projects";
-import { fetchRuns, useRunStore } from "stores/runs";
+import { fetchProjects, getUserProjects, useProjectStore } from "stores/projects";
+import { fetchRuns, getUserRuns, useRunStore } from "stores/runs";
 
 export default function ProfileRoute(): ReactElement {
   const { handle } = useParams<{ handle: string }>();
   const account = useAccountsStore((state) => state.accounts[handle]);
   const notFound = useAccountsStore((state) => state.notFoundHandles.has(handle));
-  const projects = useProjectStore((state) => state.projects);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const runs = useRunStore((state) => state.runs);
+  const projects = useProjectStore(useShallow(getUserProjects(handle)));
   const runError = useRunStore((state) => state.errors[handle] ?? null);
   const isRunsLoading = useRunStore((state) => state.isLoading[handle] ?? false);
+  const runs = useRunStore(useShallow(getUserRuns(handle)));
   const currentHandle = useAuthStore((state) => state.currentHandle);
   const user = account?.type === "USER" ? account : null;
   const organization = account?.type === "ORGANIZATION" ? account : null;
-  const projectsList = Object.values(projects).filter((project) => project.owner === handle).sort((a, b) => a.name.localeCompare(b.name));
-  const runsList = Object.values(runs).filter((run) => run.projectOwner === handle).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   useEffect(() => {
     if (!account && !notFound) { void fetchAccount(handle); }
@@ -52,25 +51,25 @@ export default function ProfileRoute(): ReactElement {
       <Navbar breadcrumbs={[{ label: handle, href: `/${handle}` }, { label: "Profile" }]} />
 
       <NotebookShell columns="18.75rem 1fr" className="max-w-7xl">
-        <ProfileSidebar user={user} projects={projectsList} runs={runsList} isOwnProfile={handle === currentHandle} />
+        <ProfileSidebar user={user} projects={projects} runs={runs} isOwnProfile={handle === currentHandle} />
 
         <main className="relative min-w-0 px-4 pb-5 lg:px-5 lg:pb-6">
           <div className="grid">
             <ProfileProjectsPanel
-              projects={projectsList}
-              runs={runsList}
+              projects={projects}
+              runs={runs}
               userHandle={handle}
               isLoading={isProjectsLoading}
               error={projectError}
             />
             <ProfileRunsPanel
-              runs={runsList}
-              projects={projectsList}
+              runs={runs}
+              projects={projects}
               userHandle={handle}
               isLoading={isRunsLoading}
               error={runError}
             />
-            <ProfileActivityHeatmap runs={runsList} />
+            <ProfileActivityHeatmap runs={runs} />
           </div>
         </main>
       </NotebookShell>

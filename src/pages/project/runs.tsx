@@ -1,32 +1,28 @@
 import type { ReactElement } from "react";
 import { useEffect } from "react";
 import { useParams } from "wouter";
+import { useShallow } from "zustand/react/shallow";
 
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import ProjectRunsTable from "components/project/RunsTable";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { fetchRuns, useRunStore } from "stores/runs";
+import { fetchRuns, getProjectRuns, useRunStore } from "stores/runs";
 
 export default function ProjectRunsPage(): ReactElement {
   const { handle, projectName } = useParams<{ handle: string; projectName: string }>();
-  const projects = useProjectStore((state) => state.projects);
+  const projectKey = buildProjectKey(handle, projectName);
+  const project = useProjectStore((state) => state.projects[projectKey]);
   const projectError = useProjectStore((state) => state.error);
   const isProjectsLoading = useProjectStore((state) => state.isLoading);
-  const runs = useRunStore((state) => state.runs);
-  const projectKey = buildProjectKey(handle, projectName);
   const runError = useRunStore((state) => state.errors[projectKey] ?? null);
   const isRunsLoading = useRunStore((state) => state.isLoading[projectKey] ?? false);
+  const projectRuns = useRunStore(useShallow(getProjectRuns(project?.id ?? "")));
 
   useEffect(() => {
     if (!isProjectsLoading) { void fetchRuns(handle, projectName); }
   }, [handle, isProjectsLoading, projectName]);
-
-  const projectList = Object.values(projects);
-  const runList = Object.values(runs);
-  const project = projects[projectKey] ?? projectList.find((item) => item.name === projectName);
-  const projectRuns = project ? runList.filter((run) => run.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [];
   const showProjectNotFound = !project && !isProjectsLoading;
 
   return (
