@@ -10,7 +10,9 @@ const project: Project = {
   owner: "ada",
   name: "demo",
   description: "Demo project",
+  metadata: {},
   visibility: "private",
+  pendingTransferTo: null,
   createdAt: "2025-01-02T00:00:00.000Z",
   updatedAt: "2025-01-03T00:00:00.000Z"
 };
@@ -21,11 +23,15 @@ const run: Run = {
   user: "ada",
   projectName: "demo",
   projectOwner: "ada",
+  launchId: "launch-1",
   name: "run-a",
-  status: "running",
+  terminalState: null,
+  isActive: true,
   createdAt: "2025-01-02T00:00:00.000Z",
   updatedAt: "2025-01-03T00:00:00.000Z",
-  config: null
+  config: null,
+  metadata: {},
+  workerToken: null
 };
 
 const createResponse = (body: unknown, init?: { ok?: boolean; status?: number }) => ({

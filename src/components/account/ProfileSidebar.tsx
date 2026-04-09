@@ -35,7 +35,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
   }
 
   const name = user.name;
-  const bio = user.bio ?? "Building transparent model reporting with Underfit.";
+  const bio = user.bio || "Building transparent model reporting with Underfit.";
 
   return (
     <aside className={asideClass} style={asideStyle}>

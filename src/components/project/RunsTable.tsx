@@ -4,7 +4,7 @@ import { Link } from "wouter";
 
 import { getRunColor } from "colors";
 import RunStatusBadge from "components/RunStatusBadge";
-import { formatDuration, formatRunTime, RULED_LINE, RULED_LINE_HEIGHT, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
+import { formatDuration, formatRunTime, getRunStatus, RULED_LINE, RULED_LINE_HEIGHT, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
 import type { Project, Run } from "types";
 
 const leftHeaderIndexCellClass = "flex items-center whitespace-nowrap pr-2 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted";
@@ -128,7 +128,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
                     onMouseEnter={() => { setHoveredRunId(run.id); }}
                     onMouseLeave={() => { setHoveredRunId(null); }}
                   >
-                    <div className={TABLE_BODY_CELL_CLASS}><RunStatusBadge status={run.status} /></div>
+                    <div className={TABLE_BODY_CELL_CLASS}><RunStatusBadge status={getRunStatus(run)} /></div>
                     <span className={TABLE_BODY_CELL_CLASS}>@{run.user}</span>
                     <span className={TABLE_BODY_CELL_CLASS}>{formatRunTime(run.createdAt)}</span>
                     <span className={TABLE_BODY_CELL_CLASS}>{formatDuration(run.createdAt, run.updatedAt)}</span>

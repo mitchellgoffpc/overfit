@@ -1,4 +1,5 @@
 import { API_BASE } from "types";
+import type { Run, RunStatus } from "types";
 
 const mergeCache = new WeakMap<object, WeakMap<object, object>>();
 export const cachedMerge = <A extends object, B extends object>(a: A, b: B): A & B => {
@@ -19,15 +20,25 @@ interface APIFailureResponse { ok: false; body?: never; error: string; status: n
 export type APIResponse<T> = APISuccessResponse<T> | APIFailureResponse;
 export type ActionResult<T = never> = [T] extends [never] ? { ok: true } | { ok: false; error: string } : { ok: true; body: T } | { ok: false; error: string };
 
+function getAPIError(payload: unknown, status: number): string {
+  if (!payload || typeof payload !== "object") { return `Request failed with status ${String(status)}`; }
+  if ("error" in payload && typeof payload.error === "string" && payload.error) { return payload.error; }
+  if ("detail" in payload && typeof payload.detail === "string" && payload.detail) { return payload.detail; }
+  if ("detail" in payload && payload.detail && typeof payload.detail === "object" && "error" in payload.detail && typeof payload.detail.error === "string") {
+    return payload.detail.error;
+  }
+  return `Request failed with status ${String(status)}`;
+}
+
 export const request = async <T>(path: string, init?: RequestInit): Promise<APIResponse<T>> => {
   const url = path.startsWith("/") ? `${API_BASE}${path}` : `${API_BASE}/${path}`;
   const requestInit = init ? { credentials: "include" as const, ...init } : { credentials: "include" as const };
   try {
     const response = await fetch(url, requestInit);
-    const payload = await response.json().catch(() => null) as T | {error: string} | null;
+    const payload = await response.json().catch(() => null) as T | { error?: string; detail?: unknown } | null;
 
     if (!response.ok) {
-      const error = payload && typeof payload === "object" && "error" in payload ? payload.error : `Request failed with status ${String(response.status)}`;
+      const error = getAPIError(payload, response.status);
       return { ok: false, status: response.status, error };
     } else if (payload) {
       return { ok: true, status: response.status, body: payload as T };
@@ -72,6 +83,8 @@ export const formatDuration = (start: string, end: string): string => {
   if (minutes > 0) { return `${minutes.toString()}m ${seconds.toString()}s`; }
   return `${seconds.toString()}s`;
 };
+
+export const getRunStatus = (run: Run): RunStatus => run.terminalState ?? (run.isActive ? "running" : "inactive");
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HANDLE_PATTERN = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/;

@@ -7,6 +7,7 @@ import WorkspaceRunsTable from "components/home/WorkspaceRunsTable";
 import Navbar from "components/Navbar";
 import NotebookShell from "components/NotebookShell";
 import SectionHeader from "components/SectionHeader";
+import { getRunStatus } from "helpers";
 import { getMe, useAccountsStore } from "stores/accounts";
 import { fetchProjects, getUserProjects, useProjectStore } from "stores/projects";
 import { fetchRuns, getUserRuns, useRunStore } from "stores/runs";
@@ -28,8 +29,8 @@ export default function IndexRoute(): ReactElement {
   useEffect(() => {
     if (user && !isProjectsLoading) { void fetchRuns(user.handle); }
   }, [isProjectsLoading, user]);
-  const runningCount = useMemo(() => runs.filter((run) => run.status === "running").length, [runs]);
-  const failedCount = useMemo(() => runs.filter((run) => run.status === "failed").length, [runs]);
+  const runningCount = useMemo(() => runs.filter((run) => getRunStatus(run) === "running").length, [runs]);
+  const failedCount = useMemo(() => runs.filter((run) => getRunStatus(run) === "failed").length, [runs]);
   const displayHandle = user?.handle ?? "workspace";
   return (
     <div className="min-h-screen bg-brand-bgStrong text-brand-text">

@@ -29,7 +29,7 @@ describe("log store", () => {
     await fetchLogs("ada", "demo", "run-1", "worker-1");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerId=worker-1&cursor=0`,
+      `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerLabel=worker-1&cursor=0`,
       { credentials: "include" }
     );
     expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toMatchObject({
@@ -60,12 +60,12 @@ describe("log store", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerId=worker-1&cursor=0`,
+      `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerLabel=worker-1&cursor=0`,
       { credentials: "include" }
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerId=worker-1&cursor=1`,
+      `${API_BASE}/accounts/ada/projects/demo/runs/run-1/logs?workerLabel=worker-1&cursor=1`,
       { credentials: "include" }
     );
     expect(useLogStore.getState().logs["ada/demo/run-1/worker-1"]).toMatchObject({

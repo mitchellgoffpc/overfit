@@ -1,7 +1,9 @@
 import type { ReactElement } from "react";
 
+import type { MediaType } from "types";
+
 interface MediaPreviewProps {
-  readonly type: "image" | "video" | "audio";
+  readonly type: MediaType;
   readonly src: string;
   readonly alt: string;
   readonly caption?: string | undefined;
@@ -15,6 +17,8 @@ export default function MediaPreview({ type, src, alt, caption, mediaClassName }
         <img src={src} alt={alt} className={`w-full rounded-lg ${mediaClassName ?? ""}`} />
       ) : type === "video" ? (
         <video src={src} controls className={`w-full rounded-lg ${mediaClassName ?? ""}`} />
+      ) : type === "html" ? (
+        <iframe src={src} title={alt} sandbox="allow-scripts" className={`w-full rounded-lg border-0 ${mediaClassName ?? ""}`} />
       ) : (
         <audio src={src} controls className={`w-full ${mediaClassName ?? ""}`} />
       )}

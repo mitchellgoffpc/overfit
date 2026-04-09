@@ -1,20 +1,20 @@
 import type { ReactElement } from "react";
 
-import type { Run } from "types";
+import type { RunStatus } from "types";
 
 interface RunStatusBadgeProps {
-  readonly status: Run["status"];
+  readonly status: RunStatus;
 }
 
-const statusClasses: Record<Run["status"], string> = {
-  queued: "bg-status-queued-bg text-status-queued-text border border-status-queued-border",
+const statusClasses: Record<RunStatus, string> = {
   running: "bg-status-running-bg text-status-running-text border border-status-running-border",
   finished: "bg-status-finished-bg text-status-finished-text border border-status-finished-border",
   failed: "bg-status-failed-bg text-status-failed-text border border-status-failed-border",
   cancelled: "bg-status-cancelled-bg text-status-cancelled-text border border-status-cancelled-border",
+  inactive: "border border-brand-border bg-white text-brand-textMuted",
 };
 
-const formatStatus = (status: Run["status"]): string => status.replace(/^\w/, (char) => char.toUpperCase());
+const formatStatus = (status: RunStatus): string => status.replace(/^\w/, (char) => char.toUpperCase());
 
 export default function RunStatusBadge({ status }: RunStatusBadgeProps): ReactElement {
   return (

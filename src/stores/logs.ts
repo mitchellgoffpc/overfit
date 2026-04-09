@@ -36,11 +36,11 @@ const splitTimestampPrefix = (line: string): ParsedLogLine => {
   return { content: line, timestamp: match[1] ?? null, message: match[2] ?? line };
 };
 
-export const fetchLogs = async (handle: string, projectName: string, runName: string, workerId: string): Promise<void> => {
-  const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
+export const fetchLogs = async (handle: string, projectName: string, runName: string, workerLabel: string): Promise<void> => {
+  const scopeKey = `${handle}/${projectName}/${runName}/${workerLabel}`;
   const requestedCursor = useLogStore.getState().logs[scopeKey]?.cursor ?? 0;
 
-  const query = new URLSearchParams({ workerId, cursor: String(requestedCursor) });
+  const query = new URLSearchParams({ workerLabel, cursor: String(requestedCursor) });
   const { ok, body, error } = await request<LogPage>(`accounts/${handle}/projects/${projectName}/runs/${runName}/logs?${query.toString()}`);
   const scope = useLogStore.getState().logs[scopeKey] ?? { lines: [], cursor: 0, error: null };
   if (ok) {
@@ -49,7 +49,7 @@ export const fetchLogs = async (handle: string, projectName: string, runName: st
       const newScope = { lines: [...scope.lines, ...incomingLines], cursor: body.nextCursor, error: null };
       useLogStore.setState((state) => ({ logs: { ...state.logs, [scopeKey]: newScope } }));
       if (body.hasMore && body.nextCursor > requestedCursor) {
-        await fetchLogs(handle, projectName, runName, workerId);
+        await fetchLogs(handle, projectName, runName, workerLabel);
       }
     }
   } else if (scope.cursor === requestedCursor) {

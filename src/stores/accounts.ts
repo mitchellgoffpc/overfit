@@ -8,11 +8,14 @@ import type { Organization, OrganizationRole, Timestamp, User } from "types";
 export interface MembershipDetails {
   handle: string;
   role: OrganizationRole;
+}
+
+export interface OrganizationMemberDetails extends MembershipDetails {
   membershipCreatedAt: Timestamp;
   membershipUpdatedAt: Timestamp;
 };
 
-export type OrganizationMember = User & MembershipDetails;
+export type OrganizationMember = User & OrganizationMemberDetails;
 export type OrganizationMembership = Organization & MembershipDetails;
 
 interface AccountsState {
@@ -20,7 +23,7 @@ interface AccountsState {
   notFoundHandles: Set<string>;
   avatarVersion: number;
   membershipsByUser: Record<string, Record<string, MembershipDetails>>;
-  membersByOrganization: Record<string, Record<string, MembershipDetails>>;
+  membersByOrganization: Record<string, Record<string, OrganizationMemberDetails>>;
 }
 
 export const useAccountsStore = create<AccountsState>(() => ({
@@ -33,11 +36,18 @@ export const useAccountsStore = create<AccountsState>(() => ({
 
 const indexByHandle = <T extends { handle: string }>(items: T[]): Record<string, T> => Object.fromEntries(items.map((item) => [item.handle, item]));
 
-const pickMembershipFields = (m: MembershipDetails): MembershipDetails => (
+const pickMembershipFields = (m: MembershipDetails): MembershipDetails => ({ handle: m.handle, role: m.role });
+
+const pickOrganizationMemberFields = (m: OrganizationMemberDetails): OrganizationMemberDetails => (
   { handle: m.handle, role: m.role, membershipCreatedAt: m.membershipCreatedAt, membershipUpdatedAt: m.membershipUpdatedAt }
 );
 
-const omitMembershipFields = <T extends MembershipDetails>(m: T): Omit<T, "role" | "membershipCreatedAt" | "membershipUpdatedAt"> => {
+const omitMembershipFields = <T extends MembershipDetails>(m: T): Omit<T, "role"> => {
+  const { role: _r, ...rest } = m;
+  return rest;
+};
+
+const omitOrganizationMemberFields = <T extends OrganizationMemberDetails>(m: T): Omit<T, "role" | "membershipCreatedAt" | "membershipUpdatedAt"> => {
   const { role: _r, membershipCreatedAt: _c, membershipUpdatedAt: _u, ...rest } = m;
   return rest;
 };
@@ -132,8 +142,8 @@ export const fetchOrganizationMembers = async (orgHandle: string): Promise<Actio
   const result = await request<OrganizationMember[]>(`organizations/${orgHandle}/members`);
   if (result.ok) {
     useAccountsStore.setState((state) => ({
-      accounts: { ...state.accounts, ...indexByHandle(result.body.map(omitMembershipFields)) },
-      membersByOrganization: { ...state.membersByOrganization, [orgHandle]: indexByHandle(result.body.map(pickMembershipFields)) },
+      accounts: { ...state.accounts, ...indexByHandle(result.body.map(omitOrganizationMemberFields)) },
+      membersByOrganization: { ...state.membersByOrganization, [orgHandle]: indexByHandle(result.body.map(pickOrganizationMemberFields)) },
     }));
     return { ok: true };
   }
@@ -144,8 +154,8 @@ export const addMembership = (org: Organization, role: OrganizationRole): void =
   const me = getMe(useAccountsStore.getState());
   if (!me) { return; }
   const now = new Date().toISOString();
-  const membership: MembershipDetails = { handle: org.handle, role, membershipCreatedAt: now, membershipUpdatedAt: now };
-  const memberEntry: MembershipDetails = { handle: me.handle, role, membershipCreatedAt: now, membershipUpdatedAt: now };
+  const membership: MembershipDetails = { handle: org.handle, role };
+  const memberEntry: OrganizationMemberDetails = { handle: me.handle, role, membershipCreatedAt: now, membershipUpdatedAt: now };
   useAccountsStore.setState((state) => {
     const userMemberships = state.membershipsByUser[me.handle];
     const orgMembers = state.membersByOrganization[org.handle];

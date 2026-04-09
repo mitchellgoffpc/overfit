@@ -17,7 +17,7 @@ const user: User = {
   name: "Ada Lovelace",
   type: "USER",
   email: "ada@underfit.local",
-  bio: null,
+  bio: "",
   createdAt: "2025-01-01T00:00:00.000Z",
   updatedAt: "2025-01-01T00:00:00.000Z"
 };

@@ -1,11 +1,11 @@
 export type ID = string;
 export type Handle = string;
 export type Timestamp = string;
-export type MediaType = "image" | "video" | "audio";
-export type RunStatus = "queued" | "running" | "finished" | "failed" | "cancelled";
+export type MediaType = "image" | "video" | "audio" | "html";
+export type RunTerminalState = "finished" | "failed" | "cancelled";
+export type RunStatus = "running" | "finished" | "failed" | "cancelled" | "inactive";
 export type OrganizationRole = "ADMIN" | "MEMBER";
 export type ProjectVisibility = "private" | "public";
-export type ArtifactStatus = "open" | "finalized";
 
 export interface Account {
   id: ID;
@@ -16,7 +16,7 @@ export interface User extends Account {
   type: "USER";
   email: string;
   name: string;
-  bio: string | null;
+  bio: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -33,7 +33,9 @@ export interface Project {
   owner: Handle;
   name: string;
   description: string | null;
+  metadata: Record<string, unknown>;
   visibility: ProjectVisibility;
+  pendingTransferTo: ID | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -52,11 +54,15 @@ export interface Run {
   user: Handle;
   projectName: string;
   projectOwner: Handle;
+  launchId: string;
   name: string;
-  status: RunStatus;
+  terminalState: RunTerminalState | null;
+  isActive: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   config: Record<string, unknown> | null;
+  metadata: Record<string, unknown>;
+  workerToken: string | null;
 }
 
 export interface Artifact {
@@ -66,10 +72,8 @@ export interface Artifact {
   step: number | null;
   name: string;
   type: string;
-  status: ArtifactStatus;
   storageKey: string;
-  declaredFileCount: number;
-  uploadedFileCount: number;
+  storedSizeBytes: number | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   finalizedAt: Timestamp | null;
@@ -117,6 +121,15 @@ export interface ApiKey {
 
 export interface ApiKeyWithToken extends ApiKey {
   token: string;
+}
+
+export interface Worker {
+  id: ID;
+  runId: ID;
+  workerLabel: string;
+  workerToken: string | null;
+  lastHeartbeat: Timestamp;
+  joinedAt: Timestamp;
 }
 
 export const API_BASE = "/api/v1";

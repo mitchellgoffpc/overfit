@@ -4,7 +4,7 @@ import { Link } from "wouter";
 
 import { getRunColor } from "colors";
 import RunStatusBadge from "components/RunStatusBadge";
-import { formatDuration, formatRunTime, RULED_LINE, RULED_LINE_HEIGHT, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
+import { formatDuration, formatRunTime, getRunStatus, RULED_LINE, RULED_LINE_HEIGHT, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
 import type { Run } from "types";
 
 const tableGridTemplateColumns = "3.5rem 14rem 7.5rem 8.5rem 9.25rem 5.625rem 6.25rem";
@@ -60,7 +60,7 @@ export default function WorkspaceRunsTable({ runs, isLoading, error }: Workspace
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: runColor }} />
                       <span className="truncate font-semibold text-brand-text">{run.name}</span>
                     </Link>
-                    <div className={TABLE_BODY_CELL_CLASS}><RunStatusBadge status={run.status} /></div>
+                    <div className={TABLE_BODY_CELL_CLASS}><RunStatusBadge status={getRunStatus(run)} /></div>
                     <span className={TABLE_BODY_CELL_CLASS}>{run.projectName}</span>
                     <span className={TABLE_BODY_CELL_CLASS}>{formatRunTime(run.createdAt)}</span>
                     <span className={TABLE_BODY_CELL_CLASS}>{formatDuration(run.createdAt, run.updatedAt)}</span>

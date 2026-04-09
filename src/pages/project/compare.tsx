@@ -11,7 +11,7 @@ import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import Slider from "components/Slider";
-import { formatRunTime, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { formatRunTime, getRunStatus, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
 import { buildRunKey, fetchRuns, getProjectRuns, useRunStore } from "stores/runs";
@@ -52,8 +52,8 @@ export default function ProjectCompareRoute(): ReactElement {
     [projectRuns]
   );
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
-  const runningCount = useMemo(() => projectRuns.filter((run) => run.status === "running").length, [projectRuns]);
-  const failedCount = useMemo(() => projectRuns.filter((run) => run.status === "failed").length, [projectRuns]);
+  const runningCount = useMemo(() => projectRuns.filter((run) => getRunStatus(run) === "running").length, [projectRuns]);
+  const failedCount = useMemo(() => projectRuns.filter((run) => getRunStatus(run) === "failed").length, [projectRuns]);
 
   const chartSeries = useMemo(() => {
     const metricKeys = new Set<string>();
@@ -77,6 +77,10 @@ export default function ProjectCompareRoute(): ReactElement {
   }, [colorByRunName, handle, projectName, scalars, visibleRuns]);
 
   const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);
+  const hasLoadedScalarData = useMemo(
+    () => visibleRuns.some((run) => (scalars[buildRunKey(handle, projectName, run.name)] ?? []).length > 0),
+    [handle, projectName, scalars, visibleRuns]
+  );
 
   const mediaKeys = useMemo(() => {
     const keySet = new Map<string, { steps: Set<number>; maxCount: number }>();
@@ -149,7 +153,7 @@ export default function ProjectCompareRoute(): ReactElement {
   const renderRunItem = (run: Run, index: number) => {
     const isVisible = hiddenRunNames[run.name] !== true;
     const color = getRunColor(index);
-    const isActive = run.status === "running";
+    const isActive = getRunStatus(run) === "running";
     return (
       <button
         className={[
@@ -240,7 +244,9 @@ export default function ProjectCompareRoute(): ReactElement {
           {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
           {!showProjectNotFound ? (
             <section style={{ marginTop: RULED_LINE }}>
-              {isRunsLoading || isScalarsLoading ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Loading charts...</div> : null}
+              {(isRunsLoading || isScalarsLoading) && !hasLoadedScalarData
+                ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Loading charts...</div>
+                : null}
               {visibleRuns.length === 0 ? <div className="mb-4 text-[0.8125rem] text-brand-textMuted">Select at least one run to view charts.</div> : null}
               <ChartSections sections={sections} hasPoints={hasPoints} isLoading={isScalarsLoading} />
               {!isScalarsLoading && sections.length === 0 ? <div className="text-[0.8125rem] text-brand-textMuted">No scalar data yet.</div> : null}

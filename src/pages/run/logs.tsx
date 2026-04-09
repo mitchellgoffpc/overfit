@@ -7,34 +7,43 @@ import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import type { ParsedLogLine } from "stores/logs";
 import { fetchLogs, useLogStore } from "stores/logs";
 import { buildRunKey, useRunStore } from "stores/runs";
+import { fetchWorkers, useWorkerStore } from "stores/workers";
 
 type LogLine = ParsedLogLine & { lineNumber: number };
 
-const workerIds: string[] = ["worker-0", "worker-1"];
 const emptyLines: ParsedLogLine[] = [];
 
 export default function RunLogsPage(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
-  const [workerId, setWorkerId] = useState<string>(workerIds[0] ?? "");
+  const runKey = buildRunKey(handle, projectName, runName);
+  const workers = useWorkerStore((state) => state.workers[runKey] ?? []);
+  const isWorkersLoading = useWorkerStore((state) => state.isLoading[runKey] ?? false);
+  const workerError = useWorkerStore((state) => state.errors[runKey] ?? null);
+  const [workerLabel, setWorkerLabel] = useState("");
   const [search, setSearch] = useState("");
-  const scopeKey = `${handle}/${projectName}/${runName}/${workerId}`;
+  const selectedWorkerLabel = workers.some((worker) => worker.workerLabel === workerLabel) ? workerLabel : workers[0]?.workerLabel ?? "";
+  const scopeKey = `${handle}/${projectName}/${runName}/${selectedWorkerLabel}`;
   const scope = useLogStore((state) => state.logs[scopeKey]);
   const lines = useLogStore((state) => state.logs[scopeKey]?.lines ?? emptyLines);
   const logError = scope?.error ?? null;
-  const runKey = buildRunKey(handle, projectName, runName);
   const run = useRunStore((state) => state.runs[runKey]);
   const runError = useRunStore((state) => state.errors[runKey] ?? null);
   const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
 
   useEffect(() => {
+    void fetchWorkers(handle, projectName, runName);
+  }, [handle, projectName, runName]);
+
+  useEffect(() => {
+    if (!selectedWorkerLabel) { return; }
     let cancelled = false;
     const poll = async () => {
-      if (!cancelled) { await fetchLogs(handle, projectName, runName, workerId); }
+      if (!cancelled) { await fetchLogs(handle, projectName, runName, selectedWorkerLabel); }
       if (!cancelled) { setTimeout(() => { void poll(); }, 2000); }
     };
     void poll();
     return () => { cancelled = true; };
-  }, [handle, projectName, runName, workerId]);
+  }, [handle, projectName, runName, selectedWorkerLabel]);
 
   const visibleLines = useMemo(() => {
     const base = lines.map((line, index): LogLine => ({ lineNumber: index, ...line }));
@@ -77,17 +86,17 @@ export default function RunLogsPage(): ReactElement {
               onChange={(event) => { setSearch(event.target.value); }}
             />
           </div>
-          {workerIds.length > 1 ? (
+          {workers.length > 1 ? (
             <div className="flex items-center">
               <select
                 aria-label="Worker"
                 className="rounded-xl border border-brand-border bg-white px-3 py-2 text-[0.8125rem] text-brand-text"
-                value={workerId}
-                onChange={(event) => { setWorkerId(event.target.value); }}
+                value={selectedWorkerLabel}
+                onChange={(event) => { setWorkerLabel(event.target.value); }}
               >
-                {workerIds.map((id) => (
-                  <option key={id} value={id}>
-                    {id}
+                {workers.map((worker) => (
+                  <option key={worker.id} value={worker.workerLabel}>
+                    {worker.workerLabel}
                   </option>
                 ))}
               </select>
@@ -100,11 +109,18 @@ export default function RunLogsPage(): ReactElement {
       {run && runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
 
       <section className="flex min-h-0 flex-1 flex-col">
+        {workerError ? <div className="mb-2 text-[0.8125rem] text-brand-textMuted">{workerError}</div> : null}
         {logError ? <div className="mb-2 text-[0.8125rem] text-brand-textMuted">{logError}</div> : null}
 
         <div className="min-h-0 flex-1 overflow-auto border-b border-brand-border">
-          {!logError && !scope && visibleLines.length === 0 ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">Loading logs...</div> : null}
-          {!logError && scope && visibleLines.length === 0 ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">No logs yet.</div> : null}
+          {!workerError && isWorkersLoading ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">Loading workers...</div> : null}
+          {!workerError && !isWorkersLoading && workers.length === 0 ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">No workers yet.</div> : null}
+          {!workerError && workers.length > 0 && !logError && !scope && visibleLines.length === 0
+            ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">Loading logs...</div>
+            : null}
+          {!workerError && workers.length > 0 && !logError && scope && visibleLines.length === 0
+            ? <div className="py-2 text-[0.8125rem] text-brand-textMuted">No logs yet.</div>
+            : null}
           {visibleLines.length > 0 ? (
             <div className="font-mono text-[0.75rem] text-log-text" style={{ lineHeight: RULED_LINE }}>
               {visibleLines.map(renderLine)}

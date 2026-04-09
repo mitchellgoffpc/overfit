@@ -71,7 +71,7 @@ export const fetchProject = async (handle: string, projectName: string): Promise
 };
 
 export const updateProject = async (
-  handle: string, projectName: string, data: { description?: string | null; visibility?: string }
+  handle: string, projectName: string, data: { description?: string | null; metadata?: Record<string, unknown>; visibility?: string }
 ): Promise<ActionResult<Project>> => {
   const result = await send<Project>(
     `accounts/${handle}/projects/${projectName}`, "PUT", data as Record<string, unknown>,
