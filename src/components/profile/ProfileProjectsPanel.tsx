@@ -4,11 +4,15 @@ import { Link } from "wouter";
 
 import { getRunColor } from "colors";
 import SectionHeader from "components/SectionHeader";
-import { formatDate, RULED_LINE } from "helpers";
+import { formatDate, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import type { Project, Run } from "types";
 
-const projectCardClass = "grid gap-3 rounded-[0.875rem] border border-brand-borderMuted bg-white/90 p-4 text-inherit"
+const projectCardClass = "flex h-full flex-col justify-between rounded-[0.875rem] border border-brand-borderMuted bg-white/90 p-4 text-inherit"
   + " no-underline transition hover:border-brand-accent/40 hover:bg-white";
+const PROJECT_CARD_ROW_SPAN = 4;
+const PROJECT_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.5;
+const PROJECT_CARD_HEIGHT = `${String(PROJECT_CARD_ROW_SPAN * RULED_LINE_HEIGHT - PROJECT_CARD_GRID_GAP_REM)}rem`;
+const PROJECT_CARD_GRID_GAP = `${String(PROJECT_CARD_GRID_GAP_REM)}rem`;
 
 interface ProfileProjectsPanelProps {
   readonly projects: Project[];
@@ -47,9 +51,9 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
             No projects yet. Start your first run to create a project.
           </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2" style={{ marginTop: "1.25rem" }}>
+          <div className="grid md:grid-cols-2" style={{ marginTop: `${String(.75 * RULED_LINE_HEIGHT)}rem`, marginBottom: `${String(0.25 * RULED_LINE_HEIGHT + PROJECT_CARD_GRID_GAP_REM)}rem`, gap: PROJECT_CARD_GRID_GAP }}>
             {projectStats.map(({ project, runCount, latestRun }, index) => (
-              <Link className={projectCardClass} href={`/${userHandle}/${project.name}`} key={project.id}>
+              <Link className={projectCardClass} href={`/${userHandle}/${project.name}`} key={project.id} style={{ height: PROJECT_CARD_HEIGHT }}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: getRunColor(index) }} />

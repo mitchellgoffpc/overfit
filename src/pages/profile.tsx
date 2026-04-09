@@ -55,7 +55,7 @@ export default function ProfileRoute(): ReactElement {
         <ProfileSidebar user={user} projects={projectsList} runs={runsList} isOwnProfile={handle === currentHandle} />
 
         <main className="relative min-w-0 px-4 pb-5 lg:px-5 lg:pb-6">
-          <div className="grid gap-6">
+          <div className="grid">
             <ProfileProjectsPanel
               projects={projectsList}
               runs={runsList}

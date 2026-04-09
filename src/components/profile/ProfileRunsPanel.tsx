@@ -26,7 +26,7 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
   const sectionHeight = Math.max(15, 6.875 + tableHeight);
 
   return (
-    <section style={{ minHeight: `${sectionHeight.toString()}rem` }}>
+    <section className="min-w-0" style={{ minHeight: `${sectionHeight.toString()}rem` }}>
       <SectionHeader title="Runs" subtitle={`${String(runs.length)} total`} sectionLabel="Section B" />
 
       {error ? <div className="py-2 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>{error}</div> : null}
@@ -39,7 +39,7 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
           </div>
         ) : (
           <div className="-mx-4 min-w-0 overflow-x-auto overflow-y-hidden lg:-mx-5" style={{ marginTop: RULED_LINE }}>
-            <div className="min-w-full w-max">
+            <div className="w-max min-w-max">
               <div className="grid px-4 lg:px-5" style={{ gridTemplateColumns: tableGridTemplateColumns, height: RULED_LINE }}>
                 <span className={TABLE_HEADER_CELL_CLASS}>Ln</span>
                 <span className={TABLE_HEADER_CELL_CLASS}>Name</span>

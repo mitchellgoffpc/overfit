@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useMemo } from "react";
 
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE } from "helpers";
+import { RULED_LINE_HEIGHT } from "helpers";
 import type { Run } from "types";
 
 interface ProfileActivityHeatmapProps {
@@ -67,11 +67,17 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
   }, [runs]);
 
   return (
-    <section>
+    <section className="min-w-0">
       <SectionHeader title="Activity" sectionLabel="Section C" />
 
-      <div style={{ marginTop: RULED_LINE }}>
-        <div className="hidden items-center justify-end gap-2 -mt-3 mb-2 font-mono text-[0.6875rem] text-brand-textMuted xs:flex">
+      <div>
+        <div
+          className={
+            "ml-auto hidden w-max items-center gap-2 mb-2 rounded-full border border-brand-borderMuted bg-white/90 px-3 py-1.5 "
+            + "font-mono text-[0.6875rem] text-brand-textMuted xs:flex"
+          }
+          style={{ marginTop: `${String(-0.5 * RULED_LINE_HEIGHT)}rem` }}
+        >
           <span>Less</span>
           <div className="flex items-center gap-1">
             {levelClasses.map((classes) => (
@@ -81,9 +87,9 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
           <span>More</span>
         </div>
 
-        <div className="rounded-[0.875rem] border border-brand-borderMuted bg-white/85 px-4 py-4">
-          <div className="min-w-0 overflow-x-auto">
-            <div className="grid grid-cols-[2rem_1fr] items-start gap-3">
+        <div className="min-w-0 rounded-[0.875rem] border border-brand-borderMuted bg-white/85 px-3 py-4">
+          <div className="overflow-x-auto">
+            <div className="grid min-w-max grid-cols-[2rem_max-content] items-start gap-2.5">
               <div className="grid grid-rows-[repeat(7,_1fr)] gap-1 pt-6 text-[0.6875rem] text-brand-textMuted">
                 {["", "Mon", "", "Wed", "", "Fri", ""].map((label, index) => (
                   <span className="h-3 leading-3" key={`day-label-${String(index)}`}>{label}</span>
