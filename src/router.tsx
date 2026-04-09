@@ -3,11 +3,11 @@ import { useEffect } from "react";
 import type { AroundNavHandler } from "wouter";
 import { Router, Redirect, Route, Switch, useLocation } from "wouter";
 
+import AccountsPage from "pages/account";
 import ForgotPasswordPage from "pages/forgot-password";
 import HomePage from "pages/home";
 import LoginPage from "pages/login";
 import NotFoundPage from "pages/not-found";
-import ProfilePage from "pages/profile";
 import ProjectPage from "pages/project";
 import ResetPasswordPage from "pages/reset-password";
 import RunPage from "pages/run";
@@ -56,7 +56,7 @@ export function AppRouter(): ReactElement {
               <Route path="/:handle/:projectName/runs/:runName" component={RunPage} />
               <Route path="/:handle/:projectName/*" component={ProjectPage} />
               <Route path="/:handle/:projectName" component={ProjectPage} />
-              <Route path="/:handle" component={ProfilePage} />
+              <Route path="/:handle" component={AccountsPage} />
               <Route component={NotFoundPage} />
             </Switch>
           </AuthLayout>

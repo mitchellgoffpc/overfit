@@ -2,13 +2,12 @@ import type { ReactElement } from "react";
 import { useMemo } from "react";
 import { Link } from "wouter";
 
-import { getRunColor } from "colors";
 import SectionHeader from "components/SectionHeader";
 import { formatDate, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import type { Project, Run } from "types";
 
 const projectCardClass = "flex h-full flex-col justify-between rounded-[0.875rem] border border-brand-borderMuted bg-white/90 p-4 text-inherit"
-  + " no-underline transition hover:border-brand-accent/40 hover:bg-white";
+  + " no-underline transition hover:border-brand-accent/40 hover:bg-hover-subtle";
 const PROJECT_CARD_ROW_SPAN = 4;
 const PROJECT_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.5;
 const PROJECT_CARD_HEIGHT = `${String(PROJECT_CARD_ROW_SPAN * RULED_LINE_HEIGHT - PROJECT_CARD_GRID_GAP_REM)}rem`;
@@ -59,18 +58,18 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
               gap: PROJECT_CARD_GRID_GAP,
             }}
           >
-            {projectStats.map(({ project, runCount, latestRun }, index) => (
+            {projectStats.map(({ project, runCount, latestRun }) => (
               <Link className={projectCardClass} href={`/${userHandle}/${project.name}`} key={project.id} style={{ height: PROJECT_CARD_HEIGHT }}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: getRunColor(index) }} />
                     <span className="truncate text-sm font-semibold text-brand-text">{project.name}</span>
                   </div>
                   <span className="rounded-full border border-pill-border bg-pill-bg px-2 py-0.5 text-[0.6875rem] text-brand-accentStrong">Public</span>
                 </div>
-                <p className="line-clamp-2 text-[0.75rem] text-brand-textMuted">{project.description ?? "No description yet."}</p>
-                <div className="flex items-center justify-between gap-2 pt-1 text-[0.75rem] text-brand-textMuted">
+                <p className="truncate text-[0.75rem] text-brand-textMuted">{project.description ?? "No description yet."}</p>
+                <div className="flex items-center gap-2 pt-1 text-[0.75rem] text-brand-textMuted">
                   <span>{String(runCount)} runs</span>
+                  <span aria-hidden="true">•</span>
                   <span>{latestRun ? `Last run ${formatDate(latestRun.createdAt)}` : "No runs yet"}</span>
                 </div>
               </Link>
