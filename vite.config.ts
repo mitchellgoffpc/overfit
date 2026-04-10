@@ -13,6 +13,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./tests/setup.ts",
-    exclude: ["dist/**"]
+    exclude: ["dist/**"],
+    fileParallelism: false
   }
 });

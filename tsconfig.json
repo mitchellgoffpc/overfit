@@ -21,7 +21,7 @@
     "skipLibCheck": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "types": ["vitest/globals", "react", "react-dom"],
+    "types": ["vitest/globals", "react", "react-dom", "node"],
     "paths": {
       "types": ["./types.ts"]
     }
