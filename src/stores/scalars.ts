@@ -2,10 +2,10 @@ import { create } from "zustand";
 
 import { request } from "helpers";
 import { buildRunKey } from "stores/runs";
-import type { Scalar } from "types";
+import type { ScalarSeries } from "types";
 
 interface ScalarState {
-  scalars: Record<string, Scalar[]>;
+  scalars: Record<string, ScalarSeries>;
   isLoading: Record<string, boolean>;
   errors: Record<string, string | null>;
 }
@@ -22,7 +22,7 @@ export const fetchScalars = async (handle: string, projectName: string, runName:
     isLoading: { ...isLoading, [runKey]: true },
     errors: { ...errors, [runKey]: null }
   }));
-  const response = await request<Scalar[]>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
+  const response = await request<ScalarSeries>(`accounts/${handle}/projects/${projectName}/runs/${runName}/scalars`);
   useScalarStore.setState(({ scalars, isLoading, errors }) => ({
     scalars: response.ok ? { ...scalars, [runKey]: response.body } : scalars,
     isLoading: { ...isLoading, [runKey]: false },

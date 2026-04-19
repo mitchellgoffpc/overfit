@@ -13,9 +13,8 @@ import { RULED_LINE } from "helpers";
 import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
 import { buildRunKey, useRunStore } from "stores/runs";
 import { fetchScalars, useScalarStore } from "stores/scalars";
-import type { Media, Scalar } from "types";
+import type { Media } from "types";
 
-const EMPTY_SCALARS: Scalar[] = [];
 const EMPTY_MEDIA: Media[] = [];
 
 export default function RunChartsPage(): ReactElement {
@@ -24,7 +23,7 @@ export default function RunChartsPage(): ReactElement {
   const run = useRunStore((state) => state.runs[runKey]);
   const runError = useRunStore((state) => state.errors[runKey] ?? null);
   const isRunsLoading = useRunStore((state) => state.isLoading[runKey] ?? false);
-  const scalars = useScalarStore((state) => state.scalars[runKey] ?? EMPTY_SCALARS);
+  const scalars = useScalarStore((state) => state.scalars[runKey] ?? null);
   const scalarError = useScalarStore((state) => state.errors[runKey] ?? null);
   const isScalarsLoading = useScalarStore((state) => state.isLoading[runKey] ?? false);
   const media = useMediaStore((state) => state.media[runKey] ?? EMPTY_MEDIA);
@@ -39,9 +38,9 @@ export default function RunChartsPage(): ReactElement {
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
 
   const chartSeries = useMemo(() => {
-    const keys = new Set<string>(scalars.flatMap((scalar) => Object.keys(scalar.values)));
+    const keys = scalars ? Object.keys(scalars.series) : [];
     const runColor = colors.brand.accent;
-    return Array.from(keys).sort().map((key) => ({
+    return keys.sort().map((key) => ({
       id: key,
       series: [{ id: key, label: runName, points: getSeriesPoints(scalars, key), color: runColor, lineWidth: 2 }]
     }));

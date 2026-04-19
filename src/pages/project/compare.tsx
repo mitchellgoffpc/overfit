@@ -58,10 +58,9 @@ export default function ProjectCompareRoute(): ReactElement {
   const chartSeries = useMemo(() => {
     const metricKeys = new Set<string>();
     for (const run of visibleRuns) {
-      const runScalars = scalars[buildRunKey(handle, projectName, run.name)] ?? [];
-      for (const scalar of runScalars) {
-        for (const metric of Object.keys(scalar.values)) { metricKeys.add(metric); }
-      }
+      const runScalars = scalars[buildRunKey(handle, projectName, run.name)];
+      if (!runScalars) { continue; }
+      for (const metric of Object.keys(runScalars.series)) { metricKeys.add(metric); }
     }
 
     return Array.from(metricKeys).sort().map((metric) => ({
@@ -69,7 +68,7 @@ export default function ProjectCompareRoute(): ReactElement {
       series: visibleRuns.map((run, index) => ({
         id: `${metric}:${run.name}`,
         label: run.name,
-        points: getSeriesPoints(scalars[buildRunKey(handle, projectName, run.name)] ?? [], metric),
+        points: getSeriesPoints(scalars[buildRunKey(handle, projectName, run.name)] ?? null, metric),
         color: colorByRunName.get(run.name) ?? getRunColor(index),
         lineWidth: 2
       }))
@@ -78,7 +77,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
   const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);
   const hasLoadedScalarData = useMemo(
-    () => visibleRuns.some((run) => (scalars[buildRunKey(handle, projectName, run.name)] ?? []).length > 0),
+    () => visibleRuns.some((run) => Object.keys(scalars[buildRunKey(handle, projectName, run.name)]?.series ?? {}).length > 0),
     [handle, projectName, scalars, visibleRuns]
   );
 

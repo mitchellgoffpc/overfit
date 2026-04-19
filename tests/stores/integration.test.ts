@@ -156,7 +156,7 @@ describe.skipIf(!python).sequential("store integration", () => {
     const runKey = buildRunKey("ada", "demo", "train");
     expect(useProjectStore.getState().projects["ada/demo"]?.name).toBe("demo");
     expect(useRunStore.getState().runs[runKey]?.name).toBe("train");
-    expect(useScalarStore.getState().scalars[runKey]?.map((point) => point.values["loss"])).toEqual([0.5, 0.25]);
+    expect(useScalarStore.getState().scalars[runKey]?.series["loss"]?.values).toEqual([0.5, 0.25]);
     expect(useWorkerStore.getState().workers[runKey]?.map((worker) => worker.workerLabel)).toEqual(["0"]);
     expect(useLogStore.getState().logs["ada/demo/train/0"]?.lines.map((line) => line.message)).toEqual(["started", "finished"]);
   });

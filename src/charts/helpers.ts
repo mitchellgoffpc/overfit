@@ -1,11 +1,13 @@
-import type { Scalar } from "types";
+import type { ScalarSeries } from "types";
 
-export const getSeriesPoints = (scalars: Scalar[], metric: string): { x: number; y: number }[] =>
-  scalars.flatMap((scalar, scalarIndex) => {
-    const value = scalar.values[metric];
-    if (typeof value !== "number") { return []; }
-    return [{ x: scalar.step ?? scalarIndex, y: value }];
-  });
+export const getSeriesPoints = (series: ScalarSeries | null, metric: string): { x: number; y: number }[] => {
+  if (!series) { return []; }
+  const entry = series.series[metric];
+  if (!entry) { return []; }
+  const axis = series.axes[entry.axis];
+  if (!axis) { return []; }
+  return entry.values.map((y, i) => ({ x: axis.steps[i] ?? i, y }));
+};
 
 export const groupChartsByPrefix = <T extends { id: string }>(items: T[]): { prefix: string; charts: T[] }[] => {
   const buckets = new Map<string, T[]>();

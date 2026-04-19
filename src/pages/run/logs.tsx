@@ -4,7 +4,7 @@ import { useParams } from "wouter";
 
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
-import type { ParsedLogLine } from "stores/logs";
+import type { ParsedLogLine, Worker } from "stores/logs";
 import { fetchLogs, useLogStore } from "stores/logs";
 import { buildRunKey, useRunStore } from "stores/runs";
 import { fetchWorkers, useWorkerStore } from "stores/workers";
@@ -12,11 +12,12 @@ import { fetchWorkers, useWorkerStore } from "stores/workers";
 type LogLine = ParsedLogLine & { lineNumber: number };
 
 const emptyLines: ParsedLogLine[] = [];
+const emptyWorkers: Worker[] = [];
 
 export default function RunLogsPage(): ReactElement {
   const { handle, projectName, runName } = useParams<{ handle: string; projectName: string; runName: string }>();
   const runKey = buildRunKey(handle, projectName, runName);
-  const workers = useWorkerStore((state) => state.workers[runKey] ?? []);
+  const workers = useWorkerStore((state) => state.workers[runKey] ?? emptyWorkers);
   const isWorkersLoading = useWorkerStore((state) => state.isLoading[runKey] ?? false);
   const workerError = useWorkerStore((state) => state.errors[runKey] ?? null);
   const [workerLabel, setWorkerLabel] = useState("");

@@ -92,10 +92,20 @@ export interface Media {
   createdAt: Timestamp;
 }
 
-export interface Scalar {
-  step: number | null;
-  values: Record<string, number>;
-  timestamp: Timestamp;
+export interface ScalarAxis {
+  steps: (number | null)[];
+  timestamps: Timestamp[];
+}
+
+export interface ScalarSeriesValues {
+  axis: number;
+  values: number[];
+}
+
+export interface ScalarSeries {
+  resolution: number;
+  axes: ScalarAxis[];
+  series: Record<string, ScalarSeriesValues>;
 }
 
 export interface LogEntry {

@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildRunKey } from "stores/runs";
 import { fetchScalars, useScalarStore } from "stores/scalars";
 import { API_BASE } from "types";
-import type { Scalar } from "types";
+import type { ScalarSeries } from "types";
 
-const scalar: Scalar = {
-  step: 1,
-  values: { loss: 0.5 },
-  timestamp: "2025-01-01T00:00:00.000Z"
+const series: ScalarSeries = {
+  resolution: 1,
+  axes: [{ steps: [1], timestamps: ["2025-01-01T00:00:00.000Z"] }],
+  series: { loss: { axis: 0, values: [0.5] } }
 };
 
 const createResponse = (body: unknown, init?: { ok?: boolean; status?: number }) => ({
@@ -28,7 +28,7 @@ describe("scalar store", () => {
   });
 
   it("fetches scalars with cookie credentials", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse([scalar]));
+    fetchMock.mockResolvedValueOnce(createResponse(series));
     const runKey = buildRunKey("ada", "demo", "run-1");
 
     await fetchScalars("ada", "demo", "run-1");
@@ -37,14 +37,19 @@ describe("scalar store", () => {
       `${API_BASE}/accounts/ada/projects/demo/runs/run-1/scalars`,
       { credentials: "include" }
     );
-    expect(useScalarStore.getState().scalars[runKey]).toEqual([scalar]);
+    expect(useScalarStore.getState().scalars[runKey]).toEqual(series);
     expect(useScalarStore.getState().isLoading[runKey]).toBe(false);
     expect(useScalarStore.getState().errors[runKey]).toBeNull();
   });
 
   it("fetches multiple runs and stores them separately", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse([scalar]));
-    fetchMock.mockResolvedValueOnce(createResponse([{ ...scalar, values: { loss: 0.4 } }]));
+    const other: ScalarSeries = {
+      resolution: 1,
+      axes: [{ steps: [1], timestamps: ["2025-01-01T00:00:00.000Z"] }],
+      series: { loss: { axis: 0, values: [0.4] } }
+    };
+    fetchMock.mockResolvedValueOnce(createResponse(series));
+    fetchMock.mockResolvedValueOnce(createResponse(other));
 
     await Promise.all([
       fetchScalars("ada", "demo", "run-1"),
@@ -59,8 +64,8 @@ describe("scalar store", () => {
       `${API_BASE}/accounts/ada/projects/demo/runs/run-2/scalars`,
       { credentials: "include" }
     );
-    expect(useScalarStore.getState().scalars[buildRunKey("ada", "demo", "run-1")]).toEqual([scalar]);
-    expect(useScalarStore.getState().scalars[buildRunKey("ada", "demo", "run-2")]?.[0]?.values["loss"]).toBe(0.4);
+    expect(useScalarStore.getState().scalars[buildRunKey("ada", "demo", "run-1")]).toEqual(series);
+    expect(useScalarStore.getState().scalars[buildRunKey("ada", "demo", "run-2")]?.series["loss"]?.values[0]).toBe(0.4);
     expect(Object.values(useScalarStore.getState().errors).filter(Boolean)).toHaveLength(0);
   });
 
@@ -85,14 +90,18 @@ describe("scalar store", () => {
   });
 
   it("replaces scalars and clears stale errors on success", async () => {
-    const existingScalar: Scalar = { ...scalar, step: 0 };
+    const existing: ScalarSeries = {
+      resolution: 1,
+      axes: [{ steps: [0], timestamps: ["2025-01-01T00:00:00.000Z"] }],
+      series: { loss: { axis: 0, values: [0.9] } }
+    };
     const runKey = buildRunKey("ada", "demo", "run-1");
-    useScalarStore.setState({ scalars: { [runKey]: [existingScalar] }, isLoading: { [runKey]: false }, errors: { [runKey]: "stale error" } });
-    fetchMock.mockResolvedValueOnce(createResponse([scalar]));
+    useScalarStore.setState({ scalars: { [runKey]: existing }, isLoading: { [runKey]: false }, errors: { [runKey]: "stale error" } });
+    fetchMock.mockResolvedValueOnce(createResponse(series));
 
     await fetchScalars("ada", "demo", "run-1");
 
-    expect(useScalarStore.getState().scalars[runKey]).toEqual([scalar]);
+    expect(useScalarStore.getState().scalars[runKey]).toEqual(series);
     expect(useScalarStore.getState().errors[runKey]).toBeNull();
   });
 });
