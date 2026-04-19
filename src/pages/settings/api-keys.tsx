@@ -1,12 +1,19 @@
+import { faCheck, faClipboard, faKey } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
 
 import TextInputField from "components/fields/TextInputField";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE } from "helpers";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { dangerButtonClass } from "pages/settings/styles";
 import { createApiKey, deleteApiKey, loadApiKeys, useAuthStore } from "stores/auth";
 import type { ApiKey } from "types";
+
+const API_KEY_TOKEN_LENGTH = 44;
+const API_KEY_CARD_ROW_SPAN = 3.5;
+const API_KEY_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.5;
+const API_KEY_CARD_HEIGHT_REM = API_KEY_CARD_ROW_SPAN * RULED_LINE_HEIGHT - API_KEY_CARD_GRID_GAP_REM;
 
 export default function SettingsKeysContent(): ReactElement {
   const status = useAuthStore((state) => state.status);
@@ -16,6 +23,7 @@ export default function SettingsKeysContent(): ReactElement {
   const [isApiKeysLoading, setIsApiKeysLoading] = useState(false);
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [createdKeyToken, setCreatedKeyToken] = useState<string | null>(null);
+  const [createdKeyCopied, setCreatedKeyCopied] = useState(false);
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [isDeletingKey, setIsDeletingKey] = useState<string | null>(null);
 
@@ -47,9 +55,16 @@ export default function SettingsKeysContent(): ReactElement {
     setIsCreatingKey(true);
     setApiKeysError(null);
     setCreatedKeyToken(null);
+    setCreatedKeyCopied(false);
     const result = await createApiKey(newKeyLabel);
     if (result.ok) {
-      setApiKeys((current) => [{ id: result.body.id, userId: result.body.userId, label: result.body.label, createdAt: result.body.createdAt }, ...current]);
+      setApiKeys((current) => [{
+        id: result.body.id,
+        userId: result.body.userId,
+        label: result.body.label,
+        tokenPrefix: result.body.tokenPrefix,
+        createdAt: result.body.createdAt
+      }, ...current]);
       setCreatedKeyToken(result.body.token);
       setNewKeyLabel("");
       setIsCreatingKey(false);
@@ -58,6 +73,22 @@ export default function SettingsKeysContent(): ReactElement {
       setIsCreatingKey(false);
     }
   };
+
+  const handleCopyCreatedKey = async () => {
+    if (!createdKeyToken) { return; }
+    try {
+      await navigator.clipboard.writeText(createdKeyToken);
+      setCreatedKeyCopied(true);
+    } catch {
+      setApiKeysError("Could not copy API key.");
+    }
+  };
+
+  useEffect(() => {
+    if (!createdKeyCopied) { return; }
+    const timeoutId = window.setTimeout(() => { setCreatedKeyCopied(false); }, 2000);
+    return () => { window.clearTimeout(timeoutId); };
+  }, [createdKeyCopied]);
 
   const handleDeleteKey = async (id: string) => {
     if (status !== "authenticated") { return; }
@@ -73,6 +104,10 @@ export default function SettingsKeysContent(): ReactElement {
     }
   };
 
+  const formatCreatedAt = (createdAt: string) => new Date(createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const maskApiKey = (tokenPrefix: string) => tokenPrefix + "*".repeat(Math.max(0, API_KEY_TOKEN_LENGTH - tokenPrefix.length));
+  const sortedApiKeys = [...apiKeys].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
   return (
     <main className="relative pb-[1.5rem] px-4 lg:px-[1.5rem]">
       <SectionHeader title="API Keys" subtitle={`${String(apiKeys.length)} active`} sectionLabel="Section C" />
@@ -83,7 +118,7 @@ export default function SettingsKeysContent(): ReactElement {
         </div>
       ) : null}
 
-      <div className="grid gap-4" style={{ marginTop: RULED_LINE }}>
+      <div style={{ marginTop: RULED_LINE }}>
         <TextInputField
           label="New key"
           type="text"
@@ -99,54 +134,81 @@ export default function SettingsKeysContent(): ReactElement {
         />
 
         {createdKeyToken ? (
-          <div className="rounded-xl border border-success-border bg-white p-4">
+          <div
+            className="grid content-center rounded-xl border border-success-border bg-white p-4"
+            style={{
+              marginTop: `${String(RULED_LINE_HEIGHT * 0.5)}rem`,
+              marginBottom: `${String(RULED_LINE_HEIGHT * 0.5)}rem`,
+              height: `${String(RULED_LINE_HEIGHT * 4.0)}rem`
+            }}
+          >
             <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-success-text">New secret</p>
             <p className="mt-1 text-sm font-semibold text-brand-text">Copy this key now. It won&apos;t be shown again.</p>
-            <div className="mt-3 overflow-x-auto rounded-[0.625rem] bg-brand-bg px-3 py-2">
-              <code className="font-mono text-xs text-brand-text">{createdKeyToken}</code>
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[0.625rem] bg-brand-bg px-3 py-2">
+              <div className="overflow-x-auto">
+                <code className="font-mono text-xs text-brand-text">{createdKeyToken}</code>
+              </div>
+              <button
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-[0.5rem] text-brand-textMuted transition hover:text-brand-text`
+                  + ` ${createdKeyCopied ? "text-success-text" : ""}`}
+                type="button"
+                aria-label={createdKeyCopied ? "API key copied" : "Copy API key"}
+                title={createdKeyCopied ? "Copied" : "Copy API key"}
+                onClick={() => { void handleCopyCreatedKey(); }}
+              >
+                <FontAwesomeIcon icon={createdKeyCopied ? faCheck : faClipboard} />
+              </button>
             </div>
           </div>
         ) : null}
 
-        <section className="rounded-xl border border-brand-borderMuted bg-white">
-          <div className="flex items-center justify-between gap-3 border-b border-brand-borderMuted px-4 py-3">
-            <div>
-              <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Active keys</p>
-              <p className="text-xs text-brand-textMuted">Manage tokens used by your local tools and services.</p>
-            </div>
-            <p className="rounded-full border border-brand-borderMuted bg-brand-bg px-2.5 py-1 text-[0.6875rem] text-brand-textMuted">
-              {apiKeys.length} total
-            </p>
-          </div>
+        <p
+          className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted"
+          style={{ paddingTop: RULED_LINE, lineHeight: RULED_LINE }}
+        >
+          Active keys
+        </p>
 
-          {isApiKeysLoading ? <div className="px-4 py-4 text-xs text-brand-textMuted">Loading API keys...</div> : null}
-          {!isApiKeysLoading && apiKeys.length === 0 ? <div className="px-4 py-4 text-xs text-brand-textMuted">No API keys yet.</div> : null}
+        {isApiKeysLoading ? <div className="text-xs text-brand-textMuted">Loading API keys...</div> : null}
+        {!isApiKeysLoading && apiKeys.length === 0 ? <div className="text-xs text-brand-textMuted">No API keys yet.</div> : null}
 
-          {apiKeys.length > 0 ? (
-            <div className="grid gap-3 p-3">
-              {apiKeys.map((key) => (
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-[0.875rem] bg-brand-bg px-4 py-3" key={key.id}>
-                  <div className="grid gap-1">
-                    <p className="text-sm font-semibold text-brand-text">{key.label ?? "Untitled key"}</p>
-                    <p className="text-[0.6875rem] text-brand-textMuted">
-                      Created {new Date(key.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </p>
-                  </div>
-                  <button
-                    className={dangerButtonClass}
-                    type="button"
-                    onClick={() => {
-                      void handleDeleteKey(key.id);
-                    }}
-                    disabled={isDeletingKey === key.id}
+        {apiKeys.length > 0 ? (
+          <div className="grid" style={{ gap: `${String(API_KEY_CARD_GRID_GAP_REM)}rem`, marginTop: `${String(RULED_LINE_HEIGHT * 0.25)}rem` }}>
+            {sortedApiKeys.map((key) => (
+              <section
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-brand-borderMuted bg-white px-4"
+                key={key.id}
+                style={{ height: `${String(API_KEY_CARD_HEIGHT_REM)}rem` }}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className={"grid h-10 w-10 shrink-0 place-items-center rounded-[0.875rem] border border-brand-borderMuted"
+                      + " bg-brand-bg text-[0.875rem] text-brand-textMuted"}
                   >
-                    {isDeletingKey === key.id ? "Deleting..." : "Delete"}
-                  </button>
+                    <FontAwesomeIcon icon={faKey} />
+                  </div>
+                  <div className="grid min-w-0 gap-1">
+                    <p className="truncate text-sm font-semibold text-brand-text">{key.label ?? "Untitled key"}</p>
+                    <div className="max-w-full overflow-x-auto">
+                      <p className="whitespace-nowrap font-mono text-[0.6875rem] text-brand-textMuted">{maskApiKey(key.tokenPrefix)}</p>
+                    </div>
+                    <p className="text-[0.6875rem] text-brand-textMuted">Created on {formatCreatedAt(key.createdAt)}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : null}
-        </section>
+                <button
+                  className={dangerButtonClass}
+                  type="button"
+                  onClick={() => {
+                    void handleDeleteKey(key.id);
+                  }}
+                  disabled={isDeletingKey === key.id}
+                >
+                  {isDeletingKey === key.id ? "Deleting..." : "Delete"}
+                </button>
+              </section>
+            ))}
+          </div>
+        ) : null}
       </div>
     </main>
   );
