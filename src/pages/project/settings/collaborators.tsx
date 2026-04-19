@@ -48,20 +48,22 @@ export default function CollaboratorsSettings({ project }: CollaboratorsSettings
     if (!showAdd || !searchQuery.trim()) { return; }
     const query = searchQuery.trim();
     let active = true;
-    const timeoutId = window.setTimeout(async () => {
-      const result = await searchUsers(query);
-      if (!active) { return; }
-      if (!result.ok) {
-        setSearchResults([]);
-        setSearchError(result.error);
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        const result = await searchUsers(query);
+        if (!active) { return; }
+        if (!result.ok) {
+          setSearchResults([]);
+          setSearchError(result.error);
+          setIsSearching(false);
+          return;
+        }
+        const hiddenHandles = new Set(collaborators.map((user) => user.handle));
+        hiddenHandles.add(project.owner);
+        const filteredResults = result.body.filter((user) => !hiddenHandles.has(user.handle));
+        setSearchResults(filteredResults);
         setIsSearching(false);
-        return;
-      }
-      const hiddenHandles = new Set(collaborators.map((user) => user.handle));
-      hiddenHandles.add(project.owner);
-      const filteredResults = result.body.filter((user) => !hiddenHandles.has(user.handle));
-      setSearchResults(filteredResults);
-      setIsSearching(false);
+      })();
     }, 200);
     return () => { active = false; window.clearTimeout(timeoutId); };
   }, [collaborators, project.owner, searchQuery, showAdd]);

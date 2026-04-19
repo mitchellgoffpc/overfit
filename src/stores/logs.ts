@@ -40,8 +40,8 @@ export const fetchLogs = async (handle: string, projectName: string, runName: st
   const scopeKey = `${handle}/${projectName}/${runName}/${workerLabel}`;
   const requestedCursor = useLogStore.getState().logs[scopeKey]?.cursor ?? 0;
 
-  const query = new URLSearchParams({ workerLabel, cursor: String(requestedCursor) });
-  const { ok, body, error } = await request<LogPage>(`accounts/${handle}/projects/${projectName}/runs/${runName}/logs?${query.toString()}`);
+  const query = new URLSearchParams({ cursor: String(requestedCursor) });
+  const { ok, body, error } = await request<LogPage>(`accounts/${handle}/projects/${projectName}/runs/${runName}/logs/${workerLabel}?${query.toString()}`);
   const scope = useLogStore.getState().logs[scopeKey] ?? { lines: [], cursor: 0, error: null };
   if (ok) {
     if (scope.cursor === requestedCursor) {

@@ -4,10 +4,11 @@ import { useParams } from "wouter";
 
 import SectionHeader from "components/SectionHeader";
 import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
-import type { ParsedLogLine, Worker } from "stores/logs";
+import type { ParsedLogLine } from "stores/logs";
 import { fetchLogs, useLogStore } from "stores/logs";
 import { buildRunKey, useRunStore } from "stores/runs";
 import { fetchWorkers, useWorkerStore } from "stores/workers";
+import type { Worker } from "types";
 
 type LogLine = ParsedLogLine & { lineNumber: number };
 
