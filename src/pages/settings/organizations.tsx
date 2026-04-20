@@ -1,14 +1,20 @@
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
+import Avatar from "components/Avatar";
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE } from "helpers";
-import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { accentButtonClass, dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import type { OrganizationMembership } from "stores/accounts";
 import { createOrganization, fetchUserMemberships, getUserMemberships, leaveOrganization, useAccountsStore } from "stores/accounts";
 import { useAuthStore } from "stores/auth";
+
+const ORGANIZATION_CARD_ROW_SPAN = 3;
+const ORGANIZATION_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.5;
+const ORGANIZATION_CARD_HEIGHT_REM = ORGANIZATION_CARD_ROW_SPAN * RULED_LINE_HEIGHT - ORGANIZATION_CARD_GRID_GAP_REM;
 
 export default function SettingsOrganizationsContent(): ReactElement {
   const status = useAuthStore((state) => state.status);
@@ -79,26 +85,58 @@ export default function SettingsOrganizationsContent(): ReactElement {
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between" style={{ marginTop: RULED_LINE }}>
-        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Your organizations</p>
-        <button className={inkButtonClass} type="button" onClick={openCreateModal}>New organization</button>
+      <div className="flex items-center justify-between gap-3" style={{ marginTop: RULED_LINE, minHeight: RULED_LINE }}>
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>
+          Your organizations
+        </p>
+        <button
+          className={`${accentButtonClass} inline-flex items-center px-3 text-xs`}
+          type="button"
+          onClick={openCreateModal}
+          style={{
+            height: `${String(RULED_LINE_HEIGHT * 1.125)}rem`,
+            marginTop: `${String(-RULED_LINE_HEIGHT * 0.0625)}rem`,
+            marginBottom: `${String(-RULED_LINE_HEIGHT * 0.0625)}rem`
+          }}
+        >
+          <span>Create organization</span>
+        </button>
       </div>
 
-      {isLoading ? <div className="mt-3 text-xs text-brand-textMuted">Loading organizations...</div> : null}
-      {!isLoading && membershipList.length === 0 ? <div className="mt-3 text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
+      {isLoading ? <div className="text-xs text-brand-textMuted">Loading organizations...</div> : null}
+      {!isLoading && membershipList.length === 0 ? <div className="text-xs text-brand-textMuted">You are not a member of any organizations.</div> : null}
 
-      <div className={membershipList.length > 0 ? "mt-3 border-t border-brand-borderMuted" : ""}>
+      <div
+        className="grid"
+        style={membershipList.length > 0
+          ? { gap: `${String(ORGANIZATION_CARD_GRID_GAP_REM)}rem`, marginTop: `${String(RULED_LINE_HEIGHT * 0.25)}rem` }
+          : undefined}
+      >
         {membershipList.map((membership) => (
-          <div
-            className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0"
+          <section
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-brand-borderMuted bg-white px-4"
             key={membership.handle}
+            style={{ height: `${String(ORGANIZATION_CARD_HEIGHT_REM)}rem` }}
           >
-            <div className="grid gap-1">
-              <p className="text-sm font-semibold">{membership.name}</p>
-              <p className="text-[0.6875rem] text-brand-textMuted">
-                @{membership.handle}
-                <span className="ml-2 rounded-full border border-brand-borderMuted px-2 py-0.5 text-[0.625rem] font-medium">{membership.role}</span>
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar handle={membership.handle} name={membership.name} className="h-8 w-8 shrink-0 border border-brand-borderStrong text-[0.625rem]" />
+              <div className="grid min-w-0 gap-[0.125rem]">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Link
+                    className={"inline-flex max-w-full min-w-0 self-start text-sm font-semibold text-brand-accentStrong"
+                      + " underline-offset-2 transition hover:underline"}
+                    href={`/${membership.handle}`}
+                  >
+                    <span className="block truncate">{membership.name}</span>
+                  </Link>
+                  <span className="rounded-full border border-brand-borderMuted px-2 py-0.5 text-[0.625rem] font-medium text-brand-textMuted">
+                    {membership.role}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-brand-textMuted">
+                  <span>@{membership.handle}</span>
+                </div>
+              </div>
             </div>
             <button
               className={dangerButtonClass}
@@ -108,7 +146,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
             >
               {isLeaving === membership.handle ? "Leaving..." : "Leave"}
             </button>
-          </div>
+          </section>
         ))}
       </div>
 
@@ -119,7 +157,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
               <span className="font-display">U</span>
             </div>
             <div>
-              <p className="text-xl font-semibold">New organization</p>
+              <p className="text-xl font-semibold">Create organization</p>
               <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Create a shared workspace for your team.</p>
             </div>
           </div>

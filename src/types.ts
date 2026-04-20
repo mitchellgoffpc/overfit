@@ -126,6 +126,7 @@ export interface ApiKey {
   id: ID;
   userId: ID;
   label: string | null;
+  tokenPrefix: string;
   createdAt: Timestamp;
 }
 
