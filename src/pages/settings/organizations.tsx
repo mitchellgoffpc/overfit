@@ -1,22 +1,23 @@
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import Avatar from "components/Avatar";
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { RULED_LINE, RULED_LINE_HEIGHT, USERNAME_HINT } from "helpers";
 import { accentButtonClass, dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import type { OrganizationMembership } from "stores/accounts";
 import { createOrganization, fetchUserMemberships, getUserMemberships, leaveOrganization, useAccountsStore } from "stores/accounts";
-import { useAuthStore } from "stores/auth";
+import { checkHandleValid, useAuthStore } from "stores/auth";
 
 const ORGANIZATION_CARD_ROW_SPAN = 3;
-const ORGANIZATION_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.5;
+const ORGANIZATION_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.35;
 const ORGANIZATION_CARD_HEIGHT_REM = ORGANIZATION_CARD_ROW_SPAN * RULED_LINE_HEIGHT - ORGANIZATION_CARD_GRID_GAP_REM;
 
 export default function SettingsOrganizationsContent(): ReactElement {
+  const [, navigate] = useLocation();
   const status = useAuthStore((state) => state.status);
   const currentHandle = useAuthStore((state) => state.currentHandle);
   const memberships = useAccountsStore((state) => currentHandle ? state.membershipsByUser[currentHandle] : undefined);
@@ -26,6 +27,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const [showCreate, setShowCreate] = useState(false);
   const [newHandle, setNewHandle] = useState("");
   const [newName, setNewName] = useState("");
+  const [newHandleHintError, setNewHandleHintError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isLeaving, setIsLeaving] = useState<string | null>(null);
@@ -47,13 +49,14 @@ export default function SettingsOrganizationsContent(): ReactElement {
       setCreateError("Handle and name are required.");
       return;
     }
+    const nextHandleError = await checkHandleValid(newHandle);
+    setNewHandleHintError(nextHandleError);
+    if (nextHandleError) { return; }
     setIsCreating(true);
     setCreateError(null);
     const result = await createOrganization(newHandle, newName);
     if (result.ok) {
-      setNewHandle("");
-      setNewName("");
-      setShowCreate(false);
+      navigate(`/${result.body.handle}`);
     } else {
       setCreateError(result.error);
     }
@@ -63,8 +66,13 @@ export default function SettingsOrganizationsContent(): ReactElement {
   const openCreateModal = () => {
     setNewHandle("");
     setNewName("");
+    setNewHandleHintError(null);
     setCreateError(null);
     setShowCreate(true);
+  };
+
+  const handleNewHandleBlur = async () => {
+    setNewHandleHintError(await checkHandleValid(newHandle));
   };
 
   const handleLeave = async (orgHandle: string) => {
@@ -94,9 +102,9 @@ export default function SettingsOrganizationsContent(): ReactElement {
           type="button"
           onClick={openCreateModal}
           style={{
-            height: `${String(RULED_LINE_HEIGHT * 1.125)}rem`,
-            marginTop: `${String(-RULED_LINE_HEIGHT * 0.0625)}rem`,
-            marginBottom: `${String(-RULED_LINE_HEIGHT * 0.0625)}rem`
+            height: `${String(RULED_LINE_HEIGHT * 1.25)}rem`,
+            marginTop: `${String(-RULED_LINE_HEIGHT * 0.125)}rem`,
+            marginBottom: `${String(-RULED_LINE_HEIGHT * 0.125)}rem`
           }}
         >
           <span>Create organization</span>
@@ -109,7 +117,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
       <div
         className="grid"
         style={membershipList.length > 0
-          ? { gap: `${String(ORGANIZATION_CARD_GRID_GAP_REM)}rem`, marginTop: `${String(RULED_LINE_HEIGHT * 0.25)}rem` }
+          ? { gap: `${String(ORGANIZATION_CARD_GRID_GAP_REM)}rem`, marginTop: `${String(RULED_LINE_HEIGHT * 0.65)}rem` }
           : undefined}
       >
         {membershipList.map((membership) => (
@@ -119,7 +127,7 @@ export default function SettingsOrganizationsContent(): ReactElement {
             style={{ height: `${String(ORGANIZATION_CARD_HEIGHT_REM)}rem` }}
           >
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar handle={membership.handle} name={membership.name} className="h-8 w-8 shrink-0 border border-brand-borderStrong text-[0.625rem]" />
+              <Avatar handle={membership.handle} name={membership.name} className="h-8 w-8 shrink-0 text-[0.625rem]" />
               <div className="grid min-w-0 gap-[0.125rem]">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <Link
@@ -166,7 +174,22 @@ export default function SettingsOrganizationsContent(): ReactElement {
           ) : null}
           <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Handle
-            <input className={lineInputClass} type="text" placeholder="acme" value={newHandle} onChange={(e) => { setNewHandle(e.target.value); }} />
+            <input
+              className={`${lineInputClass} ${newHandleHintError ? "border-danger-text focus:border-danger-text" : ""}`.trim()}
+              type="text"
+              placeholder="acme"
+              value={newHandle}
+              onChange={(e) => {
+                setNewHandle(e.target.value);
+                setNewHandleHintError(null);
+              }}
+              onBlur={() => {
+                void handleNewHandleBlur();
+              }}
+            />
+            <span className={newHandleHintError ? "text-xs font-medium text-danger-text" : "text-xs font-normal text-brand-textMuted"}>
+              {newHandleHintError ?? USERNAME_HINT}
+            </span>
           </label>
           <label className="grid gap-1.5 text-[0.8125rem] font-medium text-brand-text">
             Display name
