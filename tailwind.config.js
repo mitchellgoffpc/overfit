@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        xs: "30rem",
+        xs: "480px",
       },
       colors: {
         brand: colors.brand,

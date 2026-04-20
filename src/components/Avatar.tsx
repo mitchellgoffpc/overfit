@@ -10,9 +10,10 @@ interface AvatarProps {
   readonly name: string;
   readonly className?: string;
   readonly style?: CSSProperties;
+  readonly onHasImageChange?: (hasImage: boolean) => void;
 }
 
-export default function Avatar({ handle, name, className = "", style }: AvatarProps): ReactElement {
+export default function Avatar({ handle, name, className = "", style, onHasImageChange }: AvatarProps): ReactElement {
   const initials = getInitials(name);
   const avatarVersion = useAccountsStore((state) => state.avatarVersion);
   const src = `${API_BASE}/accounts/${encodeURIComponent(handle)}/avatar?v=${avatarVersion.toString()}`;
@@ -23,17 +24,23 @@ export default function Avatar({ handle, name, className = "", style }: AvatarPr
     const image = new Image();
     image.src = src;
     image.onload = () => {
-      if (!cancelled) { setLoadedSrc(src); }
+      if (!cancelled) {
+        setLoadedSrc(src);
+        onHasImageChange?.(true);
+      }
     };
     image.onerror = () => {
-      if (!cancelled) { setLoadedSrc(null); }
+      if (!cancelled) {
+        setLoadedSrc(null);
+        onHasImageChange?.(false);
+      }
     };
     return () => {
       cancelled = true;
       image.onload = null;
       image.onerror = null;
     };
-  }, [src]);
+  }, [onHasImageChange, src]);
 
   return (
     <div
