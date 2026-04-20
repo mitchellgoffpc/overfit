@@ -83,7 +83,7 @@ export default function SettingsProfileContent(): ReactElement {
         </div>
       ) : null}
 
-      <div className="grid sm:grid-cols-[1fr_15rem] xs:grid-cols-[1fr_10rem] gap-3" style={{ marginTop: RULED_LINE }}>
+      <div className="grid sm:grid-cols-[1fr_15rem] xs:grid-cols-[1fr_10rem] xs:gap-3" style={{ marginTop: RULED_LINE }}>
         <div>
           <TextInputField
             label="Name"
