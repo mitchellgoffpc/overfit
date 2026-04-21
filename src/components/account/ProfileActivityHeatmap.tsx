@@ -55,6 +55,7 @@ export default function ProfileActivityHeatmap({ runs }: ProfileActivityHeatmapP
     const monthLabels = weekMatrix.map((week, index) => {
       const weekStart = week[0];
       if (!weekStart) { return ""; }
+      if (weekStart.date.getDate() > 7) { return ""; }
       const month = weekStart.date.toLocaleDateString("en-US", { month: "short" });
       if (index === 0) { return month; }
       const previousWeekStart = weekMatrix[index - 1]?.[0];

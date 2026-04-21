@@ -46,8 +46,11 @@ export default function ProfileProjectsPanel({ projects, runs, userHandle, isLoa
 
       {!error && !isLoading ? (
         projects.length === 0 ? (
-          <div className="bg-white/20 px-4 py-8 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>
-            No projects yet. Start your first run to create a project.
+          <div
+            className="truncate whitespace-nowrap px-4 text-[0.8125rem] text-brand-textMuted"
+            style={{ marginTop: RULED_LINE, marginBottom: RULED_LINE, lineHeight: RULED_LINE }}
+          >
+            No projects to show.
           </div>
         ) : (
           <div

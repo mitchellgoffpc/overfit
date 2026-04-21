@@ -15,7 +15,7 @@ interface ProfileSidebarProps {
 export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: ProfileSidebarProps): ReactElement {
   const editProfileClass = "rounded-xl border border-ink bg-ink px-4 py-2 text-center text-sm font-semibold"
     + " text-white no-underline transition hover:bg-ink-hover";
-  const asideClass = "relative flex h-full flex-col gap-4 border-b border-brand-borderMuted px-4 pb-5 lg:border-b-0 lg:border-r lg:pb-6 lg:pr-5";
+  const asideClass = "relative flex h-full flex-col px-4 lg:border-r lg:pr-5";
   const asideStyle = { paddingTop: `${String(RULED_LINE_HEIGHT)}rem` };
 
   if (!user) {
@@ -26,7 +26,7 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
           aria-hidden
         />
         <div>
-          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Profile Ledger</p>
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>User Data</p>
           <h2 className="font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>Profile</h2>
         </div>
         <div className="relative px-1 py-1.5 text-xs text-brand-textMuted">Log in to view profile.</div>
@@ -36,6 +36,21 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
 
   const name = user.name;
   const bio = user.bio || "Building transparent model reporting with Underfit.";
+  const avatarSize = `calc(${RULED_LINE} * 2.75)`;
+  const identityBlockStyle = {
+    columnGap: `calc(${RULED_LINE} * 0.5)`,
+    height: `calc(${RULED_LINE} * 4)`,
+    alignContent: "center" as const,
+  };
+  const bioClampStyle = {
+    WebkitBoxOrient: "vertical" as const,
+    WebkitLineClamp: 3,
+    display: "-webkit-box",
+    lineHeight: RULED_LINE,
+  };
+  const statsSectionStyle = { height: `calc(${RULED_LINE} * 5)` };
+  const statsCardStyle = { height: `calc(${RULED_LINE} * 4.25)` };
+  const statsRowStyle = { minHeight: RULED_LINE, lineHeight: RULED_LINE };
 
   return (
     <aside className={asideClass} style={asideStyle}>
@@ -45,57 +60,54 @@ export default function ProfileSidebar({ user, projects, runs, isOwnProfile }: P
       />
 
       <div>
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Profile Ledger</p>
+        <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>User Data</p>
         <h2 className="font-display text-brand-text" style={{ fontSize: RULED_LINE, lineHeight: RULED_LINE }}>Profile</h2>
       </div>
 
-      <div className="relative grid gap-4">
-        <div className="rounded-[0.875rem] border border-brand-borderMuted bg-white/85 p-3">
-          <div className="grid place-items-center">
-            <Avatar handle={user.handle} name={name} className="h-24 w-24 border border-brand-borderStrong text-2xl" />
-          </div>
-          <div className="mt-3 grid gap-2 text-center">
-            <div>
-              <p className="text-lg font-semibold">{name}</p>
-              <p className="text-xs text-brand-textMuted">@{user.handle}</p>
-            </div>
-            <p className="text-[0.8125rem] text-brand-textMuted">{bio}</p>
+      <div className="relative">
+        <div className="grid grid-cols-[auto_1fr] items-center" style={identityBlockStyle}>
+          <Avatar
+            handle={user.handle}
+            name={name}
+            className="shrink-0 text-xl"
+            style={{ width: avatarSize, height: avatarSize }}
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-brand-text" style={{ lineHeight: RULED_LINE }}>{name}</p>
+            <p className="truncate text-[0.6875rem] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>@{user.handle}</p>
           </div>
         </div>
-        {isOwnProfile ? (
+        <p className="overflow-hidden text-[0.8125rem] text-brand-textMuted" style={bioClampStyle}>{bio}</p>
+      </div>
+
+      <div className="relative flex items-center" style={statsSectionStyle}>
+        <div className="flex w-full flex-col justify-center rounded-2xl border border-brand-borderMuted bg-white/85 px-4 text-sm" style={statsCardStyle}>
+          <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>Stats</p>
+          <div className="flex min-w-0 items-center justify-between gap-3" style={statsRowStyle}>
+            <span className="truncate whitespace-nowrap text-brand-textMuted">Projects</span>
+            <span className="shrink-0 whitespace-nowrap font-semibold">{projects.length}</span>
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-3" style={statsRowStyle}>
+            <span className="truncate whitespace-nowrap text-brand-textMuted">Runs</span>
+            <span className="shrink-0 whitespace-nowrap font-semibold">{runs.length}</span>
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-3" style={statsRowStyle}>
+            <span className="truncate whitespace-nowrap text-brand-textMuted">Member since</span>
+            <span className="shrink-0 whitespace-nowrap font-semibold">{formatDate(user.createdAt, { month: "short", year: "numeric" })}</span>
+          </div>
+        </div>
+      </div>
+
+      {isOwnProfile ? (
+        <div className="flex items-center" style={{ height: `calc(${RULED_LINE} * 2)` }}>
           <Link
-            className={editProfileClass}
+            className={`${editProfileClass} w-full`}
             href="/settings/profile"
           >
             Edit profile
           </Link>
-        ) : null}
-      </div>
-
-      <div className="relative grid gap-3 rounded-2xl border border-brand-borderMuted bg-white/85 px-4 py-4 text-sm">
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Stats</p>
-        <div className="flex items-center justify-between">
-          <span className="text-brand-textMuted">Projects</span>
-          <span className="font-semibold">{projects.length}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-brand-textMuted">Runs</span>
-          <span className="font-semibold">{runs.length}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-brand-textMuted">Member since</span>
-          <span className="font-semibold">{formatDate(user.createdAt, { month: "short", year: "numeric" })}</span>
-        </div>
-      </div>
-
-      <div className="relative grid gap-2 rounded-2xl border border-brand-borderMuted bg-white/85 px-4 py-4 text-sm">
-        <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-brand-textMuted">Links</p>
-        <div className="grid gap-1.5 text-[0.8125rem]">
-          <span className="text-brand-text">{user.email}</span>
-          <span className="text-brand-textMuted">underfit.dev/{user.handle}</span>
-          <span className="text-brand-textMuted">San Diego, CA</span>
-        </div>
-      </div>
+      ) : null}
     </aside>
   );
 }

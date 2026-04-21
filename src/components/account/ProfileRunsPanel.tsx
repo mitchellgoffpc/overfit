@@ -5,7 +5,7 @@ import { Link } from "wouter";
 import { getRunColor } from "colors";
 import RunStatusBadge from "components/RunStatusBadge";
 import SectionHeader from "components/SectionHeader";
-import { formatDuration, formatRunTime, getRunStatus, RULED_LINE, RULED_LINE_HEIGHT, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
+import { formatDuration, formatRunTime, getRunStatus, RULED_LINE, TABLE_BODY_CELL_CLASS, TABLE_HEADER_CELL_CLASS } from "helpers";
 import type { Project, Run } from "types";
 
 const tableGridTemplateColumns = "3.5rem 14rem 7.5rem 8.5rem 9.25rem 5.625rem";
@@ -22,11 +22,9 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
   const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
   const projectNames = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
   const colorByRunId = useMemo(() => new Map(runs.map((run, index) => [run.id, getRunColor(index)])), [runs]);
-  const tableHeight = (runs.length + 1) * RULED_LINE_HEIGHT;
-  const sectionHeight = Math.max(15, 6.875 + tableHeight);
 
   return (
-    <section className="min-w-0" style={{ minHeight: `${sectionHeight.toString()}rem` }}>
+    <section className="min-w-0">
       <SectionHeader title="Runs" subtitle={`${String(runs.length)} total`} sectionLabel="Section B" />
 
       {error ? <div className="py-2 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>{error}</div> : null}
@@ -34,8 +32,11 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
 
       {!error && !isLoading ? (
         runs.length === 0 ? (
-          <div className="bg-white/20 px-4 py-8 text-[0.8125rem] text-brand-textMuted" style={{ marginTop: RULED_LINE }}>
-            No runs yet. Launch a run to populate your profile activity.
+          <div
+            className="truncate whitespace-nowrap px-4 text-[0.8125rem] text-brand-textMuted"
+            style={{ marginTop: RULED_LINE, marginBottom: RULED_LINE, lineHeight: RULED_LINE }}
+          >
+            No runs to show.
           </div>
         ) : (
           <div className="-mx-4 min-w-0 overflow-x-auto overflow-y-hidden lg:-mx-5" style={{ marginTop: RULED_LINE }}>
