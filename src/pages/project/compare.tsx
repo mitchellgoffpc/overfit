@@ -1,3 +1,5 @@
+import { faBullseye, faEllipsisVertical, faPen, faThumbTack, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
@@ -7,14 +9,15 @@ import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
 import { colors, getRunColor } from "colors";
 import ChartSections from "components/charts/ChartSections";
 import MediaPreview from "components/MediaPreview";
+import Modal from "components/Modal";
 import NotebookShell from "components/NotebookShell";
 import ProjectHeader from "components/project/ProjectHeader";
 import SectionHeader from "components/SectionHeader";
 import Slider from "components/Slider";
-import { formatRunTime, getRunStatus, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { getRunStatus, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { buildRunKey, fetchRuns, getProjectRuns, useRunStore } from "stores/runs";
+import { buildRunKey, deleteRun, fetchRuns, getProjectRuns, pinRun, setBaselineRun, useRunStore } from "stores/runs";
 import { fetchScalars, useScalarStore } from "stores/scalars";
 import type { Run } from "types";
 
@@ -34,6 +37,10 @@ export default function ProjectCompareRoute(): ReactElement {
   const [hiddenRunNames, setHiddenRunNames] = useState<Record<string, boolean>>({});
   const [mediaSteps, setMediaSteps] = useState<Record<string, number>>({});
   const [mediaIndexes, setMediaIndexes] = useState<Record<string, number>>({});
+  const [openMenuRunId, setOpenMenuRunId] = useState<string | null>(null);
+  const [renameRun, setRenameRun] = useState<Run | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [runActionError, setRunActionError] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchRuns(handle, projectName);
@@ -98,6 +105,24 @@ export default function ProjectCompareRoute(): ReactElement {
 
   const hasPoints = useMemo(() => chartSeries.some((item) => item.series.some((s) => s.points.length > 0)), [chartSeries]);
 
+  const openRenameModal = (run: Run) => {
+    setOpenMenuRunId(null);
+    setRenameRun(run);
+    setRenameValue(run.name);
+  };
+
+  const closeRenameModal = () => {
+    setRenameRun(null);
+    setRenameValue("");
+  };
+
+  const runAction = async (action: () => Promise<{ ok: true } | { ok: false; error: string }>) => {
+    setOpenMenuRunId(null);
+    setRunActionError(null);
+    const result = await action();
+    if (!result.ok) { setRunActionError(result.error); }
+  };
+
   const renderMediaComparison = (key: string, steps: number[], maxCount: number) => {
     const selectedStep = mediaSteps[key] ?? steps[steps.length - 1] ?? 0;
     const selectedIndex = mediaIndexes[key] ?? 0;
@@ -154,25 +179,75 @@ export default function ProjectCompareRoute(): ReactElement {
     const color = getRunColor(index);
     const isActive = getRunStatus(run) === "running";
     return (
-      <button
+      <div
         className={[
           "relative flex w-full items-center justify-between text-left transition",
           isVisible ? "bg-transparent hover:bg-white/35" : "bg-transparent opacity-60"
         ].join(" ")}
         key={run.id}
-        onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
         style={{ height: RULED_LINE }}
-        type="button"
       >
-        <div className="flex min-w-0 items-center gap-2">
+        <button
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
+          type="button"
+        >
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+          {run.isPinned ? <FontAwesomeIcon icon={faThumbTack} className="text-[0.625rem] text-brand-textMuted" /> : null}
+          {run.isBaseline ? <FontAwesomeIcon icon={faBullseye} className="text-[0.625rem] text-brand-textMuted" /> : null}
           <span className="truncate text-[0.75rem] font-semibold leading-5">{run.name}</span>
-        </div>
-        <div className="ml-2 flex items-center gap-2 text-[0.625rem] text-brand-textMuted">
-          <span>{formatRunTime(run.createdAt)}</span>
+        </button>
+        <div className="ml-2 flex items-center gap-1.5 text-[0.625rem] text-brand-textMuted">
           <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-signal-running" : "bg-brand-border"}`} />
+          <button
+            aria-label={`Open actions for ${run.name}`}
+            className="flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-white hover:text-brand-text"
+            onClick={() => { setOpenMenuRunId((current) => current === run.id ? null : run.id); }}
+            type="button"
+          >
+            <FontAwesomeIcon icon={faEllipsisVertical} />
+          </button>
         </div>
-      </button>
+        {openMenuRunId === run.id ? (
+          <div
+            className={"absolute right-0 top-[1.625rem] z-20 w-40 overflow-hidden rounded-lg border border-brand-borderMuted bg-white py-1"
+              + " text-[0.75rem] shadow-[0_0.75rem_1.75rem_rgba(23,43,43,0.14)]"}
+          >
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
+              onClick={() => { void runAction(async () => await pinRun(handle, projectName, run.name, !run.isPinned)); }}
+              type="button"
+            >
+              <FontAwesomeIcon icon={faThumbTack} className="w-3 text-brand-textMuted" />
+              <span>{run.isPinned ? "Unpin run" : "Pin run"}</span>
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
+              onClick={() => { void runAction(async () => await setBaselineRun(handle, projectName, run.name)); }}
+              type="button"
+            >
+              <FontAwesomeIcon icon={faBullseye} className="w-3 text-brand-textMuted" />
+              <span>Set baseline</span>
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
+              onClick={() => { openRenameModal(run); }}
+              type="button"
+            >
+              <FontAwesomeIcon icon={faPen} className="w-3 text-brand-textMuted" />
+              <span>Rename run</span>
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-signal-failed transition hover:bg-red-50"
+              onClick={() => { void runAction(async () => await deleteRun(handle, projectName, run.name)); }}
+              type="button"
+            >
+              <FontAwesomeIcon icon={faTrash} className="w-3" />
+              <span>Delete run</span>
+            </button>
+          </div>
+        ) : null}
+      </div>
     );
   };
 
@@ -240,6 +315,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
           {showProjectNotFound ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{projectError ?? "Project not found."}</div> : null}
           {runError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{runError}</div> : null}
+          {runActionError ? <div className="mb-4 py-3 text-[0.8125rem] text-signal-failed">{runActionError}</div> : null}
           {scalarError ? <div className="mb-4 py-3 text-[0.8125rem] text-brand-textMuted">{scalarError}</div> : null}
           {!showProjectNotFound ? (
             <section style={{ marginTop: RULED_LINE }}>
@@ -259,7 +335,43 @@ export default function ProjectCompareRoute(): ReactElement {
               </div>
             </section>
           ) : null}
+          <Modal open={renameRun !== null} onClose={closeRenameModal}>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                closeRenameModal();
+              }}
+            >
+              <h2 className="text-base font-semibold text-brand-text">Rename run</h2>
+              <p className="mt-1 text-[0.8125rem] text-brand-textMuted">Run rename is not supported by the API yet. Saving will close this dialog.</p>
+              <label className="mt-4 block text-[0.75rem] font-semibold text-brand-text" htmlFor="rename-run-name">Run name</label>
+              <input
+                id="rename-run-name"
+                className={"mt-1 w-full rounded-lg border border-brand-border bg-white px-3 py-2 text-[0.8125rem] text-brand-text outline-none"
+                  + " transition focus:border-brand-borderStrong"}
+                onChange={(event) => { setRenameValue(event.target.value); }}
+                value={renameValue}
+              />
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  className={"rounded-lg border border-brand-borderMuted bg-white px-3 py-2 text-[0.75rem] font-semibold text-brand-text"
+                    + " transition hover:bg-brand-surface"}
+                  onClick={closeRenameModal}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className={"rounded-lg border border-brand-borderStrong bg-hover px-3 py-2 text-[0.75rem] font-semibold text-brand-text"
+                    + " transition hover:bg-white"}
+                  type="submit"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </Modal>
         </main>
-      </NotebookShell>
+    </NotebookShell>
   );
 }

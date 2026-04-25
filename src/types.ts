@@ -62,8 +62,13 @@ export interface Run {
   updatedAt: Timestamp;
   config: Record<string, unknown> | null;
   metadata: Record<string, unknown>;
+  uiState: Record<string, unknown>;
+  isPinned: boolean;
+  isBaseline: boolean;
   workerToken: string | null;
 }
+
+export type RunUIState = Partial<Pick<Run, "uiState" | "isPinned" | "isBaseline">>;
 
 export interface Artifact {
   id: ID;

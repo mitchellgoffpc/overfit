@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { buildRunKey, fetchRun, fetchRuns, useRunStore } from "stores/runs";
+import { buildRunKey, deleteRun, fetchRun, fetchRuns, pinRun, setBaselineRun, useRunStore } from "stores/runs";
 import { API_BASE } from "types";
 import type { Project, Run } from "types";
 
@@ -31,6 +31,9 @@ const run: Run = {
   updatedAt: "2025-01-03T00:00:00.000Z",
   config: null,
   metadata: {},
+  uiState: {},
+  isPinned: false,
+  isBaseline: false,
   workerToken: null
 };
 
@@ -138,5 +141,57 @@ describe("run store", () => {
       [buildRunKey("ada", "demo", "run-a")]: run
     });
     expect(useRunStore.getState().errors["ada"]).toBeNull();
+  });
+
+  it("pins a run through the run ui-state endpoint", async () => {
+    const pinnedRun = { ...run, isPinned: true };
+    fetchMock.mockResolvedValueOnce(createResponse(pinnedRun));
+
+    const result = await pinRun("ada", "demo", "run-a", true);
+
+    expect(result).toEqual({ ok: true, body: pinnedRun });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo/runs/run-a/ui-state`, {
+      credentials: "include",
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPinned: true })
+    });
+    expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "run-a")]).toEqual(pinnedRun);
+  });
+
+  it("sets one baseline run for a project", async () => {
+    const baseline = { ...run, id: "baseline", name: "baseline", isBaseline: true };
+    useRunStore.setState({
+      runs: {
+        [buildRunKey("ada", "demo", "baseline")]: baseline,
+        [buildRunKey("ada", "demo", "run-a")]: run
+      },
+      isLoading: {},
+      errors: {}
+    });
+    const updatedRun = { ...run, isBaseline: true };
+    fetchMock.mockResolvedValueOnce(createResponse(updatedRun));
+
+    await setBaselineRun("ada", "demo", "run-a");
+
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo/runs/run-a/ui-state`, {
+      credentials: "include",
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isBaseline: true })
+    });
+    expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "baseline")]?.isBaseline).toBe(false);
+    expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "run-a")]?.isBaseline).toBe(true);
+  });
+
+  it("deletes a run from the store when the delete request succeeds", async () => {
+    useRunStore.setState({ runs: { [buildRunKey("ada", "demo", "run-a")]: run }, isLoading: {}, errors: {} });
+    fetchMock.mockResolvedValueOnce(createResponse({ status: "ok" }));
+
+    const result = await deleteRun("ada", "demo", "run-a");
+
+    expect(result).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo/runs/run-a`, { credentials: "include", method: "DELETE" });
+    expect(useRunStore.getState().runs).toEqual({});
   });
 });

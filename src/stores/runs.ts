@@ -1,7 +1,8 @@
 import { create } from "zustand";
 
-import { request } from "helpers";
-import type { Run } from "types";
+import type { ActionResult } from "helpers";
+import { request, send } from "helpers";
+import type { Run, RunUIState } from "types";
 
 interface RunState {
   runs: Record<string, Run>;
@@ -54,4 +55,40 @@ export const fetchRun = async (handle: string, projectName: string, runName: str
     errors: { ...errors, [runKey]: ok ? null : error }
   }));
   return ok ? body : null;
+};
+
+export const updateRunUIState = async (handle: string, projectName: string, runName: string, data: RunUIState): Promise<ActionResult<Run>> => {
+  const result = await send<Run>(`accounts/${handle}/projects/${projectName}/runs/${runName}/ui-state`, "PUT", data);
+  if (result.ok) {
+    const updatedRun = result.body;
+    useRunStore.setState(({ runs }) => ({
+      runs: {
+        ...Object.fromEntries(Object.entries(runs).map(([key, existing]) => [
+          key,
+          updatedRun.isBaseline && existing.projectId === updatedRun.projectId ? { ...existing, isBaseline: false } : existing
+        ])),
+        ...indexByKey([updatedRun])
+      }
+    }));
+    return { ok: true, body: updatedRun };
+  }
+  return { ok: false, error: result.error };
+};
+
+export const pinRun = async (handle: string, projectName: string, runName: string, isPinned: boolean): Promise<ActionResult<Run>> =>
+  await updateRunUIState(handle, projectName, runName, { isPinned });
+
+export const setBaselineRun = async (handle: string, projectName: string, runName: string): Promise<ActionResult<Run>> =>
+  await updateRunUIState(handle, projectName, runName, { isBaseline: true });
+
+export const deleteRun = async (handle: string, projectName: string, runName: string): Promise<ActionResult> => {
+  const result = await request<{ status: "ok" }>(`accounts/${handle}/projects/${projectName}/runs/${runName}`, { method: "DELETE" });
+  if (result.ok) {
+    const key = buildRunKey(handle, projectName, runName);
+    useRunStore.setState(({ runs }) => ({
+      runs: Object.fromEntries(Object.entries(runs).filter(([runKey]) => runKey !== key))
+    }));
+    return { ok: true };
+  }
+  return { ok: false, error: result.error };
 };
