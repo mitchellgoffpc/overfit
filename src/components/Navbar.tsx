@@ -1,16 +1,16 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useState } from "react";
 import { Link, useLocation } from "wouter";
 
 import Avatar from "components/Avatar";
+import DropdownMenu from "components/DropdownMenu";
 import { getMe, useAccountsStore } from "stores/accounts";
 import { logout } from "stores/auth";
 
 const navButtonClass = "flex items-center gap-3 rounded-full px-2 py-1 ring-offset-2 transition"
   + " focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent";
-const menuItemClass = "block px-4 py-2 text-sm text-brand-text hover:bg-hover";
 
 export interface Breadcrumb {
   readonly label: string;
@@ -42,34 +42,8 @@ export default function Navbar({
   const profileHref = user ? `/${user.handle}` : "/";
   const name = user?.name ?? "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isMenuOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (menuRef.current && event.target instanceof Node && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isMenuOpen]);
 
   const handleLogout = async () => {
-    setIsMenuOpen(false);
     await logout();
     navigate("/login");
   };
@@ -150,50 +124,36 @@ export default function Navbar({
           ) : null}
 
           {user ? (
-            <div className="relative flex justify-end py-2.5" ref={menuRef} style={accountMinWidth}>
-              <button
-                type="button"
-                className={navButtonClass}
-                aria-haspopup="menu"
-                aria-expanded={isMenuOpen}
-                onClick={() => { setIsMenuOpen((prev) => !prev); }}
-              >
-                <div className="hidden text-right xl:block">
-                  <p className="text-[0.8125rem] font-semibold leading-tight">{name}</p>
-                  <p className="mt-1 text-[0.6875rem] leading-tight text-brand-textMuted">{user.email}</p>
-                </div>
-                <Avatar handle={user.handle} name={name} className="h-9 w-9 text-sm" />
-              </button>
-              {isMenuOpen ? (
-                <div
-                  className={"absolute right-0 top-full z-20 mt-2 w-48 rounded-xl border border-brand-border bg-white py-2"
-                    + " shadow-[0_1rem_2rem_rgba(15,23,42,0.14)]"}
-                  role="menu"
+            <DropdownMenu
+              open={isMenuOpen}
+              onOpenChange={setIsMenuOpen}
+              className="relative flex justify-end py-2.5"
+              style={accountMinWidth}
+              sections={[
+                { items: [
+                  { label: "Profile", href: profileHref },
+                  { label: "Projects", href: "/" },
+                  { label: "Runs", href: profileHref },
+                  { label: "Settings", href: "/settings/profile" }
+                ] },
+                { items: [{ label: "Sign Out", onSelect: handleLogout }] }
+              ]}
+              trigger={(
+                <button
+                  type="button"
+                  className={navButtonClass}
+                  aria-haspopup="menu"
+                  aria-expanded={isMenuOpen}
+                  onClick={() => { setIsMenuOpen((prev) => !prev); }}
                 >
-                  <Link className={menuItemClass} role="menuitem" href={profileHref}>
-                    Profile
-                  </Link>
-                  <Link className={menuItemClass} role="menuitem" href="/">
-                    Projects
-                  </Link>
-                  <Link className={menuItemClass} role="menuitem" href={profileHref}>
-                    Runs
-                  </Link>
-                  <Link className={menuItemClass} role="menuitem" href="/settings/profile">
-                    Settings
-                  </Link>
-                  <div className="my-2 border-t border-brand-border" />
-                  <button
-                    type="button"
-                    className={`w-full text-left ${menuItemClass}`}
-                    role="menuitem"
-                    onClick={() => { void handleLogout(); }}
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : null}
-            </div>
+                  <div className="hidden text-right xl:block">
+                    <p className="text-[0.8125rem] font-semibold leading-tight">{name}</p>
+                    <p className="mt-1 text-[0.6875rem] leading-tight text-brand-textMuted">{user.email}</p>
+                  </div>
+                  <Avatar handle={user.handle} name={name} className="h-9 w-9 text-sm" />
+                </button>
+              )}
+            />
           ) : null}
         </div>
       </div>

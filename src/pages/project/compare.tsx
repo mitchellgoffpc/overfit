@@ -1,4 +1,4 @@
-import { faBullseye, faEllipsisVertical, faPen, faThumbTack, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faBullseye, faEllipsisVertical, faEye, faPen, faThumbTack, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -8,6 +8,7 @@ import { useShallow } from "zustand/react/shallow";
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
 import { colors, getRunColor } from "colors";
 import ChartSections from "components/charts/ChartSections";
+import DropdownMenu from "components/DropdownMenu";
 import MediaPreview from "components/MediaPreview";
 import Modal from "components/Modal";
 import NotebookShell from "components/NotebookShell";
@@ -55,7 +56,9 @@ export default function ProjectCompareRoute(): ReactElement {
   }, [handle, projectName, projectRuns]);
 
   const colorByRunName = useMemo(
-    () => new Map(projectRuns.map((run, index) => [run.name, getRunColor(index)])),
+    () => new Map([...projectRuns]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.name.localeCompare(b.name))
+      .map((run, index) => [run.name, getRunColor(index)])),
     [projectRuns]
   );
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
@@ -72,11 +75,11 @@ export default function ProjectCompareRoute(): ReactElement {
 
     return Array.from(metricKeys).sort().map((metric) => ({
       id: metric,
-      series: visibleRuns.map((run, index) => ({
+      series: visibleRuns.map((run) => ({
         id: `${metric}:${run.name}`,
         label: run.name,
         points: getSeriesPoints(scalars[buildRunKey(handle, projectName, run.name)] ?? null, metric),
-        color: colorByRunName.get(run.name) ?? getRunColor(index),
+        color: colorByRunName.get(run.name) ?? colors.brand.accent,
         lineWidth: 2
       }))
     }));
@@ -174,9 +177,9 @@ export default function ProjectCompareRoute(): ReactElement {
     );
   };
 
-  const renderRunItem = (run: Run, index: number) => {
+  const renderRunItem = (run: Run) => {
     const isVisible = hiddenRunNames[run.name] !== true;
-    const color = getRunColor(index);
+    const color = colorByRunName.get(run.name) ?? colors.brand.accent;
     const isActive = getRunStatus(run) === "running";
     return (
       <div
@@ -192,61 +195,54 @@ export default function ProjectCompareRoute(): ReactElement {
           onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
           type="button"
         >
-          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-          {run.isPinned ? <FontAwesomeIcon icon={faThumbTack} className="text-[0.625rem] text-brand-textMuted" /> : null}
-          {run.isBaseline ? <FontAwesomeIcon icon={faBullseye} className="text-[0.625rem] text-brand-textMuted" /> : null}
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+          {run.isPinned ? <FontAwesomeIcon icon={faThumbTack} className="text-[0.75rem] text-brand-textMuted" /> : null}
+          {run.isBaseline ? <FontAwesomeIcon icon={faBullseye} className="text-[0.75rem] text-brand-textMuted" /> : null}
           <span className="truncate text-[0.75rem] font-semibold leading-5">{run.name}</span>
         </button>
-        <div className="ml-2 flex items-center gap-1.5 text-[0.625rem] text-brand-textMuted">
-          <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-signal-running" : "bg-brand-border"}`} />
-          <button
-            aria-label={`Open actions for ${run.name}`}
-            className="flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-white hover:text-brand-text"
-            onClick={() => { setOpenMenuRunId((current) => current === run.id ? null : run.id); }}
-            type="button"
-          >
-            <FontAwesomeIcon icon={faEllipsisVertical} />
-          </button>
-        </div>
-        {openMenuRunId === run.id ? (
-          <div
-            className={"absolute right-0 top-[1.625rem] z-20 w-40 overflow-hidden rounded-lg border border-brand-borderMuted bg-white py-1"
+        <div className="ml-2 flex items-center gap-1.5 text-[0.75rem] text-brand-textMuted">
+          {isActive ? <span className="h-2 w-2 rounded-full bg-signal-running" /> : null}
+          <DropdownMenu
+            open={openMenuRunId === run.id}
+            onOpenChange={(open) => { setOpenMenuRunId(open ? run.id : null); }}
+            className="relative"
+            menuClassName={"absolute right-0 top-[1.625rem] z-20 w-40 overflow-hidden rounded-lg border border-brand-borderMuted bg-white py-1"
               + " text-[0.75rem] shadow-[0_0.75rem_1.75rem_rgba(23,43,43,0.14)]"}
-          >
-            <button
-              className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
-              onClick={() => { void runAction(async () => await pinRun(handle, projectName, run.name, !run.isPinned)); }}
-              type="button"
-            >
-              <FontAwesomeIcon icon={faThumbTack} className="w-3 text-brand-textMuted" />
-              <span>{run.isPinned ? "Unpin run" : "Pin run"}</span>
-            </button>
-            <button
-              className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
-              onClick={() => { void runAction(async () => await setBaselineRun(handle, projectName, run.name)); }}
-              type="button"
-            >
-              <FontAwesomeIcon icon={faBullseye} className="w-3 text-brand-textMuted" />
-              <span>Set baseline</span>
-            </button>
-            <button
-              className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
-              onClick={() => { openRenameModal(run); }}
-              type="button"
-            >
-              <FontAwesomeIcon icon={faPen} className="w-3 text-brand-textMuted" />
-              <span>Rename run</span>
-            </button>
-            <button
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-signal-failed transition hover:bg-red-50"
-              onClick={() => { void runAction(async () => await deleteRun(handle, projectName, run.name)); }}
-              type="button"
-            >
-              <FontAwesomeIcon icon={faTrash} className="w-3" />
-              <span>Delete run</span>
-            </button>
-          </div>
-        ) : null}
+            itemClassName="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
+            sections={[{ items: [
+              { label: "View run", href: `/${handle}/${projectName}/runs/${run.name}`, icon: faEye },
+              {
+                label: run.isPinned ? "Unpin run" : "Pin run",
+                icon: faThumbTack,
+                onSelect: () => { void runAction(async () => await pinRun(handle, projectName, run.name, !run.isPinned)); }
+              },
+              {
+                label: "Set baseline",
+                icon: faBullseye,
+                onSelect: () => { void runAction(async () => await setBaselineRun(handle, projectName, run.name)); }
+              },
+              { label: "Rename run", icon: faPen, onSelect: () => { openRenameModal(run); } },
+              {
+                label: "Delete run",
+                icon: faTrash,
+                destructive: true,
+                onSelect: () => { void runAction(async () => await deleteRun(handle, projectName, run.name)); }
+              }
+            ] }]}
+            trigger={(
+              <button
+                aria-label={`Open actions for ${run.name}`}
+                aria-haspopup="menu"
+                aria-expanded={openMenuRunId === run.id}
+                className="flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-white hover:text-brand-text"
+                onClick={() => { setOpenMenuRunId(openMenuRunId === run.id ? null : run.id); }}
+                type="button"
+              >
+                <FontAwesomeIcon icon={faEllipsisVertical} />
+              </button>
+            )}
+          />
+        </div>
       </div>
     );
   };
@@ -261,9 +257,9 @@ export default function ProjectCompareRoute(): ReactElement {
             <div>
               <ProjectHeader handle={handle} projectName={projectName} />
 
-              <div className="pt-4" style={{ height: `${String(RULED_LINE_HEIGHT * 6)}rem` }}>
+              <div className="pt-5" style={{ height: `${String(RULED_LINE_HEIGHT * 4)}rem` }}>
                 <div className="rounded-xl border border-brand-borderMuted bg-white/85 px-3 py-3">
-                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Run Ledger</p>
+                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-brand-textMuted">Overview</p>
                   <div className="mt-2 flex items-center justify-between text-[0.75rem]">
                     <span className="text-brand-textMuted">total</span>
                     <span className="font-semibold">{projectRuns.length}</span>
@@ -277,29 +273,10 @@ export default function ProjectCompareRoute(): ReactElement {
                     <span className="font-semibold text-signal-failed">{failedCount}</span>
                   </div>
                 </div>
-
-                <div className="mt-3 flex gap-2">
-                  <button
-                    className={"flex-1 rounded-lg border border-brand-borderStrong bg-hover px-2 py-1.5"
-                      + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
-                    onClick={() => { setHiddenRunNames({}); }}
-                    type="button"
-                  >
-                    Show all
-                  </button>
-                  <button
-                    className={"flex-1 rounded-lg border border-brand-borderMuted bg-white/80 px-2 py-1.5"
-                      + " text-[0.6875rem] font-semibold text-brand-text transition hover:bg-white"}
-                    onClick={() => { setHiddenRunNames(Object.fromEntries(projectRuns.map((run) => [run.name, true]))); }}
-                    type="button"
-                  >
-                    Hide all
-                  </button>
-                </div>
               </div>
             </div>
 
-            <div className="grid">
+            <div className="grid" style={{ marginTop: RULED_LINE }}>
               {projectRuns.length === 0 && !isRunsLoading ? <div className="py-1 text-[0.8125rem] text-brand-textMuted">No runs yet.</div> : null}
               {projectRuns.map(renderRunItem)}
             </div>

@@ -41,7 +41,7 @@ export default function RunDetailRoute(): ReactElement {
         activeTabId={activeTab}
       />
 
-      <NotebookShell columns="18.75rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
+      <NotebookShell columns="18.25rem 1fr" className="max-w-full md:max-w-[calc(100%-5rem)]">
         <aside
           className="relative pb-5 px-4 lg:border-r lg:pb-6 lg:pr-5"
           style={{ paddingTop: `${String(RULED_LINE_HEIGHT)}rem` }}

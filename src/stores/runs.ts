@@ -20,8 +20,12 @@ export const getUserRuns = (handle: string) => (state: RunState): Run[] => (
   Object.values(state.runs).filter((r) => r.projectOwner === handle).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 );
 
+const compareProjectRuns = (a: Run, b: Run): number => (
+  Number(b.isBaseline) - Number(a.isBaseline) || Number(b.isPinned) - Number(a.isPinned) || b.createdAt.localeCompare(a.createdAt)
+);
+
 export const getProjectRuns = (projectId: string) => (state: RunState): Run[] => (
-  Object.values(state.runs).filter((r) => r.projectId === projectId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  Object.values(state.runs).filter((r) => r.projectId === projectId).sort(compareProjectRuns)
 );
 
 export const buildRunKey = (handle: string, projectName: string, runName: string): string => `${handle}/${projectName}/${runName}`;

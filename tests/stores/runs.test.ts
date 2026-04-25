@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { buildRunKey, deleteRun, fetchRun, fetchRuns, pinRun, setBaselineRun, useRunStore } from "stores/runs";
+import { buildRunKey, deleteRun, fetchRun, fetchRuns, getProjectRuns, pinRun, setBaselineRun, useRunStore } from "stores/runs";
 import { API_BASE } from "types";
 import type { Project, Run } from "types";
 
@@ -103,6 +103,23 @@ describe("run store", () => {
     expect(useRunStore.getState().errors[buildProjectKey("ada", "demo")]).toBeNull();
   });
 
+  it("orders project runs by baseline, pinned, then newest", () => {
+    const newest: Run = { ...run, id: "run-2", name: "newest", createdAt: "2025-01-04T00:00:00.000Z" };
+    const pinned: Run = { ...run, id: "run-3", name: "pinned", createdAt: "2025-01-03T00:00:00.000Z", isPinned: true };
+    const baseline: Run = { ...run, id: "run-4", name: "baseline", createdAt: "2025-01-01T00:00:00.000Z", isBaseline: true };
+    useRunStore.setState({
+      runs: {
+        [buildRunKey("ada", "demo", "newest")]: newest,
+        [buildRunKey("ada", "demo", "pinned")]: pinned,
+        [buildRunKey("ada", "demo", "baseline")]: baseline
+      },
+      isLoading: {},
+      errors: {}
+    });
+
+    expect(getProjectRuns("project-1")(useRunStore.getState()).map((item) => item.name)).toEqual(["baseline", "pinned", "newest"]);
+  });
+
   it("stores backend errors when fetching a run fails", async () => {
     fetchMock.mockResolvedValueOnce(createResponse({ error: "Run not found" }, { ok: false, status: 404 }));
 
@@ -145,6 +162,15 @@ describe("run store", () => {
 
   it("pins a run through the run ui-state endpoint", async () => {
     const pinnedRun = { ...run, isPinned: true };
+    const newerRun = { ...run, id: "run-2", name: "newer", createdAt: "2025-01-04T00:00:00.000Z" };
+    useRunStore.setState({
+      runs: {
+        [buildRunKey("ada", "demo", "run-a")]: run,
+        [buildRunKey("ada", "demo", "newer")]: newerRun
+      },
+      isLoading: {},
+      errors: {}
+    });
     fetchMock.mockResolvedValueOnce(createResponse(pinnedRun));
 
     const result = await pinRun("ada", "demo", "run-a", true);
@@ -157,6 +183,7 @@ describe("run store", () => {
       body: JSON.stringify({ isPinned: true })
     });
     expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "run-a")]).toEqual(pinnedRun);
+    expect(getProjectRuns("project-1")(useRunStore.getState()).map((item) => item.name)).toEqual(["run-a", "newer"]);
   });
 
   it("sets one baseline run for a project", async () => {

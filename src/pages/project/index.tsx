@@ -1,7 +1,7 @@
 import { faCodeBranch, faGear, faList } from "@fortawesome/free-solid-svg-icons";
 import type { ReactElement } from "react";
 import { useEffect } from "react";
-import { Redirect, Route, Switch, useLocation, useParams } from "wouter";
+import { Route, Switch, useLocation, useParams } from "wouter";
 
 import Navbar from "components/Navbar";
 import ProjectComparePage from "pages/project/compare";
@@ -50,7 +50,6 @@ export default function ProjectPage(): ReactElement {
         <Route path="/:handle/:projectName/settings/*" component={ProjectSettingsPage} />
         <Route path="/:handle/:projectName/settings" component={ProjectSettingsPage} />
         <Route path="/:handle/:projectName" component={ProjectRunsPage} />
-        <Route path="/:handle/:projectName/*"><Redirect to={basePath} /></Route>
       </Switch>
     </div>
   );
