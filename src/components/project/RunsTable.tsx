@@ -12,12 +12,14 @@ const leftBodyIndexCellClass = "flex items-center whitespace-nowrap pr-2 font-mo
 const leftGridTemplateColumns = "2.5rem minmax(0, 1fr)";
 const leftPaneWidth = "14.75rem";
 
-const formatRunConfigValue = (config: Run["config"], key: string): string => {
-  if (!config || typeof config !== "object") { return "—"; }
-  const value = key.split("/").reduce<unknown>((current, segment) => {
-    if (!current || typeof current !== "object" || Array.isArray(current)) { return undefined; }
-    return (current as Record<string, unknown>)[segment];
-  }, config);
+const formatRunFieldValue = (field: Record<string, unknown> | null, key: string): string => {
+  if (!field || typeof field !== "object") { return "—"; }
+  const value = Object.hasOwn(field, key)
+    ? field[key]
+    : key.split("/").reduce<unknown>((current, segment) => {
+      if (!current || typeof current !== "object" || Array.isArray(current)) { return undefined; }
+      return (current as Record<string, unknown>)[segment];
+    }, field);
   if (value === null || value === undefined) { return "—"; }
   if (typeof value === "number") {
     const fixed = Number.isInteger(value) ? String(value) : value.toFixed(4);
@@ -27,8 +29,8 @@ const formatRunConfigValue = (config: Run["config"], key: string): string => {
   return "—";
 };
 
-const getRunConfigKeys = (config: Run["config"]): string[] => {
-  if (!config || typeof config !== "object" || Array.isArray(config)) { return []; }
+const getRunFieldKeys = (field: Record<string, unknown> | null): string[] => {
+  if (!field || typeof field !== "object" || Array.isArray(field)) { return []; }
   const keys: string[] = [];
   const visit = (value: Record<string, unknown>, prefix: string): void => {
     for (const [key, item] of Object.entries(value)) {
@@ -40,7 +42,7 @@ const getRunConfigKeys = (config: Run["config"]): string[] => {
       }
     }
   };
-  visit(config, "");
+  visit(field, "");
   return keys;
 };
 
@@ -58,13 +60,20 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
   const configColumns = useMemo(() => {
     const keys = new Set<string>();
     for (const run of runs) {
-      for (const key of getRunConfigKeys(run.config)) { keys.add(key); }
+      for (const key of getRunFieldKeys(run.config)) { keys.add(key); }
+    }
+    return [...keys].sort((a, b) => a.localeCompare(b));
+  }, [runs]);
+  const summaryColumns = useMemo(() => {
+    const keys = new Set<string>();
+    for (const run of runs) {
+      for (const key of getRunFieldKeys(run.summary)) { keys.add(key); }
     }
     return [...keys].sort((a, b) => a.localeCompare(b));
   }, [runs]);
   const rightGridTemplateColumns = useMemo(
-    () => ["7.5rem", "6.25rem", "9.375rem", "5.625rem", ...configColumns.map(() => "7.5rem")].join(" "),
-    [configColumns]
+    () => ["7.5rem", "6.25rem", "9.375rem", "5.625rem", ...configColumns.map(() => "7.5rem"), ...summaryColumns.map(() => "7.5rem")].join(" "),
+    [configColumns, summaryColumns]
   );
   const tableHeight = (runs.length + 1) * RULED_LINE_HEIGHT;
   const sectionHeight = Math.max(15, 9.375 + tableHeight + 0.75);
@@ -116,7 +125,10 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
                   <span className={TABLE_HEADER_CELL_CLASS}>Created</span>
                   <span className={TABLE_HEADER_CELL_CLASS}>Runtime</span>
                   {configColumns.map((column) => (
-                    <span className={TABLE_HEADER_CELL_CLASS} key={column}>{column}</span>
+                    <span className={TABLE_HEADER_CELL_CLASS} key={`config:${column}`}>{column}</span>
+                  ))}
+                  {summaryColumns.map((column) => (
+                    <span className={TABLE_HEADER_CELL_CLASS} key={`summary:${column}`}>{column}</span>
                   ))}
                 </div>
 
@@ -133,8 +145,21 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
                     <span className={TABLE_BODY_CELL_CLASS}>{formatRunTime(run.createdAt)}</span>
                     <span className={TABLE_BODY_CELL_CLASS}>{formatDuration(run.createdAt, run.updatedAt)}</span>
                     {configColumns.map((column) => (
-                      <span className={`${TABLE_BODY_CELL_CLASS} max-w-[11.25rem] truncate`} key={column} title={formatRunConfigValue(run.config, column)}>
-                        {formatRunConfigValue(run.config, column)}
+                      <span
+                        className={`${TABLE_BODY_CELL_CLASS} max-w-[11.25rem] truncate`}
+                        key={`config:${column}`}
+                        title={formatRunFieldValue(run.config, column)}
+                      >
+                        {formatRunFieldValue(run.config, column)}
+                      </span>
+                    ))}
+                    {summaryColumns.map((column) => (
+                      <span
+                        className={`${TABLE_BODY_CELL_CLASS} max-w-[11.25rem] truncate`}
+                        key={`summary:${column}`}
+                        title={formatRunFieldValue(run.summary, column)}
+                      >
+                        {formatRunFieldValue(run.summary, column)}
                       </span>
                     ))}
                   </div>

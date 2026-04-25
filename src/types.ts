@@ -57,6 +57,7 @@ export interface Run {
   uiState: Record<string, unknown>;
   isPinned: boolean;
   isBaseline: boolean;
+  summary: Record<string, number>;
   workerToken: string | null;
 }
 

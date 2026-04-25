@@ -34,6 +34,7 @@ const run: Run = {
   uiState: {},
   isPinned: false,
   isBaseline: false,
+  summary: {},
   workerToken: null
 };
 
