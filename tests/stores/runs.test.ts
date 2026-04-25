@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { buildRunKey, deleteRun, fetchRun, fetchRuns, getProjectRuns, pinRun, setBaselineRun, useRunStore } from "stores/runs";
+import { buildRunKey, deleteRun, fetchRun, fetchRuns, getProjectRuns, pinRun, setBaselineRun, unsetBaselineRun, useRunStore } from "stores/runs";
 import { API_BASE } from "types";
 import type { Project, Run } from "types";
 
@@ -205,10 +205,27 @@ describe("run store", () => {
       credentials: "include",
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isBaseline: true })
+      body: JSON.stringify({ isBaseline: true, isPinned: false })
     });
     expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "baseline")]?.isBaseline).toBe(false);
     expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "run-a")]?.isBaseline).toBe(true);
+  });
+
+  it("unsets a baseline run", async () => {
+    const baseline = { ...run, isBaseline: true };
+    useRunStore.setState({ runs: { [buildRunKey("ada", "demo", "run-a")]: baseline }, isLoading: {}, errors: {} });
+    const updatedRun = { ...run, isBaseline: false };
+    fetchMock.mockResolvedValueOnce(createResponse(updatedRun));
+
+    await unsetBaselineRun("ada", "demo", "run-a");
+
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE}/accounts/ada/projects/demo/runs/run-a/ui-state`, {
+      credentials: "include",
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isBaseline: false })
+    });
+    expect(useRunStore.getState().runs[buildRunKey("ada", "demo", "run-a")]?.isBaseline).toBe(false);
   });
 
   it("deletes a run from the store when the delete request succeeds", async () => {

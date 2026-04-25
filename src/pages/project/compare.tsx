@@ -1,8 +1,8 @@
-import { faBullseye, faEllipsisVertical, faEye, faPen, faThumbTack, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faBullseye, faEllipsisVertical, faEye, faEyeSlash, faPen, faThumbTack, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "wouter";
+import { Link, useParams } from "wouter";
 import { useShallow } from "zustand/react/shallow";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
@@ -18,7 +18,7 @@ import Slider from "components/Slider";
 import { getRunStatus, RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
 import { fetchMedia, getMediaFileUrl, useMediaStore } from "stores/media";
 import { buildProjectKey, useProjectStore } from "stores/projects";
-import { buildRunKey, deleteRun, fetchRuns, getProjectRuns, pinRun, setBaselineRun, useRunStore } from "stores/runs";
+import { buildRunKey, deleteRun, fetchRuns, getProjectRuns, pinRun, setBaselineRun, unsetBaselineRun, useRunStore } from "stores/runs";
 import { fetchScalars, useScalarStore } from "stores/scalars";
 import type { Run } from "types";
 
@@ -185,16 +185,25 @@ export default function ProjectCompareRoute(): ReactElement {
         key={run.id}
         style={{ height: RULED_LINE }}
       >
-        <button
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
-          onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
-          type="button"
-        >
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-          {run.isPinned ? <FontAwesomeIcon icon={faThumbTack} className="text-[0.75rem] text-brand-textMuted" /> : null}
-          {run.isBaseline ? <FontAwesomeIcon icon={faBullseye} className="text-[0.75rem] text-brand-textMuted" /> : null}
-          <span className="truncate text-[0.75rem] font-semibold leading-5">{run.name}</span>
-        </button>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <button
+            aria-label={isVisible ? `Hide ${run.name}` : `Show ${run.name}`}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-brand-textMuted transition hover:bg-white hover:text-brand-text"
+            onClick={() => { setHiddenRunNames((prev) => ({ ...prev, [run.name]: prev[run.name] !== true })); }}
+            type="button"
+          >
+            <FontAwesomeIcon icon={isVisible ? faEye : faEyeSlash} className="text-[0.75rem]" />
+          </button>
+          <Link
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md text-left transition hover:text-brand-accentStrong"
+            href={`/${handle}/${projectName}/runs/${run.name}`}
+          >
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+            {run.isPinned ? <FontAwesomeIcon icon={faThumbTack} className="shrink-0 text-[0.75rem] text-brand-textMuted" /> : null}
+            {run.isBaseline ? <FontAwesomeIcon icon={faBullseye} className="shrink-0 text-[0.75rem] text-brand-textMuted" /> : null}
+            <span className="truncate text-[0.75rem] font-semibold leading-5">{run.name}</span>
+          </Link>
+        </div>
         <div className="ml-2 flex items-center gap-1.5 text-[0.75rem] text-brand-textMuted">
           {isActive ? <span className="h-2 w-2 rounded-full bg-signal-running" /> : null}
           <DropdownMenu
@@ -205,16 +214,15 @@ export default function ProjectCompareRoute(): ReactElement {
               + " text-[0.75rem] shadow-[0_0.75rem_1.75rem_rgba(23,43,43,0.14)]"}
             itemClassName="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-brand-surface"
             sections={[{ items: [
-              { label: "View run", href: `/${handle}/${projectName}/runs/${run.name}`, icon: faEye },
-              {
+              ...(!run.isBaseline ? [{
                 label: run.isPinned ? "Unpin run" : "Pin run",
                 icon: faThumbTack,
                 onSelect: () => { void runAction(async () => await pinRun(handle, projectName, run.name, !run.isPinned)); }
-              },
+              }] : []),
               {
-                label: "Set baseline",
+                label: run.isBaseline ? "Unset baseline" : "Set baseline",
                 icon: faBullseye,
-                onSelect: () => { void runAction(async () => await setBaselineRun(handle, projectName, run.name)); }
+                onSelect: () => { void runAction(async () => await (run.isBaseline ? unsetBaselineRun : setBaselineRun)(handle, projectName, run.name)); }
               },
               { label: "Rename run", icon: faPen, onSelect: () => { openRenameModal(run); } },
               {

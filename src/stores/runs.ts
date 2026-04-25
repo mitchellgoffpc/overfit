@@ -74,7 +74,10 @@ export const pinRun = async (handle: string, projectName: string, runName: strin
   await updateRunUIState(handle, projectName, runName, { isPinned });
 
 export const setBaselineRun = async (handle: string, projectName: string, runName: string): Promise<ActionResult<Run>> =>
-  await updateRunUIState(handle, projectName, runName, { isBaseline: true });
+  await updateRunUIState(handle, projectName, runName, { isBaseline: true, isPinned: false });
+
+export const unsetBaselineRun = async (handle: string, projectName: string, runName: string): Promise<ActionResult<Run>> =>
+  await updateRunUIState(handle, projectName, runName, { isBaseline: false });
 
 export const deleteRun = async (handle: string, projectName: string, runName: string): Promise<ActionResult> => {
   const result = await request<{ status: "ok" }>(`accounts/${handle}/projects/${projectName}/runs/${runName}`, { method: "DELETE" });

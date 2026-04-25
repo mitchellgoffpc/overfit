@@ -5,11 +5,15 @@ import { useShallow } from "zustand/react/shallow";
 import Avatar from "components/Avatar";
 import Modal from "components/Modal";
 import SectionHeader from "components/SectionHeader";
-import { RULED_LINE } from "helpers";
-import { dangerButtonClass, inkButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
+import { RULED_LINE, RULED_LINE_HEIGHT } from "helpers";
+import { accentButtonClass, dangerButtonClass, lineInputClass, paperButtonClass } from "pages/settings/styles";
 import { searchUsers } from "stores/accounts";
 import { addCollaborator, buildProjectKey, fetchCollaborators, getProjectCollaborators, removeCollaborator, useProjectStore } from "stores/projects";
 import type { Project, User } from "types";
+
+const COLLABORATOR_CARD_ROW_SPAN = 3;
+const COLLABORATOR_CARD_GRID_GAP_REM = RULED_LINE_HEIGHT * 0.35;
+const COLLABORATOR_CARD_HEIGHT_REM = COLLABORATOR_CARD_ROW_SPAN * RULED_LINE_HEIGHT - COLLABORATOR_CARD_GRID_GAP_REM;
 
 function UserPlusIcon({ className }: { readonly className?: string }): ReactElement {
   return (
@@ -109,9 +113,22 @@ export default function CollaboratorsSettings({ project }: CollaboratorsSettings
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between" style={{ marginTop: RULED_LINE }}>
-        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted">Manage access</p>
-        <button className={inkButtonClass} type="button" onClick={openAddModal}>Add people</button>
+      <div className="flex items-center justify-between gap-3" style={{ marginTop: RULED_LINE, minHeight: RULED_LINE }}>
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-brand-textMuted" style={{ lineHeight: RULED_LINE }}>
+          Manage access
+        </p>
+        <button
+          className={`${accentButtonClass} inline-flex items-center px-3 text-xs`}
+          type="button"
+          onClick={openAddModal}
+          style={{
+            height: `${String(RULED_LINE_HEIGHT * 1.25)}rem`,
+            marginTop: `${String(-RULED_LINE_HEIGHT * 0.125)}rem`,
+            marginBottom: `${String(-RULED_LINE_HEIGHT * 0.125)}rem`
+          }}
+        >
+          <span>Add people</span>
+        </button>
       </div>
 
       {collaborators.length === 0 ? (
@@ -130,16 +147,20 @@ export default function CollaboratorsSettings({ project }: CollaboratorsSettings
       ) : null}
 
       {collaborators.length > 0 ? (
-        <div className="mt-3 border-t border-brand-borderMuted">
+        <div className="grid" style={{ gap: `${String(COLLABORATOR_CARD_GRID_GAP_REM)}rem`, marginTop: `${String(RULED_LINE_HEIGHT * 0.65)}rem` }}>
           {collaborators.map((user) => (
-            <div key={user.id}
-              className="flex flex-wrap items-center justify-between gap-4 border-b border-brand-borderMuted px-1 py-3 last:border-b-0"
+            <section
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-brand-borderMuted bg-white px-4"
+              key={user.id}
+              style={{ height: `${String(COLLABORATOR_CARD_HEIGHT_REM)}rem` }}
             >
-              <div className="flex items-center gap-3">
-                <Avatar handle={user.handle} name={user.name} className="h-8 w-8 text-xs" />
-                <div>
-                  <p className="text-sm font-semibold">{user.name}</p>
-                  <p className="text-[0.6875rem] text-brand-textMuted">@{user.handle}</p>
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar handle={user.handle} name={user.name} className="h-8 w-8 shrink-0 text-[0.625rem]" />
+                <div className="grid min-w-0 gap-[0.125rem]">
+                  <p className="truncate text-sm font-semibold text-brand-text">{user.name}</p>
+                  <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-brand-textMuted">
+                    <span>@{user.handle}</span>
+                  </div>
                 </div>
               </div>
               <button
@@ -150,7 +171,7 @@ export default function CollaboratorsSettings({ project }: CollaboratorsSettings
               >
                 {removingHandle === user.handle ? "Removing..." : "Remove"}
               </button>
-            </div>
+            </section>
           ))}
         </div>
       ) : null}
