@@ -62,37 +62,30 @@ export const completePasswordReset = async (token: string, password: string): Pr
   return ok ? { ok: true } : { ok: false, error };
 };
 
+const setAuthenticated = (user: User): void => {
+  useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [user.handle]: user } }));
+  useAuthStore.setState({ status: "authenticated", currentHandle: user.handle });
+};
+
 export const loadAuth = async (): Promise<void> => {
   useAuthStore.setState({ status: "loading" });
   const { ok, body } = await request<User>("me");
-  if (ok) {
-    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
-    useAuthStore.setState({ status: "authenticated", currentHandle: body.handle });
-  } else {
-    useAuthStore.setState({ status: "unauthenticated", currentHandle: null });
-  }
+  if (ok) { setAuthenticated(body); }
+  else { useAuthStore.setState({ status: "unauthenticated", currentHandle: null }); }
 };
 
 export const login = async (email: string, password: string): Promise<ActionResult> => {
   const { ok, error, body } = await send<AuthResponse>("auth/login", "POST", { email, password });
-  if (ok) {
-    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.user.handle]: body.user } }));
-    useAuthStore.setState({ status: "authenticated", currentHandle: body.user.handle });
-    return { ok: true };
-  } else {
-    return { ok: false, error };
-  }
+  if (!ok) { return { ok: false, error }; }
+  setAuthenticated(body.user);
+  return { ok: true };
 };
 
 export const signup = async (email: string, handle: string, password: string): Promise<ActionResult> => {
   const { ok, error, body } = await send<AuthResponse>("auth/register", "POST", { email, handle, password });
-  if (ok) {
-    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.user.handle]: body.user } }));
-    useAuthStore.setState({ status: "authenticated", currentHandle: body.user.handle });
-    return { ok: true };
-  } else {
-    return { ok: false, error };
-  }
+  if (!ok) { return { ok: false, error }; }
+  setAuthenticated(body.user);
+  return { ok: true };
 };
 
 export const logout = async (): Promise<void> => {

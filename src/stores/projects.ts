@@ -46,82 +46,59 @@ export const getUserProjects = (handle: string) => (state: ProjectState): Projec
   Object.values(state.projects).filter((p) => p.owner === handle).sort((a, b) => a.name.localeCompare(b.name))
 );
 
-export const fetchProjects = async (handle: string): Promise<void> => {
+const fetchInto = async <T>(url: string, toProjects: (body: T) => Project[]): Promise<T | null> => {
   useProjectStore.setState({ isLoading: true, error: null });
-  const { ok, body, error } = await request<Project[]>(`accounts/${handle}/projects`);
-  if (ok) {
-    useProjectStore.setState(({ projects }) => ({ isLoading: false, error: null, projects: { ...projects, ...indexByKey(body) } }));
-  } else {
-    useProjectStore.setState({ error, isLoading: false });
-  }
+  const { ok, body, error } = await request<T>(url);
+  useProjectStore.setState(({ projects }) => ({
+    isLoading: false,
+    error: ok ? null : error,
+    projects: ok ? { ...projects, ...indexByKey(toProjects(body)) } : projects
+  }));
+  return ok ? body : null;
 };
 
-export const fetchProject = async (handle: string, projectName: string): Promise<Project | null> => {
-  useProjectStore.setState({ isLoading: true, error: null });
-  const { ok, body, error } = await request<Project>(`accounts/${handle}/projects/${projectName}`);
-  if (ok) {
-    useProjectStore.setState(({ projects }) => ({
-      error: null, isLoading: false, projects: { ...projects, ...indexByKey([body]) },
-    }));
-    return body;
-  } else {
-    useProjectStore.setState({ error, isLoading: false });
-    return null;
-  }
+export const fetchProjects = async (handle: string): Promise<void> => {
+  await fetchInto<Project[]>(`accounts/${handle}/projects`, (projects) => projects);
 };
+
+export const fetchProject = async (handle: string, projectName: string): Promise<Project | null> =>
+  await fetchInto<Project>(`accounts/${handle}/projects/${projectName}`, (project) => [project]);
 
 export const updateProject = async (
   handle: string, projectName: string, data: { description?: string | null; metadata?: Record<string, unknown>; visibility?: string }
 ): Promise<ActionResult<Project>> => {
-  const result = await send<Project>(
-    `accounts/${handle}/projects/${projectName}`, "PUT", data as Record<string, unknown>,
-  );
-  if (result.ok) {
-    useProjectStore.setState(({ projects }) => ({
-      projects: { ...projects, ...indexByKey([result.body]) },
-    }));
-    return { ok: true, body: result.body };
-  }
-  return { ok: false, error: result.error };
+  const result = await send<Project>(`accounts/${handle}/projects/${projectName}`, "PUT", data as Record<string, unknown>);
+  if (!result.ok) { return { ok: false, error: result.error }; }
+  useProjectStore.setState(({ projects }) => ({ projects: { ...projects, ...indexByKey([result.body]) } }));
+  return { ok: true, body: result.body };
 };
 
-export const renameProject = async (
-  handle: string, projectName: string, name: string
-): Promise<ActionResult<Project>> => {
+export const renameProject = async (handle: string, projectName: string, name: string): Promise<ActionResult<Project>> => {
   const result = await send<Project>(`accounts/${handle}/projects/${projectName}/rename`, "POST", { name });
-  if (result.ok) {
-    const oldKey = buildProjectKey(handle, projectName);
-    const newKey = buildProjectKey(result.body.owner, result.body.name);
-    useProjectStore.setState(({ projects, collaborators }) => {
-      if (oldKey === newKey) { return { projects: { ...projects, [newKey]: result.body }, collaborators }; }
-      const nextprojects = {
-        ...Object.fromEntries(Object.entries(projects).filter(([projectKey]) => projectKey !== oldKey)),
-        [newKey]: result.body
-      };
-      const oldCollaborators = collaborators[oldKey];
-      const filteredcollaborators = Object.fromEntries(
-        Object.entries(collaborators).filter(([projectKey]) => projectKey !== oldKey),
-      );
-      const nextcollaborators = oldCollaborators ? { ...filteredcollaborators, [newKey]: oldCollaborators } : filteredcollaborators;
-      return { projects: nextprojects, collaborators: nextcollaborators };
-    });
-    return { ok: true, body: result.body };
-  }
-  return { ok: false, error: result.error };
+  if (!result.ok) { return { ok: false, error: result.error }; }
+  const oldKey = buildProjectKey(handle, projectName);
+  const newKey = buildProjectKey(result.body.owner, result.body.name);
+  useProjectStore.setState(({ projects, collaborators }) => {
+    const { [oldKey]: _oldProject, ...restProjects } = projects;
+    const { [oldKey]: oldCollaborators, ...restCollaborators } = collaborators;
+    return {
+      projects: { ...restProjects, [newKey]: result.body },
+      collaborators: oldCollaborators ? { ...restCollaborators, [newKey]: oldCollaborators } : restCollaborators
+    };
+  });
+  return { ok: true, body: result.body };
 };
 
 export const deleteProject = async (handle: string, projectName: string): Promise<ActionResult> => {
   const result = await request<{ status: "ok" }>(`accounts/${handle}/projects/${projectName}`, { method: "DELETE" });
-  if (result.ok) {
-    const key = buildProjectKey(handle, projectName);
-    useProjectStore.setState(({ projects, collaborators }) => {
-      const nextprojects = Object.fromEntries(Object.entries(projects).filter(([projectKey]) => projectKey !== key));
-      const nextcollaborators = Object.fromEntries(Object.entries(collaborators).filter(([projectKey]) => projectKey !== key));
-      return { projects: nextprojects, collaborators: nextcollaborators };
-    });
-    return { ok: true };
-  }
-  return { ok: false, error: result.error };
+  if (!result.ok) { return { ok: false, error: result.error }; }
+  const key = buildProjectKey(handle, projectName);
+  useProjectStore.setState(({ projects, collaborators }) => {
+    const { [key]: _p, ...nextProjects } = projects;
+    const { [key]: _c, ...nextCollaborators } = collaborators;
+    return { projects: nextProjects, collaborators: nextCollaborators };
+  });
+  return { ok: true };
 };
 
 // Collaborators

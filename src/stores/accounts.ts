@@ -56,13 +56,12 @@ const omitOrganizationMemberFields = <T extends OrganizationMemberDetails>(m: T)
 
 export const fetchAccount = async (handle: string): Promise<User | Organization | null> => {
   const { ok, body } = await request<User | Organization>(`accounts/${handle}`);
-  if (ok) {
-    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
-    return body;
-  } else {
+  if (!ok) {
     useAccountsStore.setState((state) => ({ notFoundHandles: new Set(state.notFoundHandles).add(handle) }));
     return null;
   }
+  useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
+  return body;
 };
 
 // Users
@@ -70,8 +69,8 @@ export const fetchAccount = async (handle: string): Promise<User | Organization 
 export const searchUsers = async (query: string): Promise<ActionResult<User[]>> => {
   const normalized = query.trim();
   if (!normalized) { return { ok: true, body: [] }; }
-  const result = await request<User[]>(`users/search?query=${encodeURIComponent(normalized)}`);
-  return result.ok ? { ok: true, body: result.body } : { ok: false, error: result.error };
+  const { ok, body, error } = await request<User[]>(`users/search?query=${encodeURIComponent(normalized)}`);
+  return ok ? { ok: true, body } : { ok: false, error };
 };
 
 export const getMe = (state: AccountsState): User | null => {
@@ -82,12 +81,9 @@ export const getMe = (state: AccountsState): User | null => {
 
 export const updateMe = async (name: string, bio: string): Promise<ActionResult> => {
   const { ok, error, body } = await send<User>("me", "PATCH", { name, bio });
-  if (ok) {
-    useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
-    return { ok: true };
-  } else {
-    return { ok: false, error };
-  }
+  if (!ok) { return { ok: false, error }; }
+  useAccountsStore.setState((state) => ({ accounts: { ...state.accounts, [body.handle]: body } }));
+  return { ok: true };
 };
 
 // Avatars
@@ -127,27 +123,23 @@ export const getOrganizationMembers = (orgHandle: string) => (state: AccountsSta
 
 export const fetchUserMemberships = async (userHandle: string | null = useAuthStore.getState().currentHandle): Promise<ActionResult> => {
   if (!userHandle) { return { ok: false, error: "Not authenticated" }; }
-  const result = await request<OrganizationMembership[]>(`users/${userHandle}/memberships`);
-  if (result.ok) {
-    useAccountsStore.setState((state) => ({
-      accounts: { ...state.accounts, ...indexByHandle(result.body.map(omitMembershipFields)) },
-      membershipsByUser: { ...state.membershipsByUser, [userHandle]: indexByHandle(result.body.map(pickMembershipFields)) },
-    }));
-    return { ok: true };
-  }
-  return { ok: false, error: result.error };
+  const { ok, body, error } = await request<OrganizationMembership[]>(`users/${userHandle}/memberships`);
+  if (!ok) { return { ok: false, error }; }
+  useAccountsStore.setState((state) => ({
+    accounts: { ...state.accounts, ...indexByHandle(body.map(omitMembershipFields)) },
+    membershipsByUser: { ...state.membershipsByUser, [userHandle]: indexByHandle(body.map(pickMembershipFields)) }
+  }));
+  return { ok: true };
 };
 
 export const fetchOrganizationMembers = async (orgHandle: string): Promise<ActionResult> => {
-  const result = await request<OrganizationMember[]>(`organizations/${orgHandle}/members`);
-  if (result.ok) {
-    useAccountsStore.setState((state) => ({
-      accounts: { ...state.accounts, ...indexByHandle(result.body.map(omitOrganizationMemberFields)) },
-      membersByOrganization: { ...state.membersByOrganization, [orgHandle]: indexByHandle(result.body.map(pickOrganizationMemberFields)) },
-    }));
-    return { ok: true };
-  }
-  return { ok: false, error: result.error };
+  const { ok, body, error } = await request<OrganizationMember[]>(`organizations/${orgHandle}/members`);
+  if (!ok) { return { ok: false, error }; }
+  useAccountsStore.setState((state) => ({
+    accounts: { ...state.accounts, ...indexByHandle(body.map(omitOrganizationMemberFields)) },
+    membersByOrganization: { ...state.membersByOrganization, [orgHandle]: indexByHandle(body.map(pickOrganizationMemberFields)) }
+  }));
+  return { ok: true };
 };
 
 export const addMembership = (org: Organization, role: OrganizationRole): void => {
@@ -174,31 +166,26 @@ export const addMembership = (org: Organization, role: OrganizationRole): void =
 export const leaveOrganization = async (orgHandle: string): Promise<ActionResult> => {
   const userHandle = useAuthStore.getState().currentHandle;
   if (!userHandle) { return { ok: false, error: "Not authenticated" }; }
-  const result = await request<{ ok: true }>(`organizations/${orgHandle}/members/${userHandle}`, { method: "DELETE" });
-  if (result.ok) {
-    useAccountsStore.setState((state) => {
-      const userMemberships = state.membershipsByUser[userHandle];
-      const orgMembers = state.membersByOrganization[orgHandle];
-      const { [orgHandle]: _, ...nextUserMemberships } = userMemberships ?? {};
-      const { [userHandle]: __, ...nextOrgMembers } = orgMembers ?? {};
-      return {
-        membershipsByUser: userMemberships ? { ...state.membershipsByUser, [userHandle]: nextUserMemberships } : state.membershipsByUser,
-        membersByOrganization: orgMembers ? { ...state.membersByOrganization, [orgHandle]: nextOrgMembers } : state.membersByOrganization
-      };
-    });
-    return { ok: true };
-  }
-  return { ok: false, error: result.error };
+  const { ok, error } = await request<{ ok: true }>(`organizations/${orgHandle}/members/${userHandle}`, { method: "DELETE" });
+  if (!ok) { return { ok: false, error }; }
+  useAccountsStore.setState((state) => {
+    const userMemberships = state.membershipsByUser[userHandle];
+    const orgMembers = state.membersByOrganization[orgHandle];
+    const { [orgHandle]: _, ...nextUserMemberships } = userMemberships ?? {};
+    const { [userHandle]: __, ...nextOrgMembers } = orgMembers ?? {};
+    return {
+      membershipsByUser: userMemberships ? { ...state.membershipsByUser, [userHandle]: nextUserMemberships } : state.membershipsByUser,
+      membersByOrganization: orgMembers ? { ...state.membersByOrganization, [orgHandle]: nextOrgMembers } : state.membersByOrganization
+    };
+  });
+  return { ok: true };
 };
 
 // Organizations
 
 export const createOrganization = async (handle: string, name: string): Promise<ActionResult<Organization>> => {
-  const result = await send<Organization>("organizations", "POST", { handle, name });
-  if (result.ok) {
-    addMembership(result.body, "ADMIN");
-    return { ok: true, body: result.body };
-  } else {
-    return { ok: false, error: result.error };
-  }
+  const { ok, body, error } = await send<Organization>("organizations", "POST", { handle, name });
+  if (!ok) { return { ok: false, error }; }
+  addMembership(body, "ADMIN");
+  return { ok: true, body };
 };
