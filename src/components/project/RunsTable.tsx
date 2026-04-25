@@ -54,7 +54,7 @@ interface ProjectRunsTableProps {
 
 export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading, error }: ProjectRunsTableProps): ReactElement {
   const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
-  const colorByRunName = useMemo(() => new Map(runs.map((run, index) => [run.name, getRunColor(index)])), [runs]);
+  const colorByRunId = useMemo(() => new Map(runs.map((run) => [run.id, getRunColor(run.id)])), [runs]);
   const configColumns = useMemo(() => {
     const keys = new Set<string>();
     for (const run of runs) {
@@ -88,7 +88,7 @@ export default function ProjectRunsTable({ runs, project, ownerHandle, isLoading
               </div>
 
               {runs.map((run, index) => {
-                const runColor = colorByRunName.get(run.name) ?? getRunColor(index);
+                const runColor = colorByRunId.get(run.id) ?? getRunColor(run.id);
                 const hovered = hoveredRunId === run.id;
                 return (
                   <div

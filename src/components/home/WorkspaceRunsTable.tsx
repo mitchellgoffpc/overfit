@@ -17,7 +17,7 @@ interface WorkspaceRunsTableProps {
 
 export default function WorkspaceRunsTable({ runs, isLoading, error }: WorkspaceRunsTableProps): ReactElement {
   const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
-  const colorByRunId = useMemo(() => new Map(runs.map((run, index) => [run.id, getRunColor(index)])), [runs]);
+  const colorByRunId = useMemo(() => new Map(runs.map((run) => [run.id, getRunColor(run.id)])), [runs]);
   const tableHeight = (runs.length + 1) * RULED_LINE_HEIGHT;
   const sectionHeight = Math.max(15, 6.875 + tableHeight);
 
@@ -45,7 +45,7 @@ export default function WorkspaceRunsTable({ runs, isLoading, error }: Workspace
               </div>
 
               {runs.map((run, index) => {
-                const runColor = colorByRunId.get(run.id) ?? getRunColor(index);
+                const runColor = colorByRunId.get(run.id) ?? getRunColor(run.id);
                 const hovered = hoveredRunId === run.id;
                 return (
                   <div

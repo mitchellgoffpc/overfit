@@ -36,9 +36,55 @@ export const colors = {
   heatmap: { level0: "#e7ecef", level1: "#cbe7e1", level2: "#8fd3c8", level3: "#4fb8aa" },
 } as const;
 
-export const runPalette = [
-  "#1a7b7d", "#e16367", "#5f86d5", "#a06ac9",
-  "#d48834", "#2f9f77", "#ca5d94", "#61738a",
-] as const;
+const hashString = (value: string): number => {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
 
-export const getRunColor = (index: number): string => runPalette[index % runPalette.length] ?? colors.brand.accent;
+const createRandom = (seed: number): (() => number) => {
+  let state = seed;
+  return () => {
+    state += 0x6d2b79f5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+const hslToHex = (hue: number, saturation: number, lightness: number): string => {
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const huePrime = hue / 60;
+  const x = chroma * (1 - Math.abs((huePrime % 2) - 1));
+  let channels: [number, number, number];
+  if (huePrime < 1) {
+    channels = [chroma, x, 0];
+  } else if (huePrime < 2) {
+    channels = [x, chroma, 0];
+  } else if (huePrime < 3) {
+    channels = [0, chroma, x];
+  } else if (huePrime < 4) {
+    channels = [0, x, chroma];
+  } else if (huePrime < 5) {
+    channels = [x, 0, chroma];
+  } else {
+    channels = [chroma, 0, x];
+  }
+  const match = lightness - chroma / 2;
+  return channels
+    .map((channel) => Math.round((channel + match) * 255).toString(16).padStart(2, "0"))
+    .join("")
+    .replace(/^/, "#");
+};
+
+export const getRunColor = (runId: string): string => {
+  const random = createRandom(hashString(runId));
+  const hue = random() * 360;
+  const saturation = 0.62 + random() * 0.14;
+  const lightness = 0.42 + random() * 0.08;
+  return hslToHex(hue, saturation, lightness);
+};

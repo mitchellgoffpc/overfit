@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 
 import { getSeriesPoints, groupChartsByPrefix } from "charts/helpers";
-import { colors } from "colors";
+import { colors, getRunColor } from "colors";
 import ChartSections from "components/charts/ChartSections";
 import CollapsibleSection from "components/CollapsibleSection";
 import MediaPreview from "components/MediaPreview";
@@ -39,12 +39,12 @@ export default function RunChartsPage(): ReactElement {
 
   const chartSeries = useMemo(() => {
     const keys = scalars ? Object.keys(scalars.series) : [];
-    const runColor = colors.brand.accent;
+    const runColor = run ? getRunColor(run.id) : colors.brand.accent;
     return keys.sort().map((key) => ({
       id: key,
       series: [{ id: key, label: runName, points: getSeriesPoints(scalars, key), color: runColor, lineWidth: 2 }]
     }));
-  }, [runName, scalars]);
+  }, [run, runName, scalars]);
 
   const hasPoints = chartSeries.some((item) => item.series.some((s) => s.points.length > 0));
   const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);

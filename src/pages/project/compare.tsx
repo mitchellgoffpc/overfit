@@ -55,12 +55,7 @@ export default function ProjectCompareRoute(): ReactElement {
     }
   }, [handle, projectName, projectRuns]);
 
-  const colorByRunName = useMemo(
-    () => new Map([...projectRuns]
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.name.localeCompare(b.name))
-      .map((run, index) => [run.name, getRunColor(index)])),
-    [projectRuns]
-  );
+  const colorByRunId = useMemo(() => new Map(projectRuns.map((run) => [run.id, getRunColor(run.id)])), [projectRuns]);
   const visibleRuns = useMemo(() => projectRuns.filter((run) => hiddenRunNames[run.name] !== true), [hiddenRunNames, projectRuns]);
   const runningCount = useMemo(() => projectRuns.filter((run) => getRunStatus(run) === "running").length, [projectRuns]);
   const failedCount = useMemo(() => projectRuns.filter((run) => getRunStatus(run) === "failed").length, [projectRuns]);
@@ -79,11 +74,11 @@ export default function ProjectCompareRoute(): ReactElement {
         id: `${metric}:${run.name}`,
         label: run.name,
         points: getSeriesPoints(scalars[buildRunKey(handle, projectName, run.name)] ?? null, metric),
-        color: colorByRunName.get(run.name) ?? colors.brand.accent,
+        color: colorByRunId.get(run.id) ?? colors.brand.accent,
         lineWidth: 2
       }))
     }));
-  }, [colorByRunName, handle, projectName, scalars, visibleRuns]);
+  }, [colorByRunId, handle, projectName, scalars, visibleRuns]);
 
   const sections = useMemo(() => groupChartsByPrefix(chartSeries), [chartSeries]);
   const hasLoadedScalarData = useMemo(
@@ -142,7 +137,7 @@ export default function ProjectCompareRoute(): ReactElement {
           {visibleRuns.map((run) => {
             const items = (media[buildRunKey(handle, projectName, run.name)] ?? []).filter((m) => m.key === key && m.step === selectedStep);
             const item = items[0];
-            const color = colorByRunName.get(run.name) ?? colors.brand.accent;
+            const color = colorByRunId.get(run.id) ?? colors.brand.accent;
             return (
               <div className="flex min-h-0 min-w-0 flex-col items-center gap-1.5" key={run.name}>
                 <span className="w-full truncate text-center text-[0.75rem] font-semibold" style={{ color }} title={run.name}>{run.name}</span>
@@ -179,7 +174,7 @@ export default function ProjectCompareRoute(): ReactElement {
 
   const renderRunItem = (run: Run) => {
     const isVisible = hiddenRunNames[run.name] !== true;
-    const color = colorByRunName.get(run.name) ?? colors.brand.accent;
+    const color = colorByRunId.get(run.id) ?? colors.brand.accent;
     const isActive = getRunStatus(run) === "running";
     return (
       <div

@@ -21,7 +21,7 @@ interface ProfileRunsPanelProps {
 export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading, error }: ProfileRunsPanelProps): ReactElement {
   const [hoveredRunId, setHoveredRunId] = useState<string | null>(null);
   const projectNames = useMemo(() => new Map(projects.map((project) => [project.id, project.name])), [projects]);
-  const colorByRunId = useMemo(() => new Map(runs.map((run, index) => [run.id, getRunColor(index)])), [runs]);
+  const colorByRunId = useMemo(() => new Map(runs.map((run) => [run.id, getRunColor(run.id)])), [runs]);
 
   return (
     <section className="min-w-0">
@@ -51,7 +51,7 @@ export default function ProfileRunsPanel({ runs, projects, userHandle, isLoading
               </div>
 
               {runs.map((run, index) => {
-                const runColor = colorByRunId.get(run.id) ?? getRunColor(index);
+                const runColor = colorByRunId.get(run.id) ?? getRunColor(run.id);
                 const projectName = projectNames.get(run.projectId) ?? run.projectName;
                 const hovered = hoveredRunId === run.id;
                 return (
