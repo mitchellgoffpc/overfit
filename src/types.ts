@@ -40,14 +40,6 @@ export interface Project {
   updatedAt: Timestamp;
 }
 
-export interface Collaborator {
-  id: ID;
-  projectId: ID;
-  userId: ID;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
 export interface Run {
   id: ID;
   projectId: ID;
@@ -69,21 +61,6 @@ export interface Run {
 }
 
 export type RunUIState = Partial<Pick<Run, "uiState" | "isPinned" | "isBaseline">>;
-
-export interface Artifact {
-  id: ID;
-  projectId: ID;
-  runId: ID | null;
-  step: number | null;
-  name: string;
-  type: string;
-  storageKey: string;
-  storedSizeBytes: number | null;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  finalizedAt: Timestamp | null;
-  metadata: Record<string, unknown> | null;
-}
 
 export interface Media {
   id: ID;
